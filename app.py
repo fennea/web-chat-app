@@ -66,5 +66,11 @@ def handle_signal(data):
     if room:
         emit('signal', data, room=room, include_self=False)
 
+
 if __name__ == '__main__':
+    # For local development
     socketio.run(app, host='0.0.0.0', port=8080, debug=True)
+else:
+    # For Render (production)
+    port = int(os.environ.get('PORT', 8080))  # Use Render’s PORT or fallback
+    socketio.run(app, host='0.0.0.0', port=port)
