@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Video Classroom</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    header {
+      background-color: #333;
+      color: #fff;
+      width: 100%;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 {
+      font-size: 20px;
+      margin: 0;
+    }
+    .logout-btn {
+      background-color: #007BFF;
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .logout-btn:hover {
+      background-color: #0056b3;
+    }
+    .controls {
+      margin: 10px;
+    }
+    .btn {
+      background-color: #007BFF;
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-right: 10px;
+    }
+    .btn:hover {
+      background-color: #0056b3;
+    }
+    .status-messages {
+      width: 90%;
+      max-width: 600px;
+      margin: 10px auto;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      padding: 10px;
+    }
+    .status-messages p {
+      margin: 5px 0;
+    }
+    .video-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 20px 0;
+      flex-wrap: wrap;
+      gap: 20px;
+      width: 90%;
+    }
+    video {
+      background-color: #000;
+      border: 2px solid #ccc;
+      border-radius: 4px;
+      width: 45%;
+      max-width: 600px;
+      height: auto;
+    }
+    @media (max-width: 768px) {
+      video {
+        width: 90%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Video Classroom</h1>
+    <a href="/logout"><button class="logout-btn">Logout</button></a>
+  </header>
+  
+  <div class="controls">
+    <button id="shareScreenBtn" class="btn">Share Screen</button>
+  </div>
+
+  <!-- This div will display status messages like "A new user has joined the room!" -->
+  <div id="statusMessages" class="status-messages"></div>
+
+  <div class="video-container">
+    <video id="localVideo" autoplay muted></video>
+    <video id="remoteVideo" autoplay></video>
+  </div>
+
+  <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+  <script>
+    const localVideo = document.getElementById('localVideo');
+    const remoteVideo = document.getElementById('remoteVideo');
+    const shareScreenBtn = document.getElementById('shareScreenBtn');
+    const statusMessages = document.getElementById('statusMessages');
+
+    let localStream;
+    let peerConnection;
+    let isOfferer = true;
+    const room = "defaultRoom";  // or use a dynamic roomName
+    const config = {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' }
+      ]
+    };
+
+    const socket = io();
+
+    socket.on('connect', () => {
+      socket.emit('join', { room: room });
+    });
+
+    // Listen for the custom "user-joined" event from the server
+    socket.on('user-joined', (data) => {
+      // data might be { msg: "A new user has joined the room!" }
+      if (data && data.msg) {
+        const p = document.createElement('p');
+        p.textContent = data.msg;
+        statusMessages.appendChild(p);
+      }
+    });
+
+    socket.on('signal', (data) => {
+      if (!peerConnection) return;
+      
+      if (data.type === 'offer') {
+        isOfferer = false;
+        peerConnection.setRemoteDescription(new RTCSessionDescription(data.payload))
+          .then(() => peerConnection.createAnswer())
+          .then(answer => peerConnection.setLocalDescription(answer))
+          .then(() => {
+            socket.emit('signal', { room: room, type: 'answer', payload: peerConnection.localDescription });
+          })
+          .catch(console.error);
+      } else if (data.type === 'answer') {
+        peerConnection.setRemoteDescription(new RTCSessionDescription(data.payload))
+          .catch(console.error);
+      } else if (data.type === 'candidate') {
+        peerConnection.addIceCandidate(new RTCIceCandidate(data.payload))
+          .catch(console.error);
+      }
+    });
+
+    function initPeerConnection() {
+      peerConnection = new RTCPeerConnection(config);
+      
+      localStream.getTracks().forEach(track => {
+        peerConnection.addTrack(track, localStream);
+      });
+
+      peerConnection.onicecandidate = (event) => {
+        if (event.candidate) {
+          socket.emit('signal', { room: room, type: 'candidate', payload: event.candidate });
+        }
+      };
+
+      peerConnection.ontrack = (event) => {
+        remoteVideo.srcObject = event.streams[0];
+      };
+
+      if (isOfferer) {
+        peerConnection.createOffer()
+          .then(offer => peerConnection.setLocalDescription(offer))
+          .then(() => {
+            socket.emit('signal', { room: room, type: 'offer', payload: peerConnection.localDescription });
+          })
+          .catch(console.error);
+      }
+    }
+
+    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      .then(stream => {
+        localStream = stream;
+        localVideo.srcObject = stream;
+        initPeerConnection();
+      })
+      .catch(err => {
+        console.error('Error accessing media devices:', err);
+      });
+
+    // Screen sharing
+    shareScreenBtn.addEventListener('click', async () => {
+      try {
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+        const screenTrack = screenStream.getVideoTracks()[0];
+        const sender = peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
+        if (sender) {
+          sender.replaceTrack(screenTrack);
+        }
+        localVideo.srcObject = screenStream;
+        screenTrack.onended = () => {
+          sender.replaceTrack(localStream.getVideoTracks()[0]);
+          localVideo.srcObject = localStream;
+        };
+      } catch (err) {
+        console.error('Error sharing screen:', err);
+      }
+    });
+  </script>
+</body>
+</html>
