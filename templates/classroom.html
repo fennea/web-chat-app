@@ -2,105 +2,161 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Video Classroom</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ChitChat - {{ roomName }}</title>
   <style>
-    body {
+    /* Reset and Base Styles */
+    * {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background-color: #f4f4f4;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f0f2f5;
+      color: #1c2526;
+      line-height: 1.6;
       display: flex;
       flex-direction: column;
-      align-items: center;
+      min-height: 100vh;
     }
-    header {
-      background-color: #333;
-      color: #fff;
-      width: 100%;
-      padding: 10px 20px;
+
+    /* Top Navigation Bar */
+    .navbar {
+      background-color: #1c2526;
+      padding: 15px 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     }
-    header h1 {
+
+    .navbar h1 {
+      color: #fff;
       font-size: 20px;
       margin: 0;
     }
-    .logout-btn {
-      background-color: #007BFF;
+
+    .navbar a {
       color: #fff;
-      border: none;
+      text-decoration: none;
       padding: 8px 16px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 16px;
+      border-radius: 5px;
+      background-color: #3a4a4b;
+      transition: background-color 0.3s ease;
     }
-    .logout-btn:hover {
-      background-color: #0056b3;
+
+    .navbar a:hover {
+      background-color: #526364;
     }
+
+    /* Controls */
     .controls {
-      margin: 10px;
+      padding: 15px;
+      text-align: center;
+      background-color: #fff;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
     }
+
     .btn {
-      background-color: #007BFF;
+      background-color: #2a9d8f;
       color: #fff;
       border: none;
-      padding: 8px 16px;
-      border-radius: 4px;
+      padding: 10px 20px;
+      border-radius: 5px;
       cursor: pointer;
       font-size: 16px;
-      margin-right: 10px;
+      transition: background-color 0.3s ease;
     }
+
     .btn:hover {
-      background-color: #0056b3;
+      background-color: #21867a;
     }
+
+    /* Status Messages */
     .status-messages {
-      width: 90%;
-      max-width: 600px;
-      margin: 10px auto;
+      max-width: 800px;
+      margin: 15px auto;
       background: #fff;
       border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      padding: 10px;
+      padding: 15px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      flex-grow: 1;
+      overflow-y: auto;
     }
+
     .status-messages p {
       margin: 5px 0;
+      color: #647173;
     }
+
+    /* Video Container */
     .video-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin: 20px 0;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
       gap: 20px;
-      width: 90%;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+      flex-grow: 1;
     }
+
     video {
-      background-color: #000;
-      border: 2px solid #ccc;
-      border-radius: 4px;
-      width: 45%;
-      max-width: 600px;
+      width: 100%;
       height: auto;
+      background-color: #000;
+      border-radius: 10px;
+      border: 2px solid #e0e3e5;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     }
+
+    /* Responsive Design */
     @media (max-width: 768px) {
-      video {
-        width: 90%;
+      .navbar {
+        flex-direction: column;
+        gap: 10px;
+        padding: 10px;
+      }
+
+      .navbar h1 {
+        font-size: 18px;
+      }
+
+      .navbar a {
+        padding: 6px 12px;
+      }
+
+      .controls {
+        padding: 10px;
+      }
+
+      .btn {
+        padding: 8px 16px;
+        font-size: 14px;
+      }
+
+      .video-container {
+        grid-template-columns: 1fr;
+        padding: 10px;
+      }
+
+      .status-messages {
+        margin: 10px;
       }
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Video Classroom</h1>
-    <a href="/logout"><button class="logout-btn">Logout</button></a>
-  </header>
-  
+  <nav class="navbar">
+    <h1>ChitChat - {{ roomName }}</h1>
+    <a href="{{ url_for('logout') }}">Logout</a>
+  </nav>
+
   <div class="controls">
     <button id="shareScreenBtn" class="btn">Share Screen</button>
   </div>
 
-  <!-- This div will display status messages like "A new user has joined the room!" -->
   <div id="statusMessages" class="status-messages"></div>
 
   <div class="video-container">
@@ -118,7 +174,7 @@
     let localStream;
     let peerConnection;
     let isOfferer = true;
-    const room = "defaultRoom";  // or use a dynamic roomName
+    const room = "{{ roomName }}";  // Dynamic room name from Flask
     const config = {
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' }
@@ -131,9 +187,7 @@
       socket.emit('join', { room: room });
     });
 
-    // Listen for the custom "user-joined" event from the server
     socket.on('user-joined', (data) => {
-      // data might be { msg: "A new user has joined the room!" }
       if (data && data.msg) {
         const p = document.createElement('p');
         p.textContent = data.msg;
@@ -199,7 +253,6 @@
         console.error('Error accessing media devices:', err);
       });
 
-    // Screen sharing
     shareScreenBtn.addEventListener('click', async () => {
       try {
         const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ChitChat - Register</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f0f2f5; color: #1c2526; text-align: center; padding: 40px; }
+    h1 { font-size: 28px; margin-bottom: 20px; }
+    form { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: inline-block; }
+    label { display: block; margin: 10px 0; }
+    input[type="text"], input[type="password"] { padding: 10px; font-size: 16px; border: 1px solid #e0e3e5; border-radius: 5px; width: 200px; }
+    input[type="submit"] { background: #2a9d8f; color: #fff; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+    input[type="submit"]:hover { background: #21867a; }
+    p { color: #647173; margin: 10px 0; }
+    a { color: #2a9d8f; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <h1>Register for ChitChat</h1>
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      {% for message in messages %}
+        <p>{{ message }}</p>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+  <form method="POST">
+    <label>Username: <input type="text" name="username" required></label>
+    <label>Password: <input type="password" name="password" required></label>
+    <input type="submit" value="Register">
+  </form>
+  <p><a href="{{ url_for('login') }}">Back to Login</a></p>
+</body>
+</html>

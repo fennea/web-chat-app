@@ -1,16 +1,19 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_socketio import SocketIO, emit, join_room, leave_room
+import os
+import psycopg2
+import bcrypt
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your_secret_key'  # Replace with a secure key in production
+app.config['SECRET_KEY'] = os.urandom(24).hex()
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# Hard-coded user for demonstration purposes
-USER_DATA = {
-    "username": "admin",
-    "password": "password123"
-}
+# PostgreSQL connection (local default for macOS Homebrew)
+DB_URL = os.environ.get('DATABASE_URL', 'postgres://anthonyfenner@localhost:5432/chitchat_db')
+conn = psycopg2.connect(DB_URL)
+cursor = conn.cursor()
 
+# Rest of your code remains unchanged...
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -19,13 +22,34 @@ def index():
 def login():
     if request.method == 'POST':
         username = request.form.get('username')
-        password = request.form.get('password')
-        if username == USER_DATA.get('username') and password == USER_DATA.get('password'):
+        password = request.form.get('password').encode('utf-8')
+        cursor.execute("SELECT username, password FROM users WHERE username = %s", (username,))
+        user = cursor.fetchone()
+        if user and bcrypt.checkpw(password, user[1].encode('utf-8')):
             session['username'] = username
             return redirect(url_for('select_classroom'))
         else:
             flash("Invalid credentials. Please try again.")
     return render_template('login.html')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password').encode('utf-8')
+        hashed_pw = bcrypt.hashpw(password, bcrypt.gensalt())
+        try:
+            cursor.execute(
+                "INSERT INTO users (username, password) VALUES (%s, %s)",
+                (username, hashed_pw.decode('utf-8'))
+            )
+            conn.commit()
+            flash("Registration successful! Please log in.")
+            return redirect(url_for('login'))
+        except psycopg2.IntegrityError:
+            conn.rollback()
+            flash("Username already exists.")
+    return render_template('register.html')
 
 @app.route('/logout')
 def logout():
@@ -34,7 +58,6 @@ def logout():
 
 @app.route('/select_classroom', methods=['GET', 'POST'])
 def select_classroom():
-    # Ensure the user is logged in
     if 'username' not in session:
         return redirect(url_for('login'))
     if request.method == 'POST':
@@ -44,21 +67,17 @@ def select_classroom():
 
 @app.route('/classroom/<room_name>')
 def classroom(room_name):
-    # Ensure the user is logged in before accessing the classroom
     if 'username' not in session:
         return redirect(url_for('login'))
     return render_template('classroom.html', roomName=room_name)
 
-# Socket.IO events for WebRTC signaling
 @socketio.on('join')
 def on_join(data):
     room = data.get('room')
     if room:
         join_room(room)
         print(f"User joined room: {room}")
-        # Broadcast to everyone in the room that a new user has joined
         emit('user-joined', {'msg': 'A new user has joined the room!'}, room=room)
-
 
 @socketio.on('signal')
 def handle_signal(data):
@@ -66,7 +85,11 @@ def handle_signal(data):
     if room:
         emit('signal', data, room=room, include_self=False)
 
-
 if __name__ == '__main__':
-    # Local development only
     socketio.run(app, host='0.0.0.0', port=8080, debug=True)
+
+def shutdown():
+    cursor.close()
+    conn.close()
+import atexit
+atexit.register(shutdown)
