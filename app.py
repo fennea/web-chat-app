@@ -35,20 +35,25 @@ def login():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
+        first_name = request.form.get('first_name')
+        last_name = request.form.get('last_name')
+        email = request.form.get('email')
         username = request.form.get('username')
         password = request.form.get('password').encode('utf-8')
+        role = request.form.get('role')  # Add the role field
+
         hashed_pw = bcrypt.hashpw(password, bcrypt.gensalt())
         try:
             cursor.execute(
-                "INSERT INTO users (username, password) VALUES (%s, %s)",
-                (username, hashed_pw.decode('utf-8'))
+                "INSERT INTO users (first_name, last_name, email, username, password, role) VALUES (%s, %s, %s, %s, %s, %s)",
+                (first_name, last_name, email, username, hashed_pw.decode('utf-8'), role)
             )
             conn.commit()
             flash("Registration successful! Please log in.")
             return redirect(url_for('login'))
         except psycopg2.IntegrityError:
             conn.rollback()
-            flash("Username already exists.")
+            flash("Username or email already exists.")
     return render_template('register.html')
 
 @app.route('/logout')

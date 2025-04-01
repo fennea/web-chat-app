@@ -5,20 +5,91 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ChitChat - Register</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #f0f2f5; color: #1c2526; text-align: center; padding: 40px; }
-    h1 { font-size: 28px; margin-bottom: 20px; }
-    form { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: inline-block; }
-    label { display: block; margin: 10px 0; }
-    input[type="text"], input[type="password"] { padding: 10px; font-size: 16px; border: 1px solid #e0e3e5; border-radius: 5px; width: 200px; }
-    input[type="submit"] { background: #2a9d8f; color: #fff; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
-    input[type="submit"]:hover { background: #21867a; }
-    p { color: #647173; margin: 10px 0; }
-    a { color: #2a9d8f; text-decoration: none; }
-    a:hover { text-decoration: underline; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+      color: #1c2526;
+      text-align: center;
+      padding: 40px;
+    }
+    h1 {
+      font-size: 28px;
+      margin-bottom: 20px;
+    }
+    form {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      display: inline-block;
+    }
+    label {
+      display: block;
+      margin: 10px 0;
+    }
+    input[type="text"],
+    input[type="password"],
+    input[type="email"] {
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #e0e3e5;
+      border-radius: 5px;
+      width: 200px;
+    }
+    input[type="submit"] {
+      background: #2a9d8f;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    input[type="submit"]:hover {
+      background: #21867a;
+    }
+    p {
+      color: #647173;
+      margin: 10px 0;
+    }
+    a {
+      color: #2a9d8f;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    #toast {
+      visibility: hidden;
+      min-width: 250px;
+      background-color: #f44336;
+      color: white;
+      text-align: center;
+      border-radius: 4px;
+      padding: 12px;
+      position: fixed;
+      z-index: 1;
+      left: 50%;
+      bottom: 30px;
+      transform: translateX(-50%);
+      font-size: 14px;
+    }
+    #toast.show {
+      visibility: visible;
+      animation: fadein 0.5s, fadeout 0.5s 2.5s;
+    }
+    @keyframes fadein {
+      from { bottom: 0; opacity: 0; }
+      to { bottom: 30px; opacity: 1; }
+    }
+    @keyframes fadeout {
+      from { bottom: 30px; opacity: 1; }
+      to { bottom: 0; opacity: 0; }
+    }
   </style>
 </head>
 <body>
   <h1>Register for ChitChat</h1>
+
   {% with messages = get_flashed_messages() %}
     {% if messages %}
       {% for message in messages %}
@@ -26,11 +97,64 @@
       {% endfor %}
     {% endif %}
   {% endwith %}
-  <form method="POST">
+
+  <form method="POST" onsubmit="return validateForm()">
+    <label>First Name: <input type="text" name="first_name" required></label>
+    <label>Last Name: <input type="text" name="last_name" required></label>
+    <label>Email: <input type="email" name="email" required></label>
     <label>Username: <input type="text" name="username" required></label>
-    <label>Password: <input type="password" name="password" required></label>
+    <label>Password: <input type="password" id="password" name="password" required></label>
+    <label>Confirm Password: <input type="password" id="confirm_password" name="confirm_password" required></label>
+
+    <label>
+      I am a:
+      <select name="role" required>
+        <option value="" disabled selected>Select your role</option>
+        <option value="tutor">Tutor</option>
+        <option value="student">Student</option>
+      </select>
+    </label>
+
     <input type="submit" value="Register">
   </form>
+
   <p><a href="{{ url_for('login') }}">Back to Login</a></p>
+
+  <div id="toast"></div>
+
+  <script>
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.className = "show";
+      setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+    }
+
+    function validateForm() {
+      const password = document.getElementById("password").value;
+      const confirm = document.getElementById("confirm_password").value;
+      const minLength = 8;
+      const hasUpper = /[A-Z]/.test(password);
+      const hasLower = /[a-z]/.test(password);
+      const hasNumber = /\d/.test(password);
+      const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+      if (password !== confirm) {
+        showToast("Passwords do not match.");
+        return false;
+      }
+
+      if (
+        password.length < minLength ||
+        !hasUpper || !hasLower ||
+        !hasNumber || !hasSpecial
+      ) {
+        showToast("Password must be at least 8 characters, include a number, an uppercase letter, a lowercase letter, and a special character.");
+        return false;
+      }
+
+      return true;
+    }
+  </script>
 </body>
 </html>
