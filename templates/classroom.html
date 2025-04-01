@@ -68,6 +68,7 @@
       cursor: pointer;
       font-size: 16px;
       transition: background-color 0.3s ease;
+      margin: 0 5px; /* Add spacing between buttons */
     }
 
     .btn:hover {
@@ -92,7 +93,7 @@
     }
 
     /* Video Container */
-    .video-container {
+    .ビデオ-container {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
       gap: 20px;
@@ -109,6 +110,7 @@
       border-radius: 10px;
       border: 2px solid #e0e3e5;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease; /* Smooth flip transition */
     }
 
     /* Responsive Design */
@@ -155,6 +157,7 @@
 
   <div class="controls">
     <button id="shareScreenBtn" class="btn">Share Screen</button>
+    <button id="flipRemoteBtn" class="btn">Flip Student Video</button>
   </div>
 
   <div id="statusMessages" class="status-messages"></div>
@@ -169,11 +172,13 @@
     const localVideo = document.getElementById('localVideo');
     const remoteVideo = document.getElementById('remoteVideo');
     const shareScreenBtn = document.getElementById('shareScreenBtn');
+    const flipRemoteBtn = document.getElementById('flipRemoteBtn');
     const statusMessages = document.getElementById('statusMessages');
 
     let localStream;
     let peerConnection;
     let isOfferer = true;
+    let isFlipped = false; // Track flip state
     const room = "{{ roomName }}";  // Dynamic room name from Flask
     const config = {
       iceServers: [
@@ -269,6 +274,13 @@
       } catch (err) {
         console.error('Error sharing screen:', err);
       }
+    });
+
+    // Flip remote video toggle
+    flipRemoteBtn.addEventListener('click', () => {
+      isFlipped = !isFlipped; // Toggle state
+      remoteVideo.style.transform = isFlipped ? 'scaleX(-1)' : 'scaleX(1)'; // Flip horizontally
+      flipRemoteBtn.textContent = isFlipped ? 'Unflip Student Video' : 'Flip Student Video'; // Update button text
     });
   </script>
 </body>
