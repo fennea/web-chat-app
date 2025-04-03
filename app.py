@@ -46,13 +46,13 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form.get('username')
+        username = request.form.get('email')
         password = request.form.get('password').encode('utf-8')
-        cursor.execute("SELECT username, password, is_verified FROM users WHERE username = %s", (username,))
+        cursor.execute("SELECT email, password, is_verified FROM users WHERE username = %s", (email,))
         user = cursor.fetchone()
         if user and bcrypt.checkpw(password, user[1].encode('utf-8')):
             if user[2]:  # Check if is_verified is True
-                session['username'] = username
+                session['email'] = email
                 return redirect(url_for('select_classroom'))
             else:
                 flash("Please verify your email before logging in.")
@@ -75,9 +75,9 @@ def register():
 
         try:
             cursor.execute(
-                "INSERT INTO users (first_name, last_name, email, username, password, role, verification_token, is_verified) "
+                "INSERT INTO users (first_name, last_name, email, password, role, verification_token, is_verified) "
                 "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
-                (first_name, last_name, email, username, hashed_pw.decode('utf-8'), role, verification_token, False)
+                (first_name, last_name, email, hashed_pw.decode('utf-8'), role, verification_token, False)
             )
             conn.commit()
             send_verification_email(email, verification_token)
@@ -85,7 +85,7 @@ def register():
             return redirect(url_for('login'))
         except psycopg2.IntegrityError:
             conn.rollback()
-            flash("Username or email already exists.")
+            flash("Login or email already exists.")
     return render_template('register.html')
 
 @app.route('/verify/<token>')
