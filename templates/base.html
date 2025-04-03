@@ -15,9 +15,12 @@
       font-family: 'Arial', sans-serif;
       color: #1c2526;
       line-height: 1.6;
-      min-height: 100vh; /* Ensure body fills viewport */
-      display: flex;
-      flex-direction: column;
+      min-height: 100vh; 
+      /* Instead of forcing the entire body to be flex, 
+         let's just keep it simple. 
+         We can add a <main> that is flex if needed. */
+      margin: 0;
+      padding: 0;
     }
 
     .navbar {
@@ -27,9 +30,9 @@
       justify-content: space-between;
       align-items: center;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-      width: 100%; /* Full width */
-      position: sticky; /* Sticks to top */
-      top: 0; /* Aligns at top */
+      width: 100%;
+      position: sticky; 
+      top: 0;
       z-index: 10;
     }
 
@@ -70,6 +73,15 @@
         text-align: center;
       }
     }
+
+    /* A main container that can flex-center its content if needed */
+    main {
+      min-height: calc(100vh - 60px); /* or however tall your navbar is */
+      display: flex;
+      justify-content: center;
+      align-items: flex-start; /* or center if you want vertical centering */
+      padding-top: 2rem; /* optional space under navbar */
+    }
   </style>
   {% block extra_styles %}{% endblock %}
 </head>
@@ -86,6 +98,8 @@
     </div>
   </nav>
 
-  {% block content %}{% endblock %}
+  <main>
+    {% block content %}{% endblock %}
+  </main>
 </body>
 </html>
