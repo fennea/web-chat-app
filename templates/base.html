@@ -15,12 +15,9 @@
       font-family: 'Arial', sans-serif;
       color: #1c2526;
       line-height: 1.6;
-      min-height: 100vh; 
-      /* Instead of forcing the entire body to be flex, 
-         let's just keep it simple. 
-         We can add a <main> that is flex if needed. */
-      margin: 0;
-      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
 
     .navbar {
@@ -31,7 +28,7 @@
       align-items: center;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
       width: 100%;
-      position: sticky; 
+      position: sticky;
       top: 0;
       z-index: 10;
     }
@@ -43,12 +40,12 @@
       text-decoration: none;
     }
 
-    .navbar .nav-links {
+    .nav-links {
       display: flex;
       gap: 20px;
     }
 
-    .navbar a {
+    .nav-links a {
       color: #fff;
       text-decoration: none;
       font-size: 16px;
@@ -57,30 +54,54 @@
       transition: background-color 0.3s ease;
     }
 
-    .navbar a:hover {
+    .nav-links a:hover {
       background-color: #2a9d8f;
     }
 
-    @media (max-width: 768px) {
-      .navbar {
-        flex-direction: column;
-        gap: 15px;
-      }
-
-      .navbar .nav-links {
-        flex-direction: column;
-        width: 100%;
-        text-align: center;
-      }
+    /* Hamburger Menu */
+    .hamburger {
+      display: none; /* Hidden by default on desktop */
+      font-size: 24px;
+      color: #fff;
+      cursor: pointer;
+      padding: 5px;
     }
 
-    /* A main container that can flex-center its content if needed */
-    main {
-      min-height: calc(100vh - 60px); /* or however tall your navbar is */
+    .menu {
+      display: flex; /* Default flex for desktop */
+    }
+
+    .menu.active {
       display: flex;
-      justify-content: center;
-      align-items: flex-start; /* or center if you want vertical centering */
-      padding-top: 2rem; /* optional space under navbar */
+      flex-direction: column;
+      position: absolute;
+      top: 60px; /* Below navbar */
+      right: 20px;
+      background-color: rgba(28, 37, 38, 0.9);
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      padding: 10px 0;
+    }
+
+    .menu.active a {
+      padding: 10px 20px;
+      width: 150px;
+      text-align: right;
+    }
+
+    @media (max-width: 768px) {
+      .hamburger {
+        display: block; /* Show hamburger on mobile */
+      }
+
+      .menu {
+        display: none; /* Hide links by default on mobile */
+        flex-direction: column;
+      }
+
+      .navbar {
+        padding: 10px;
+      }
     }
   </style>
   {% block extra_styles %}{% endblock %}
@@ -88,18 +109,42 @@
 <body>
   <nav class="navbar">
     <a href="/" class="brand">TwoToro</a>
-    <div class="nav-links">
-      {% if 'username' not in session %}
+    <div class="hamburger">☰</div>
+    <div class="nav-links menu">
+      {% if 'email' not in session %}
         <a href="{{ url_for('login') }}">Login</a>
         <a href="{{ url_for('register') }}">Register</a>
+      {% elif request.path.startswith('/classroom/') %}
+        <!-- Hide links in classroom pages -->
       {% else %}
         <a href="{{ url_for('logout') }}">Logout</a>
       {% endif %}
     </div>
   </nav>
 
-  <main>
-    {% block content %}{% endblock %}
-  </main>
+  {% block content %}{% endblock %}
+
+  <script>
+    const hamburger = document.querySelector('.hamburger');
+    const menu = document.querySelector('.menu');
+
+    hamburger.addEventListener('click', () => {
+      menu.classList.toggle('active');
+    });
+
+    // Close menu if clicking outside on mobile
+    document.addEventListener('click', (event) => {
+      if (window.innerWidth <= 768 && !navbar.contains(event.target)) {
+        menu.classList.remove('active');
+      }
+    });
+
+    // Close menu if resizing past mobile threshold
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 768) {
+        menu.classList.remove('active');
+      }
+    });
+  </script>
 </body>
 </html>

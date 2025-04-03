@@ -1,19 +1,24 @@
 {% extends "base.html" %}
 
-{% block title %}TwoToro - {{ roomName }}{% endblock %}
+{% block title %}Twotoro - {{ roomName }}{% endblock %}
 
 {% block extra_styles %}
   <style>
-    /* Remove the extra flex styling on the body to let base.html handle layout */
     body {
       background-color: #f0f2f5;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
     }
 
     .controls {
       padding: 15px;
-      text-align: center;
       background-color: #fff;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      display: flex; /* Use flex for button layout */
+      justify-content: center; /* Center buttons horizontally */
+      align-items: center; /* Align vertically */
+      gap: 15px; /* Space between buttons */
     }
 
     .btn {
@@ -25,7 +30,6 @@
       cursor: pointer;
       font-size: 16px;
       transition: background-color 0.3s ease;
-      margin: 0 5px;
     }
 
     .btn:hover {
@@ -71,9 +75,12 @@
     @media (max-width: 768px) {
       .controls {
         padding: 10px;
+        flex-direction: column; /* Stack buttons vertically on mobile */
+        gap: 10px;
       }
 
       .btn {
+        width: 100%; /* Full width on mobile */
         padding: 8px 16px;
         font-size: 14px;
       }
@@ -174,7 +181,8 @@
 
       peerConnection.ontrack = (event) => {
         console.log('Remote track received');
-        remoteVideo.srcObject = event.streams[0];
+        remoteVideo.srcObject = event.streams[0] || null;
+        if (!remoteVideo.srcObject) remoteVideo.src = 'https://via.placeholder.com/300x200.png?text=No+Video';
       };
 
       if (isOfferer) {
