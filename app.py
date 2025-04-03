@@ -8,19 +8,16 @@ from email.mime.text import MIMEText
 import uuid
 from dotenv import load_dotenv
 
-# Load environment variables from .env file for local testing
 load_dotenv()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24).hex()
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# PostgreSQL connection
 DB_URL = os.environ.get('DATABASE_URL', 'postgres://anthonyfenner@localhost:5432/chitchat_db')
 conn = psycopg2.connect(DB_URL)
 cursor = conn.cursor()
 
-# Email configuration from environment variables
 EMAIL_ADDRESS = os.getenv('EMAIL_ADDRESS')
 EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD')
 
@@ -46,18 +43,18 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form.get('email')
+        email = request.form.get('email')  # Changed from username
         password = request.form.get('password').encode('utf-8')
-        cursor.execute("SELECT email, password, is_verified FROM users WHERE username = %s", (email,))
+        cursor.execute("SELECT email, password, is_verified FROM users WHERE email = %s", (email,))
         user = cursor.fetchone()
         if user and bcrypt.checkpw(password, user[1].encode('utf-8')):
-            if user[2]:  # Check if is_verified is True
-                session['email'] = email
+            if user[2]:  # Check is_verified
+                session['email'] = email  # Store email in session instead of username
                 return redirect(url_for('select_classroom'))
             else:
                 flash("Please verify your email before logging in.")
         else:
-            flash("Invalid credentials. Please try again.")
+            flash("Invalid email or password. Please try again.")
     return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -66,18 +63,18 @@ def register():
         first_name = request.form.get('first_name')
         last_name = request.form.get('last_name')
         email = request.form.get('email')
-        username = request.form.get('username')
+        username = request.form.get('username')  # Still collected but not used for login
         password = request.form.get('password').encode('utf-8')
         role = request.form.get('role')
 
         hashed_pw = bcrypt.hashpw(password, bcrypt.gensalt())
-        verification_token = str(uuid.uuid4())  # Generate unique token
+        verification_token = str(uuid.uuid4())
 
         try:
             cursor.execute(
-                "INSERT INTO users (first_name, last_name, email, password, role, verification_token, is_verified) "
+                "INSERT INTO users (first_name, last_name, email, username, password, role, verification_token, is_verified) "
                 "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
-                (first_name, last_name, email, hashed_pw.decode('utf-8'), role, verification_token, False)
+                (first_name, last_name, email, username, hashed_pw.decode('utf-8'), role, verification_token, False)
             )
             conn.commit()
             send_verification_email(email, verification_token)
@@ -85,7 +82,7 @@ def register():
             return redirect(url_for('login'))
         except psycopg2.IntegrityError:
             conn.rollback()
-            flash("Login or email already exists.")
+            flash("Username or email already exists.")
     return render_template('register.html')
 
 @app.route('/verify/<token>')
@@ -102,12 +99,12 @@ def verify(token):
 
 @app.route('/logout')
 def logout():
-    session.pop('username', None)
+    session.pop('email', None)  # Changed from 'username'
     return redirect(url_for('login'))
 
 @app.route('/select_classroom', methods=['GET', 'POST'])
 def select_classroom():
-    if 'username' not in session:
+    if 'email' not in session:  # Changed from 'username'
         return redirect(url_for('login'))
     if request.method == 'POST':
         room_name = request.form.get('room_name')
@@ -116,7 +113,7 @@ def select_classroom():
 
 @app.route('/classroom/<room_name>')
 def classroom(room_name):
-    if 'username' not in session:
+    if 'email' not in session:  # Changed from 'username'
         return redirect(url_for('login'))
     return render_template('classroom.html', roomName=room_name)
 
