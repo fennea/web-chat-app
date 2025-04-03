@@ -2,15 +2,14 @@
 
 {% block title %}TwoToro - Register{% endblock %}
 
+
+
 {% block extra_styles %}
   <style>
     body {
       background: linear-gradient(135deg, #f0f2f5 0%, #e0e6ed 100%);
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
+      /* Removed flex centering here—navbar handles top positioning */
+      padding-top: 80px; /* Space for navbar */
     }
 
     .container {

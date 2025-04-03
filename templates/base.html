@@ -15,6 +15,9 @@
       font-family: 'Arial', sans-serif;
       color: #1c2526;
       line-height: 1.6;
+      min-height: 100vh; /* Ensure body fills viewport */
+      display: flex;
+      flex-direction: column;
     }
 
     .navbar {
@@ -24,7 +27,9 @@
       justify-content: space-between;
       align-items: center;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-      position: relative;
+      width: 100%; /* Full width */
+      position: sticky; /* Sticks to top */
+      top: 0; /* Aligns at top */
       z-index: 10;
     }
 
@@ -72,8 +77,12 @@
   <nav class="navbar">
     <a href="/" class="brand">TwoToro</a>
     <div class="nav-links">
-      <a href="{{ url_for('login') }}">Login</a>
-      <a href="{{ url_for('register') }}">Register</a>
+      {% if 'username' not in session %}
+        <a href="{{ url_for('login') }}">Login</a>
+        <a href="{{ url_for('register') }}">Register</a>
+      {% else %}
+        <a href="{{ url_for('logout') }}">Logout</a>
+      {% endif %}
     </div>
   </nav>
 
