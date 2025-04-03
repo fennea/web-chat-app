@@ -1,63 +1,114 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ChitChat - Register</title>
+{% extends "base.html" %}
+
+{% block title %}TwoToro - Register{% endblock %}
+
+{% block extra_styles %}
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #f0f2f5;
-      color: #1c2526;
-      text-align: center;
-      padding: 40px;
-    }
-    h1 {
-      font-size: 28px;
-      margin-bottom: 20px;
-    }
-    form {
-      background: #fff;
+      background: linear-gradient(135deg, #f0f2f5 0%, #e0e6ed 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-      display: inline-block;
     }
+
+    .container {
+      max-width: 450px;
+      width: 100%;
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 32px;
+      margin-bottom: 20px;
+      color: #2a9d8f;
+      font-weight: 600;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
     label {
-      display: block;
-      margin: 10px 0;
+      text-align: left;
+      font-size: 14px;
+      color: #647173;
+      margin-bottom: 5px;
     }
+
     input[type="text"],
     input[type="password"],
-    input[type="email"] {
-      padding: 10px;
+    input[type="email"],
+    select {
+      padding: 12px;
       font-size: 16px;
       border: 1px solid #e0e3e5;
-      border-radius: 5px;
-      width: 200px;
+      border-radius: 6px;
+      width: 100%;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
     }
+
+    input[type="text"]:focus,
+    input[type="password"]:focus,
+    input[type="email"]:focus,
+    select:focus {
+      border-color: #2a9d8f;
+      box-shadow: 0 0 5px rgba(42, 157, 143, 0.3);
+      outline: none;
+    }
+
     input[type="submit"] {
       background: #2a9d8f;
       color: #fff;
       border: none;
-      padding: 10px 20px;
-      border-radius: 5px;
+      padding: 12px 20px;
+      border-radius: 6px;
       cursor: pointer;
+      font-size: 16px;
+      font-weight: 500;
+      transition: background 0.3s ease, transform 0.2s ease;
     }
+
     input[type="submit"]:hover {
       background: #21867a;
+      transform: translateY(-2px);
     }
+
     p {
       color: #647173;
       margin: 10px 0;
+      font-size: 14px;
     }
+
     a {
       color: #2a9d8f;
       text-decoration: none;
+      font-weight: 500;
     }
+
     a:hover {
       text-decoration: underline;
     }
+
+    .messages {
+      margin-bottom: 15px;
+    }
+
+    .messages p {
+      background: #e6f4f1;
+      color: #2a9d8f;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
     #toast {
       visibility: hidden;
       min-width: 250px;
@@ -72,89 +123,75 @@
       bottom: 30px;
       transform: translateX(-50%);
       font-size: 14px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     }
+
     #toast.show {
       visibility: visible;
       animation: fadein 0.5s, fadeout 0.5s 2.5s;
     }
+
     @keyframes fadein {
       from { bottom: 0; opacity: 0; }
       to { bottom: 30px; opacity: 1; }
     }
+
     @keyframes fadeout {
       from { bottom: 30px; opacity: 1; }
       to { bottom: 0; opacity: 0; }
     }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 20px;
+      }
+      h1 {
+        font-size: 28px;
+      }
+      input[type="text"],
+      input[type="password"],
+      input[type="email"],
+      select {
+        font-size: 14px;
+      }
+    }
   </style>
-</head>
-<body>
-  <h1>Register for ChitChat</h1>
+{% endblock %}
 
-  {% with messages = get_flashed_messages() %}
-    {% if messages %}
-      {% for message in messages %}
-        <p>{{ message }}</p>
-      {% endfor %}
-    {% endif %}
-  {% endwith %}
+{% block content %}
+  <div class="container">
+    <h1>Register for TwoToro</h1>
 
-  <form method="POST" onsubmit="return validateForm()">
-    <label>First Name: <input type="text" name="first_name" required></label>
-    <label>Last Name: <input type="text" name="last_name" required></label>
-    <label>Email: <input type="email" name="email" required></label>
-    <label>Username: <input type="text" name="username" required></label>
-    <label>Password: <input type="password" id="password" name="password" required></label>
-    <label>Confirm Password: <input type="password" id="confirm_password" name="confirm_password" required></label>
+    <div class="messages">
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          {% for message in messages %}
+            <p>{{ message }}</p>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+    </div>
 
-    <label>
-      I am a:
-      <select name="role" required>
-        <option value="" disabled selected>Select your role</option>
-        <option value="tutor">Tutor</option>
-        <option value="student">Student</option>
-      </select>
-    </label>
+    <form method="POST" onsubmit="return validateForm()">
+      <label>First Name: <input type="text" name="first_name" required></label>
+      <label>Last Name: <input type="text" name="last_name" required></label>
+      <label>Email: <input type="email" name="email" required></label>
+      <label>Username: <input type="text" name="username" required></label>
+      <label>Password: <input type="password" id="password" name="password" required></label>
+      <label>Confirm Password: <input type="password" id="confirm_password" name="confirm_password" required></label>
+      <label>
+        I am a:
+        <select name="role" required>
+          <option value="" disabled selected>Select your role</option>
+          <option value="tutor">Tutor</option>
+          <option value="student">Student</option>
+        </select>
+      </label>
+      <input type="submit" value="Register">
+    </form>
 
-    <input type="submit" value="Register">
-  </form>
+    <p>Already have an account? <a href="{{ url_for('login') }}">Log in here</a></p>
 
-  <p><a href="{{ url_for('login') }}">Back to Login</a></p>
-
-  <div id="toast"></div>
-
-  <script>
-    function showToast(message) {
-      const toast = document.getElementById("toast");
-      toast.textContent = message;
-      toast.className = "show";
-      setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
-    }
-
-    function validateForm() {
-      const password = document.getElementById("password").value;
-      const confirm = document.getElementById("confirm_password").value;
-      const minLength = 8;
-      const hasUpper = /[A-Z]/.test(password);
-      const hasLower = /[a-z]/.test(password);
-      const hasNumber = /\d/.test(password);
-      const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-
-      if (password !== confirm) {
-        showToast("Passwords do not match.");
-        return false;
-      }
-
-      if (
-        password.length < minLength ||
-        !hasUpper || !hasLower ||
-        !hasNumber || !hasSpecial
-      ) {
-        showToast("Password must be at least 8 characters, include a number, an uppercase letter, a lowercase letter, and a special character.");
-        return false;
-      }
-
-      return true;
-    }
-  </script>
-</body>
-</html>
+    <div id="toast"></div>
+  </div>
+{% endblock %}

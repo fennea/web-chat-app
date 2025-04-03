@@ -1,52 +1,14 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ChitChat - {{ roomName }}</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+{% extends "base.html" %}
 
+{% block title %}TwoToro - {{ roomName }}{% endblock %}
+
+{% block extra_styles %}
+  <style>
     body {
-      font-family: 'Arial', sans-serif;
       background-color: #f0f2f5;
-      color: #1c2526;
-      line-height: 1.6;
       display: flex;
       flex-direction: column;
       min-height: 100vh;
-    }
-
-    .navbar {
-      background-color: #1c2526;
-      padding: 15px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    }
-
-    .navbar h1 {
-      color: #fff;
-      font-size: 20px;
-      margin: 0;
-    }
-
-    .navbar a {
-      color: #fff;
-      text-decoration: none;
-      padding: 8px 16px;
-      border-radius: 5px;
-      background-color: #3a4a4b;
-      transition: background-color 0.3s ease;
-    }
-
-    .navbar a:hover {
-      background-color: #526364;
     }
 
     .controls {
@@ -109,20 +71,6 @@
     }
 
     @media (max-width: 768px) {
-      .navbar {
-        flex-direction: column;
-        gap: 10px;
-        padding: 10px;
-      }
-
-      .navbar h1 {
-        font-size: 18px;
-      }
-
-      .navbar a {
-        padding: 6px 12px;
-      }
-
       .controls {
         padding: 10px;
       }
@@ -142,13 +90,9 @@
       }
     }
   </style>
-</head>
-<body>
-  <nav class="navbar">
-    <h1>ChitChat - {{ roomName }}</h1>
-    <a href="{{ url_for('logout') }}">Logout</a>
-  </nav>
+{% endblock %}
 
+{% block content %}
   <div class="controls">
     <button id="shareScreenBtn" class="btn">Share Screen</button>
     <button id="flipRemoteBtn" class="btn">Flip Student Video</button>
@@ -281,5 +225,4 @@
       flipRemoteBtn.textContent = isFlipped ? 'Unflip Student Video' : 'Flip Student Video';
     });
   </script>
-</body>
-</html>
+{% endblock %}
