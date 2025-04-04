@@ -112,6 +112,7 @@
     <div class="hamburger">☰</div>
     <div class="nav-links menu">
       {% if 'email' not in session %}
+        <a href="{{ url_for('about') }}">About</a>
         <a href="{{ url_for('login') }}">Login</a>
         <a href="{{ url_for('register') }}">Register</a>
       {% elif request.path.startswith('/classroom/') %}

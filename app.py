@@ -103,6 +103,10 @@ def logout():
     session.pop('role', None)
     return redirect(url_for('login'))
 
+@app.route('/about')
+def about():
+    return render_template('about.html')
+
 @app.route('/dashboard', methods=['GET', 'POST'])
 def dashboard():
     if 'email' not in session:

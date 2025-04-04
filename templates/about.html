@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block title %}TwoToro - About Us{% endblock %}
+
+{% block extra_styles %}
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(135deg, #f0f2f5 0%, #e0e6ed 100%);
+      padding: 20px;
+      padding-top: 80px; /* Space for navbar */
+    }
+
+    .about-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 3rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      color: #2a9d8f;
+      font-size: 2.5rem;
+      text-align: center;
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+
+    h2 {
+      color: #1c2526;
+      font-size: 1.8rem;
+      margin: 2rem 0 1rem;
+      font-weight: 600;
+      position: relative;
+      display: inline-block;
+    }
+
+    h2::after {
+      content: '';
+      width: 50px;
+      height: 3px;
+      background: #2a9d8f;
+      position: absolute;
+      bottom: -5px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    p {
+      color: #647173;
+      font-size: 1.1rem;
+      line-height: 1.8;
+      margin-bottom: 1rem;
+    }
+
+    .tagline {
+      text-align: center;
+      font-size: 1.5rem;
+      color: #2a9d8f;
+      font-style: italic;
+      margin-bottom: 2rem;
+    }
+
+    .section {
+      margin-bottom: 3rem;
+    }
+
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+      margin-top: 1rem;
+    }
+
+    .feature-item {
+      background: #f9f9f9;
+      padding: 1.5rem;
+      border-radius: 8px;
+      text-align: center;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .feature-item:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .feature-item h3 {
+      color: #2a9d8f;
+      font-size: 1.3rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .feature-item p {
+      font-size: 1rem;
+      color: #647173;
+    }
+
+    .cta {
+      text-align: center;
+      margin-top: 3rem;
+    }
+
+    .cta a {
+      display: inline-block;
+      padding: 0.75rem 2rem;
+      background: #2a9d8f;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 1.1rem;
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+
+    .cta a:hover {
+      background: #21867a;
+      transform: translateY(-2px);
+    }
+
+    @media (max-width: 768px) {
+      .about-container {
+        padding: 1.5rem;
+      }
+
+      h1 {
+        font-size: 2rem;
+      }
+
+      h2 {
+        font-size: 1.5rem;
+      }
+
+      p {
+        font-size: 1rem;
+      }
+
+      .tagline {
+        font-size: 1.2rem;
+      }
+
+      .features {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div class="about-container">
+    <h1>About TwoToro</h1>
+    <div class="tagline">Powered Learning Together</div>
+
+    <div class="section">
+      <p>Welcome to TwoToro—a place where we believe that learning is best when it’s shared. Born out of a personal challenge and a passion for making quality tutoring accessible, TwoToro is more than just a platform—it’s a community built on collaboration and empowerment.</p>
+    </div>
+
+    <div class="section">
+      <h2>Our Story</h2>
+      <p>My journey with tutoring started in a rather unexpected way. I was paying $35 a month for Zoom, not only to connect with tutors for my daughter but also to cover the cost of a separate tutor login. Frustrated by these unnecessary expenses, I thought, “There’s got to be a better way.” I knew I could build a solution that made learning more affordable and efficient. And so, TwoToro was born.</p>
+      <p>Inspired by the strength and determination symbolized by the word “toro” (bull), and the power of two coming together, TwoToro was created to merge technology with the human element of tutoring. We’re here to challenge the status quo—because learning should never be hindered by high costs or outdated tools.</p>
+    </div>
+
+    <div class="section">
+      <h2>Our Mission</h2>
+      <p>At TwoToro, our mission is simple: to empower learners and educators alike by creating an environment where knowledge is shared, and success is a collective journey. We believe that when tutors and students work together, every learning challenge can be met head-on.</p>
+      <ul class="features">
+        <li class="feature-item">
+          <h3>Affordability</h3>
+          <p>We’re committed to cutting out the extra costs, ensuring that every learner has access to top-quality tutoring without the hefty price tag.</p>
+        </li>
+        <li class="feature-item">
+          <h3>Collaboration</h3>
+          <p>Our platform is built on the idea that learning is a two-way street. We’re here to connect passionate tutors with eager learners, creating a dynamic and interactive space for growth.</p>
+        </li>
+        <li class="feature-item">
+          <h3>Innovation</h3>
+          <p>Leveraging technology, we’re continually refining our platform to provide seamless, user-friendly tools that make virtual tutoring as engaging and effective as possible.</p>
+        </li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>What We Offer</h2>
+      <p>TwoToro is designed to be your all-in-one tutoring solution. Whether you’re a parent looking for reliable academic support for your child or a tutor wanting to reach a wider audience, we’ve got you covered. Our platform includes:</p>
+      <ul class="features">
+        <li class="feature-item">
+          <h3>Interactive Video Chat</h3>
+          <p>Engage in real-time, face-to-face sessions that feel just like being in the same room.</p>
+        </li>
+        <li class="feature-item">
+          <h3>Integrated Tools</h3>
+          <p>From whiteboards to file sharing, our tools are crafted to make learning interactive and fun.</p>
+        </li>
+        <li class="feature-item">
+          <h3>Community Focus</h3>
+          <p>We’re not just about one-on-one sessions; we’re about building a network of support where everyone learns together.</p>
+        </li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>Why TwoToro?</h2>
+      <p>TwoToro isn’t just another video chat tool—it’s a movement towards a more inclusive, cost-effective, and engaging way to learn. Our tagline, “Powered Learning Together,” perfectly encapsulates what we stand for. We’re here to:</p>
+      <ul class="features">
+        <li class="feature-item">
+          <h3>Eliminate Barriers</h3>
+          <p>By reducing costs and simplifying the tutoring process, we make quality education accessible to more people.</p>
+        </li>
+        <li class="feature-item">
+          <h3>Foster Connection</h3>
+          <p>We believe that the best learning happens when minds connect, ideas flow, and both tutors and students grow together.</p>
+        </li>
+        <li class="feature-item">
+          <h3>Drive Innovation</h3>
+          <p>We’re constantly pushing the envelope to ensure our platform meets the evolving needs of today’s learners and educators.</p>
+        </li>
+      </ul>
+    </div>
+
+    <div class="cta">
+      <p>Join us on this journey. Let’s charge forward, break down the walls of expensive tutoring, and empower each other to achieve more.</p>
+      <a href="{{ url_for('register') }}">Get Started with TwoToro</a>
+    </div>
+  </div>
+{% endblock %}
