@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}TwoToro - Dashboard{% endblock %}
+
+{% block extra_styles %}
+  <style>
+    body {
+      background-color: #f4f4f4;
+      padding: 20px;
+    }
+
+    .dashboard-container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      color: #2a9d8f;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    .section {
+      margin-bottom: 2rem;
+    }
+
+    .section h3 {
+      color: #333;
+      margin-bottom: 0.5rem;
+    }
+
+    .classroom-list, .student-list {
+      list-style: none;
+      padding: 0;
+    }
+
+    .classroom-list li, .student-list li {
+      padding: 0.5rem;
+      border-bottom: 1px solid #e0e3e5;
+    }
+
+    .classroom-list li a {
+      color: #2a9d8f;
+      text-decoration: none;
+    }
+
+    .classroom-list li a:hover {
+      text-decoration: underline;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 1rem;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    select {
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 100%;
+      max-width: 300px;
+    }
+
+    button {
+      padding: 0.5rem 1rem;
+      background: #2a9d8f;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background: #21867a;
+    }
+
+    .messages {
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    .messages p {
+      background: #e6f4f1;
+      color: #2a9d8f;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .links {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin-top: 1rem;
+    }
+
+    .links a {
+      color: #2a9d8f;
+      text-decoration: none;
+    }
+
+    .links a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 768px) {
+      .dashboard-container {
+        padding: 1rem;
+      }
+
+      input[type="text"],
+      input[type="email"],
+      select {
+        max-width: 100%;
+      }
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div class="dashboard-container">
+    <h2>Welcome, {{ first_name }}!</h2>
+
+    <div class="messages">
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          {% for message in messages %}
+            <p>{{ message }}</p>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+    </div>
+
+    {% if role == 'tutor' %}
+      <!-- Tutor Dashboard -->
+      <div class="section">
+        <h3>Create a Classroom</h3>
+        <form method="POST" action="{{ url_for('dashboard') }}">
+          <input type="hidden" name="create_room" value="1">
+          <input type="text" name="room_name" placeholder="Classroom Name" required />
+          <select name="students" multiple required>
+            {% for student in students %}
+              <option value="{{ student[0] }}">{{ student[1] }} {{ student[2] }} ({{ student[3] }})</option>
+            {% endfor %}
+          </select>
+          <button type="submit">Create and Invite</button>
+        </form>
+      </div>
+
+      <div class="section">
+        <h3>Your Classrooms</h3>
+        <ul class="classroom-list">
+          {% for room in classrooms %}
+            <li><a href="{{ url_for('classroom', room_name=room) }}">{{ room }}</a></li>
+          {% else %}
+            <li>No classrooms created yet.</li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <div class="section">
+        <h3>Your Students</h3>
+        <ul class="student-list">
+          {% for student in students %}
+            <li>{{ student[1] }} {{ student[2] }} ({{ student[3] }})</li>
+          {% else %}
+            <li>No students assigned yet.</li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <div class="section">
+        <h3>Assign a Student</h3>
+        <form method="POST" action="{{ url_for('assign_student') }}">
+          <input type="email" name="student_email" placeholder="Student Email" required />
+          <button type="submit">Assign Student</button>
+        </form>
+      </div>
+
+    {% else %}
+      <!-- Student Dashboard -->
+      <div class="section">
+        <h3>Your Classrooms</h3>
+        <ul class="classroom-list">
+          {% for room in classrooms %}
+            <li><a href="{{ url_for('classroom', room_name=room) }}">{{ room }}</a></li>
+          {% else %}
+            <li>No classroom invitations yet.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    <div class="links">
+      <a href="{{ url_for('update_info') }}">Update Personal Info</a>
+      <a href="{{ url_for('update_password') }}">Update Password</a>
+    </div>
+  </div>
+{% endblock %}
