@@ -50,8 +50,8 @@ def login():
         if user and bcrypt.checkpw(password, user[1].encode('utf-8')):
             if user[2]:  # Check is_verified
                 session['email'] = email
-                session['role'] = user[3]  # Store role in session
-                return redirect(url_for('dashboard'))  # Redirect to dashboard
+                session['role'] = user[3]
+                return redirect(url_for('dashboard'))  # Should redirect to /dashboard
             else:
                 flash("Please verify your email before logging in.")
         else:
