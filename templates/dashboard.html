@@ -10,7 +10,7 @@
     }
 
     .dashboard-container {
-      max-width: 1200px; /* Wider for desktop */
+      max-width: 1200px;
       margin: 0 auto;
       background: #fff;
       padding: 2rem;
@@ -27,9 +27,10 @@
 
     .section {
       margin-bottom: 2rem;
-      padding: 1rem;
+      padding: 1.5rem;
       border-radius: 6px;
       background: #f9f9f9;
+      border: 1px solid #e0e3e5;
     }
 
     .section h3 {
@@ -60,10 +61,10 @@
 
     form {
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: column; /* Stack elements vertically */
       gap: 15px;
       margin-bottom: 1rem;
-      align-items: center;
+      align-items: flex-start; /* Align items to the left */
     }
 
     input[type="text"],
@@ -73,12 +74,15 @@
       border: 1px solid #ccc;
       border-radius: 4px;
       font-size: 1rem;
-      flex: 1;
-      min-width: 200px;
+      width: 100%;
+      max-width: 300px;
     }
 
     select[multiple] {
-      height: 100px; /* For multi-select */
+      height: 120px; /* Fixed height for multi-select */
+      width: 100%;
+      max-width: 300px;
+      overflow-y: auto; /* Scroll if too many options */
     }
 
     button {
@@ -90,6 +94,7 @@
       cursor: pointer;
       transition: background 0.3s ease;
       font-size: 1rem;
+      align-self: flex-start; /* Align button with inputs */
     }
 
     button:hover {
@@ -148,7 +153,8 @@
       }
 
       form {
-        flex-wrap: nowrap;
+        flex-direction: column; /* Keep vertical for clarity */
+        align-items: flex-start;
       }
 
       input[type="text"],
@@ -179,7 +185,6 @@
       }
 
       form {
-        flex-direction: column;
         align-items: stretch;
       }
 
