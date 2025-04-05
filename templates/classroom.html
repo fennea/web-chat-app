@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Twotoro - {{ roomName }}{% endblock %}
+{% block title %}TwoToro - {{ roomName }}{% endblock %}
 
 {% block extra_styles %}
   <style>
@@ -15,10 +15,15 @@
       padding: 15px;
       background-color: #fff;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-      display: flex; /* Use flex for button layout */
-      justify-content: center; /* Center buttons horizontally */
-      align-items: center; /* Align vertically */
-      gap: 15px; /* Space between buttons */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .timer {
+      font-size: 1rem;
+      color: #647173;
     }
 
     .btn {
@@ -75,12 +80,12 @@
     @media (max-width: 768px) {
       .controls {
         padding: 10px;
-        flex-direction: column; /* Stack buttons vertically on mobile */
+        flex-direction: column;
         gap: 10px;
       }
 
       .btn {
-        width: 100%; /* Full width on mobile */
+        width: 100%;
         padding: 8px 16px;
         font-size: 14px;
       }
@@ -99,6 +104,7 @@
 
 {% block content %}
   <div class="controls">
+    <span class="timer" id="sessionTimer">Session Time: 00:00</span>
     <button id="shareScreenBtn" class="btn">Share Screen</button>
     <button id="flipRemoteBtn" class="btn">Flip Student Video</button>
   </div>
@@ -117,6 +123,7 @@
     const shareScreenBtn = document.getElementById('shareScreenBtn');
     const flipRemoteBtn = document.getElementById('flipRemoteBtn');
     const statusMessages = document.getElementById('statusMessages');
+    const sessionTimer = document.getElementById('sessionTimer');
 
     let localStream;
     let peerConnection;
@@ -129,11 +136,23 @@
       ]
     };
 
+    let startTime = Date.now();
+    let timerInterval;
+
+    function updateTimer() {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const minutes = Math.floor(elapsed / 60);
+      const seconds = elapsed % 60;
+      sessionTimer.textContent = `Session Time: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      socket.emit('session_update', { duration: Math.floor(elapsed / 60) });
+    }
+
     const socket = io();
 
     socket.on('connect', () => {
       console.log('SocketIO connected');
       socket.emit('join', { room: room });
+      timerInterval = setInterval(updateTimer, 1000);
     });
 
     socket.on('user-joined', (data) => {
@@ -181,8 +200,7 @@
 
       peerConnection.ontrack = (event) => {
         console.log('Remote track received');
-        remoteVideo.srcObject = event.streams[0] || null;
-        if (!remoteVideo.srcObject) remoteVideo.src = 'https://via.placeholder.com/300x200.png?text=No+Video';
+        remoteVideo.srcObject = event.streams[0];
       };
 
       if (isOfferer) {
@@ -229,6 +247,12 @@
       isFlipped = !isFlipped;
       remoteVideo.style.transform = isFlipped ? 'scaleX(-1)' : 'scaleX(1)';
       flipRemoteBtn.textContent = isFlipped ? 'Unflip Student Video' : 'Flip Student Video';
+    });
+
+    window.addEventListener('beforeunload', () => {
+      clearInterval(timerInterval);
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      socket.emit('session_update', { duration: Math.floor(elapsed / 60) });
     });
   </script>
 {% endblock %}

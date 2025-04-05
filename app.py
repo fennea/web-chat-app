@@ -6,7 +6,9 @@ import bcrypt
 import smtplib
 from email.mime.text import MIMEText
 import uuid
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
+import stripe
 
 load_dotenv()
 
@@ -20,6 +22,14 @@ cursor = conn.cursor()
 
 EMAIL_ADDRESS = os.getenv('EMAIL_ADDRESS')
 EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD')
+stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
+STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY')
+
+# Stripe Product and Price IDs (set these in Stripe Dashboard)
+FREE_PLAN = 'free'
+EARLY_ADOPTER_PRICE_ID = 'price_early_adopter_499'  # $4.99/month
+STANDARD_PRICE_ID = 'price_standard_699'  # $6.99/month
+# AI_PRICE_ID = 'price_ai_999'  # $9.99/month (future)
 
 def send_verification_email(email, token):
     msg = MIMEText(f"Please verify your email by clicking this link: https://twotoro.com/verify/{token}")
@@ -36,9 +46,25 @@ def send_verification_email(email, token):
     except Exception as e:
         print(f"Failed to send email: {e}")
 
+def get_user_session_count(user_id, month_start, month_end):
+    cursor.execute(
+        "SELECT COUNT(*) FROM sessions WHERE user_id = %s AND start_time BETWEEN %s AND %s",
+        (user_id, month_start, month_end)
+    )
+    return cursor.fetchone()[0]
+
+def get_user_subscription(user_id):
+    cursor.execute("SELECT plan, status FROM subscriptions WHERE user_id = %s", (user_id,))
+    sub = cursor.fetchone()
+    return sub if sub else (FREE_PLAN, 'active')
+
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/about')
+def about():
+    return render_template('about.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -48,10 +74,10 @@ def login():
         cursor.execute("SELECT email, password, is_verified, role FROM users WHERE email = %s", (email,))
         user = cursor.fetchone()
         if user and bcrypt.checkpw(password, user[1].encode('utf-8')):
-            if user[2]:  # Check is_verified
+            if user[2]:
                 session['email'] = email
                 session['role'] = user[3]
-                return redirect(url_for('dashboard'))  # Should redirect to /dashboard
+                return redirect(url_for('dashboard'))
             else:
                 flash("Please verify your email before logging in.")
         else:
@@ -72,9 +98,14 @@ def register():
 
         try:
             cursor.execute(
-                "INSERT INTO users (first_name, last_name, email, password, role, verification_token, is_verified) "
-                "VALUES (%s, %s, %s, %s, %s, %s, %s)",
-                (first_name, last_name, email, hashed_pw.decode('utf-8'), role, verification_token, False)
+                "INSERT INTO users (first_name, last_name, email, password, role, verification_token, is_verified, early_adopter) "
+                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING user_id",
+                (first_name, last_name, email, hashed_pw.decode('utf-8'), role, verification_token, False, True)  # Early adopter flag
+            )
+            user_id = cursor.fetchone()[0]
+            cursor.execute(
+                "INSERT INTO subscriptions (user_id, stripe_subscription_id, plan, status) VALUES (%s, %s, %s, %s)",
+                (user_id, '', FREE_PLAN, 'active')
             )
             conn.commit()
             send_verification_email(email, verification_token)
@@ -103,10 +134,6 @@ def logout():
     session.pop('role', None)
     return redirect(url_for('login'))
 
-@app.route('/about')
-def about():
-    return render_template('about.html')
-
 @app.route('/dashboard', methods=['GET', 'POST'])
 def dashboard():
     if 'email' not in session:
@@ -116,22 +143,18 @@ def dashboard():
     user = cursor.fetchone()
     user_id, first_name, last_name, email, role = user
 
-    # Tutor: Create classroom and invite students
     if role == 'tutor':
-        # Get tutor's students
         cursor.execute("SELECT u.user_id, u.first_name, u.last_name, u.email "
                       "FROM users u JOIN tutor_student ts ON u.user_id = ts.student_id "
                       "WHERE ts.tutor_id = %s", (user_id,))
         students = cursor.fetchall()
-
-        # Get tutor's classrooms (distinct room names)
         cursor.execute("SELECT DISTINCT room_name FROM invitations WHERE tutor_id = %s", (user_id,))
         classrooms = [row[0] for row in cursor.fetchall()]
 
         if request.method == 'POST':
             if 'create_room' in request.form:
                 room_name = request.form.get('room_name')
-                student_ids = request.form.getlist('students')  # Multiple students can be invited
+                student_ids = request.form.getlist('students')
                 for student_id in student_ids:
                     cursor.execute(
                         "INSERT INTO invitations (tutor_id, student_id, room_name) VALUES (%s, %s, %s)",
@@ -141,12 +164,12 @@ def dashboard():
                 flash(f"Classroom '{room_name}' created and students invited.")
                 return redirect(url_for('dashboard'))
 
-    # Student: See invited classrooms
     else:
         cursor.execute("SELECT room_name FROM invitations WHERE student_id = %s", (user_id,))
         classrooms = [row[0] for row in cursor.fetchall()]
+        students = None
 
-    return render_template('dashboard.html', role=role, first_name=first_name, last_name=last_name, email=email, classrooms=classrooms, students=students if role == 'tutor' else None)
+    return render_template('dashboard.html', role=role, first_name=first_name, last_name=last_name, email=email, classrooms=classrooms, students=students)
 
 @app.route('/classroom/<room_name>')
 def classroom(room_name):
@@ -157,6 +180,17 @@ def classroom(room_name):
     user = cursor.fetchone()
     user_id, role = user
 
+    # Check session limits
+    now = datetime.utcnow()
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    month_end = (month_start + timedelta(days=32)).replace(day=1) - timedelta(seconds=1)
+    session_count = get_user_session_count(user_id, month_start, month_end)
+    plan, status = get_user_subscription(user_id)
+
+    if plan == FREE_PLAN and session_count >= 4:
+        flash("You’ve reached your free session limit (4 sessions/month). Please upgrade to continue.")
+        return redirect(url_for('upgrade'))
+
     # Check if user has access to the room
     if role == 'tutor':
         cursor.execute("SELECT 1 FROM invitations WHERE tutor_id = %s AND room_name = %s", (user_id, room_name))
@@ -166,6 +200,14 @@ def classroom(room_name):
     if not cursor.fetchone():
         flash("You don’t have access to this room.")
         return redirect(url_for('dashboard'))
+
+    # Start session tracking
+    cursor.execute(
+        "INSERT INTO sessions (user_id, start_time) VALUES (%s, %s) RETURNING session_id",
+        (user_id, datetime.utcnow())
+    )
+    session['current_session_id'] = cursor.fetchone()[0]
+    conn.commit()
 
     return render_template('classroom.html', roomName=room_name)
 
@@ -232,6 +274,36 @@ def assign_student():
         flash("Student not found.")
     return redirect(url_for('dashboard'))
 
+@app.route('/upgrade', methods=['GET', 'POST'])
+def upgrade():
+    if 'email' not in session:
+        return redirect(url_for('login'))
+
+    cursor.execute("SELECT user_id, early_adopter FROM users WHERE email = %s", (session['email'],))
+    user = cursor.fetchone()
+    user_id, early_adopter = user
+
+    if request.method == 'POST':
+        price_id = EARLY_ADOPTER_PRICE_ID if early_adopter else STANDARD_PRICE_ID
+        try:
+            checkout_session = stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=[{
+                    'price': price_id,
+                    'quantity': 1,
+                }],
+                mode='subscription',
+                success_url='https://twotoro.com/dashboard?success=true',
+                cancel_url='https://twotoro.com/upgrade?cancel=true',
+                customer_email=session['email']
+            )
+            return redirect(checkout_session.url, code=303)
+        except Exception as e:
+            flash(f"Error creating checkout session: {str(e)}")
+            return redirect(url_for('upgrade'))
+
+    return render_template('upgrade.html', stripe_publishable_key=STRIPE_PUBLISHABLE_KEY)
+
 @socketio.on('join')
 def on_join(data):
     room = data.get('room')
@@ -245,6 +317,18 @@ def handle_signal(data):
     room = data.get('room')
     if room:
         emit('signal', data, room=room, include_self=False)
+
+@socketio.on('session_update')
+def on_session_update(data):
+    if 'email' not in session or 'current_session_id' not in session:
+        return
+
+    duration = data.get('duration', 0)  # Duration in minutes
+    cursor.execute(
+        "UPDATE sessions SET duration = %s WHERE session_id = %s",
+        (duration, session['current_session_id'])
+    )
+    conn.commit()
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=8080, debug=True)
