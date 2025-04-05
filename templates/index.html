@@ -83,6 +83,10 @@
       border-radius: 8px;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
       transition: transform 0.3s ease, box-shadow 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 300px; /* Fixed minimum height to align buttons */
     }
 
     .plan:hover {
@@ -117,6 +121,7 @@
       text-decoration: none;
       border-radius: 6px;
       transition: background 0.3s ease;
+      align-self: center; /* Center the button horizontally */
     }
 
     .plan .cta:hover {
@@ -151,6 +156,10 @@
 
       .plan .price {
         font-size: 1.5rem;
+      }
+
+      .plan {
+        min-height: auto; /* Remove fixed height on mobile */
       }
     }
   </style>
