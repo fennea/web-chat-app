@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{% block title %}Twotoro{% endblock %}</title>
+  <title>{% block title %}TwoToro{% endblock %}</title>
   <style>
     * {
       margin: 0;
@@ -60,7 +60,7 @@
 
     /* Hamburger Menu */
     .hamburger {
-      display: none; /* Hidden by default on desktop */
+      display: none;
       font-size: 24px;
       color: #fff;
       cursor: pointer;
@@ -68,14 +68,14 @@
     }
 
     .menu {
-      display: flex; /* Default flex for desktop */
+      display: flex;
     }
 
     .menu.active {
       display: flex;
       flex-direction: column;
       position: absolute;
-      top: 60px; /* Below navbar */
+      top: 60px;
       right: 20px;
       background-color: rgba(28, 37, 38, 0.9);
       border-radius: 5px;
@@ -91,11 +91,11 @@
 
     @media (max-width: 768px) {
       .hamburger {
-        display: block; /* Show hamburger on mobile */
+        display: block;
       }
 
       .menu {
-        display: none; /* Hide links by default on mobile */
+        display: none;
         flex-direction: column;
       }
 
@@ -111,12 +111,13 @@
     <a href="/" class="brand">TwoToro</a>
     <div class="hamburger">☰</div>
     <div class="nav-links menu">
+      <a href="{{ url_for('index') }}#pricing">Pricing</a> <!-- Added Pricing link -->
+      <a href="{{ url_for('about') }}">About</a>
       {% if 'email' not in session %}
-        <a href="{{ url_for('about') }}">About</a>
         <a href="{{ url_for('login') }}">Login</a>
         <a href="{{ url_for('register') }}">Register</a>
       {% elif request.path.startswith('/classroom/') %}
-      <a href="{{ url_for('logout') }}">Logout</a>
+        <!-- Hide links in classroom pages -->
       {% else %}
         <a href="{{ url_for('logout') }}">Logout</a>
       {% endif %}
@@ -133,18 +134,28 @@
       menu.classList.toggle('active');
     });
 
-    // Close menu if clicking outside on mobile
     document.addEventListener('click', (event) => {
       if (window.innerWidth <= 768 && !navbar.contains(event.target)) {
         menu.classList.remove('active');
       }
     });
 
-    // Close menu if resizing past mobile threshold
     window.addEventListener('resize', () => {
       if (window.innerWidth > 768) {
         menu.classList.remove('active');
       }
+    });
+
+    // Smooth scrolling for anchor links
+    document.querySelectorAll('a[href*="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const targetId = this.getAttribute('href').split('#')[1];
+        const targetElement = document.getElementById(targetId);
+        if (targetElement) {
+          targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
     });
   </script>
 </body>

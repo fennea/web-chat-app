@@ -1,13 +1,20 @@
 {% extends "base.html" %}
 
-{% block title %}Twotoro{% endblock %}
+{% block title %}TwoToro{% endblock %}
 
 {% block extra_styles %}
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      overflow: hidden;
-      position: relative;
+      background-color: #f0f2f5;
       min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
 
     .video-background {
@@ -21,12 +28,11 @@
     }
 
     .hero {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+      position: relative;
       text-align: center;
       z-index: 5;
+      padding: 100px 20px;
+      color: #fff;
     }
 
     .hero .logo-box {
@@ -34,23 +40,117 @@
       padding: 20px 40px;
       border-radius: 10px;
       display: inline-block;
+      margin-bottom: 20px;
     }
 
     .hero h1 {
       font-size: 72px;
       font-weight: 700;
-      color: #fff;
       text-transform: uppercase;
       letter-spacing: 2px;
     }
 
     .hero h2 {
-      color: white;
+      font-size: 1.5rem;
+      font-weight: 400;
+    }
+
+    .pricing-section {
+      background: #fff;
+      padding: 3rem 20px;
+      text-align: center;
+      position: relative;
+      z-index: 5;
+    }
+
+    .pricing-section h2 {
+      color: #2a9d8f;
+      font-size: 2.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .pricing-plans {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .plan {
+      background: #f9f9f9;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .plan:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+    }
+
+    .plan h3 {
+      color: #1c2526;
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .plan .price {
+      color: #2a9d8f;
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .plan p {
+      color: #647173;
+      font-size: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .plan .cta {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      background: #2a9d8f;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 6px;
+      transition: background 0.3s ease;
+    }
+
+    .plan .cta:hover {
+      background: #21867a;
+    }
+
+    .plan .coming-soon {
+      color: #647173;
+      font-style: italic;
     }
 
     @media (max-width: 768px) {
+      .hero {
+        padding: 50px 20px;
+      }
+
       .hero h1 {
         font-size: 48px;
+      }
+
+      .hero h2 {
+        font-size: 1.2rem;
+      }
+
+      .pricing-section h2 {
+        font-size: 2rem;
+      }
+
+      .plan h3 {
+        font-size: 1.3rem;
+      }
+
+      .plan .price {
+        font-size: 1.5rem;
       }
     }
   </style>
@@ -64,8 +164,38 @@
 
   <div class="hero">
     <div class="logo-box">
-      <h1>Twotoro</h1>
+      <h1>TwoToro</h1>
       <h2>Powered Learning Together</h2>
+    </div>
+  </div>
+
+  <div class="pricing-section" id="pricing">
+    <h2>Choose Your Plan</h2>
+    <div class="pricing-plans">
+      <div class="plan">
+        <h3>Free Plan</h3>
+        <div class="price">$0/month</div>
+        <p>4 sessions per month (30 minutes each)</p>
+        <a href="{{ url_for('register') }}" class="cta">Get Started</a>
+      </div>
+      <div class="plan">
+        <h3>Early Adopter Plan</h3>
+        <div class="price">$4.99/month</div>
+        <p>Unlimited 30-minute sessions (lifetime price for early adopters)</p>
+        <a href="{{ url_for('register') }}" class="cta">Get Started</a>
+      </div>
+      <div class="plan">
+        <h3>Standard Plan</h3>
+        <div class="price">$6.99/month</div>
+        <p>Unlimited 30-minute sessions</p>
+        <a href="{{ url_for('register') }}" class="cta">Get Started</a>
+      </div>
+      <div class="plan">
+        <h3>AI Plan</h3>
+        <div class="price">$9.99/month</div>
+        <p>Unlimited sessions with AI-powered tools (coming soon)</p>
+        <p class="coming-soon">Available in the future</p>
+      </div>
     </div>
   </div>
 {% endblock %}
