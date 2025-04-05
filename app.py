@@ -27,9 +27,9 @@ STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY')
 
 # Stripe Product and Price IDs (set these in Stripe Dashboard)
 FREE_PLAN = 'free'
-EARLY_ADOPTER_PRICE_ID = 'price_early_adopter_499'  # $4.99/month
-STANDARD_PRICE_ID = 'price_standard_699'  # $6.99/month
-# AI_PRICE_ID = 'price_ai_999'  # $9.99/month (future)
+LIFETIME_FREE_PLAN = 'lifetime_free'
+EARLY_ADOPTER_PRICE_ID = 'price_1...'  # Replace with your Early Adopter Price ID
+STANDARD_PRICE_ID = 'price_1...'      # Replace with your Standard Price ID
 
 def send_verification_email(email, token):
     msg = MIMEText(f"Please verify your email by clicking this link: https://twotoro.com/verify/{token}")
@@ -54,6 +54,10 @@ def get_user_session_count(user_id, month_start, month_end):
     return cursor.fetchone()[0]
 
 def get_user_subscription(user_id):
+    cursor.execute("SELECT lifetime_free FROM users WHERE user_id = %s", (user_id,))
+    lifetime_free = cursor.fetchone()[0]
+    if lifetime_free:
+        return LIFETIME_FREE_PLAN, 'active'
     cursor.execute("SELECT plan, status FROM subscriptions WHERE user_id = %s", (user_id,))
     sub = cursor.fetchone()
     return sub if sub else (FREE_PLAN, 'active')
@@ -92,20 +96,21 @@ def register():
         email = request.form.get('email')
         password = request.form.get('password').encode('utf-8')
         role = request.form.get('role')
+        lifetime_free = request.form.get('lifetime_free') == 'true'  # Check if checkbox is selected
 
         hashed_pw = bcrypt.hashpw(password, bcrypt.gensalt())
         verification_token = str(uuid.uuid4())
 
         try:
             cursor.execute(
-                "INSERT INTO users (first_name, last_name, email, password, role, verification_token, is_verified, early_adopter) "
-                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING user_id",
-                (first_name, last_name, email, hashed_pw.decode('utf-8'), role, verification_token, False, True)  # Early adopter flag
+                "INSERT INTO users (first_name, last_name, email, password, role, verification_token, is_verified, early_adopter, lifetime_free) "
+                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING user_id",
+                (first_name, last_name, email, hashed_pw.decode('utf-8'), role, verification_token, False, True, lifetime_free)
             )
             user_id = cursor.fetchone()[0]
             cursor.execute(
                 "INSERT INTO subscriptions (user_id, stripe_subscription_id, plan, status) VALUES (%s, %s, %s, %s)",
-                (user_id, '', FREE_PLAN, 'active')
+                (user_id, '', FREE_PLAN if not lifetime_free else LIFETIME_FREE_PLAN, 'active')
             )
             conn.commit()
             send_verification_email(email, verification_token)
@@ -176,20 +181,21 @@ def classroom(room_name):
     if 'email' not in session:
         return redirect(url_for('login'))
 
-    cursor.execute("SELECT user_id, role FROM users WHERE email = %s", (session['email'],))
+    cursor.execute("SELECT user_id, role, lifetime_free FROM users WHERE email = %s", (session['email'],))
     user = cursor.fetchone()
-    user_id, role = user
+    user_id, role, lifetime_free = user
 
-    # Check session limits
-    now = datetime.utcnow()
-    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    month_end = (month_start + timedelta(days=32)).replace(day=1) - timedelta(seconds=1)
-    session_count = get_user_session_count(user_id, month_start, month_end)
-    plan, status = get_user_subscription(user_id)
+    # Check session limits (exempt lifetime free users)
+    if not lifetime_free:
+        now = datetime.utcnow()
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        month_end = (month_start + timedelta(days=32)).replace(day=1) - timedelta(seconds=1)
+        session_count = get_user_session_count(user_id, month_start, month_end)
+        plan, status = get_user_subscription(user_id)
 
-    if plan == FREE_PLAN and session_count >= 4:
-        flash("You’ve reached your free session limit (4 sessions/month). Please upgrade to continue.")
-        return redirect(url_for('upgrade'))
+        if plan == FREE_PLAN and session_count >= 4:
+            flash("You’ve reached your free session limit (4 sessions/month). Please upgrade to continue.")
+            return redirect(url_for('upgrade'))
 
     # Check if user has access to the room
     if role == 'tutor':
@@ -279,9 +285,13 @@ def upgrade():
     if 'email' not in session:
         return redirect(url_for('login'))
 
-    cursor.execute("SELECT user_id, early_adopter FROM users WHERE email = %s", (session['email'],))
+    cursor.execute("SELECT user_id, early_adopter, lifetime_free FROM users WHERE email = %s", (session['email'],))
     user = cursor.fetchone()
-    user_id, early_adopter = user
+    user_id, early_adopter, lifetime_free = user
+
+    if lifetime_free:
+        flash("You already have a lifetime free subscription with all benefits!")
+        return redirect(url_for('dashboard'))
 
     if request.method == 'POST':
         price_id = EARLY_ADOPTER_PRICE_ID if early_adopter else STANDARD_PRICE_ID
@@ -295,7 +305,11 @@ def upgrade():
                 mode='subscription',
                 success_url='https://twotoro.com/dashboard?success=true',
                 cancel_url='https://twotoro.com/upgrade?cancel=true',
-                customer_email=session['email']
+                customer_email=session['email'],
+                payment_method_collection='if_required',
+                payment_intent_data={
+                    'statement_descriptor': 'TwoToro EarlyAdopter' if early_adopter else 'TwoToro Standard'
+                }
             )
             return redirect(checkout_session.url, code=303)
         except Exception as e:
@@ -323,7 +337,7 @@ def on_session_update(data):
     if 'email' not in session or 'current_session_id' not in session:
         return
 
-    duration = data.get('duration', 0)  # Duration in minutes
+    duration = data.get('duration', 0)
     cursor.execute(
         "UPDATE sessions SET duration = %s WHERE session_id = %s",
         (duration, session['current_session_id'])

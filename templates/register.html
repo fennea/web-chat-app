@@ -17,7 +17,7 @@
       justify-content: center;
       align-items: center;
       padding: 20px;
-      padding-top: 80px; /* Space for navbar */
+      padding-top: 80px;
     }
 
     .container {
@@ -86,6 +86,17 @@
     input[type="submit"]:hover {
       background: #21867a;
       transform: translateY(-2px);
+    }
+
+    .lifetime-free {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .lifetime-free input[type="checkbox"] {
+      width: auto;
     }
 
     p {
@@ -192,6 +203,10 @@
           <option value="tutor">Tutor</option>
           <option value="student">Student</option>
         </select>
+      </label>
+      <label class="lifetime-free">
+        <input type="checkbox" name="lifetime_free" value="true">
+        Claim Free Lifetime Membership (Unlimited Access to All Features)
       </label>
       <input type="submit" value="Register">
     </form>
