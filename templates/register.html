@@ -99,6 +99,16 @@
       width: auto;
     }
 
+    .plan-selection {
+      margin-top: 10px;
+    }
+
+    .plan-selection label {
+      text-align: left;
+      display: block;
+      margin-bottom: 5px;
+    }
+
     p {
       color: #647173;
       margin: 10px 0;
@@ -208,6 +218,13 @@
         <input type="checkbox" name="lifetime_free" value="true">
         Claim Free Lifetime Membership (Unlimited Access to All Features)
       </label>
+      <div class="plan-selection">
+        <label>Select Your Plan:</label>
+        <select name="plan" required>
+          <option value="free">Free Plan - $0/month (4 sessions)</option>
+          <option value="early_adopter">Early Adopter Plan - $4.99/month (Unlimited)</option>
+        </select>
+      </div>
       <input type="submit" value="Register">
     </form>
 
