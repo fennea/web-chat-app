@@ -111,7 +111,7 @@
     <a href="/" class="brand">TwoToro</a>
     <div class="hamburger">☰</div>
     <div class="nav-links menu">
-      <a href="{{ url_for('index') }}#pricing">Pricing</a> <!-- Added Pricing link -->
+      <a href="{{ request.url_root }}#pricing">Pricing</a> <!-- Updated to use full URL -->
       <a href="{{ url_for('about') }}">About</a>
       {% if 'email' not in session %}
         <a href="{{ url_for('login') }}">Login</a>
@@ -146,14 +146,22 @@
       }
     });
 
-    // Smooth scrolling for anchor links
+    // Enhanced smooth scrolling for anchor links
     document.querySelectorAll('a[href*="#"]').forEach(anchor => {
       anchor.addEventListener('click', function (e) {
         e.preventDefault();
-        const targetId = this.getAttribute('href').split('#')[1];
-        const targetElement = document.getElementById(targetId);
-        if (targetElement) {
-          targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const href = this.getAttribute('href');
+        if (href.includes('#')) {
+          const targetUrl = href.split('#')[0]; // Get the base URL
+          const targetId = '#' + href.split('#')[1]; // Get the anchor
+          if (window.location.pathname !== targetUrl) {
+            window.location.href = targetUrl + targetId; // Navigate to index and scroll
+          } else {
+            const targetElement = document.queryId(targetId);
+            if (targetElement) {
+              targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }
         }
       });
     });

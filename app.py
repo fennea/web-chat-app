@@ -96,7 +96,8 @@ def register():
         email = request.form.get('email')
         password = request.form.get('password').encode('utf-8')
         role = request.form.get('role')
-        lifetime_free = request.form.get('lifetime_free') == 'true'  # Check if checkbox is selected
+        lifetime_free = request.form.get('lifetime_free') == 'true'
+        plan = request.form.get('plan')  # Get selected plan
 
         hashed_pw = bcrypt.hashpw(password, bcrypt.gensalt())
         verification_token = str(uuid.uuid4())
@@ -105,21 +106,49 @@ def register():
             cursor.execute(
                 "INSERT INTO users (first_name, last_name, email, password, role, verification_token, is_verified, early_adopter, lifetime_free) "
                 "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING user_id",
-                (first_name, last_name, email, hashed_pw.decode('utf-8'), role, verification_token, False, True, lifetime_free)
+                (first_name, last_name, email, hashed_pw.decode('utf-8'), role, verification_token, False, plan == 'early_adopter', lifetime_free)
             )
             user_id = cursor.fetchone()[0]
-            cursor.execute(
-                "INSERT INTO subscriptions (user_id, stripe_subscription_id, plan, status) VALUES (%s, %s, %s, %s)",
-                (user_id, '', FREE_PLAN if not lifetime_free else LIFETIME_FREE_PLAN, 'active')
-            )
-            conn.commit()
-            send_verification_email(email, verification_token)
-            flash("Registration successful! Please check your email to verify your account.")
-            return redirect(url_for('login'))
+            if plan == 'early_adopter':
+                return redirect(url_for('register_complete', user_id=user_id, email=email))
+            else:
+                cursor.execute(
+                    "INSERT INTO subscriptions (user_id, stripe_subscription_id, plan, status) VALUES (%s, %s, %s, %s)",
+                    (user_id, '', FREE_PLAN if not lifetime_free else LIFETIME_FREE_PLAN, 'active')
+                )
+                conn.commit()
+                send_verification_email(email, verification_token)
+                flash("Registration successful! Please check your email to verify your account.")
+                return redirect(url_for('login'))
         except psycopg2.IntegrityError:
             conn.rollback()
             flash("Email already exists.")
     return render_template('register.html')
+
+@app.route('/register_complete/<user_id>/<email>', methods=['GET', 'POST'])
+def register_complete(user_id, email):
+    if request.method == 'POST':
+        try:
+            checkout_session = stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=[{
+                    'price': EARLY_ADOPTER_PRICE_ID,
+                    'quantity': 1,
+                }],
+                mode='subscription',
+                success_url='https://twotoro.com/verify_subscription?user_id={}&session_id={{CHECKOUT_SESSION_ID}}'.format(user_id),
+                cancel_url='https://twotoro.com/register?cancel=true',
+                customer_email=email,
+                payment_method_collection='if_required',
+                payment_intent_data={
+                    'statement_descriptor': 'TwoToro EarlyAdopter'
+                }
+            )
+            return redirect(checkout_session.url, code=303)
+        except Exception as e:
+            flash(f"Error creating checkout session: {str(e)}")
+            return redirect(url_for('register'))
+    return render_template('register_complete.html', user_id=user_id, email=email, stripe_publishable_key=STRIPE_PUBLISHABLE_KEY)
 
 @app.route('/verify/<token>')
 def verify(token):
