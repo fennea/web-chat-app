@@ -139,12 +139,23 @@
     let startTime = Date.now();
     let timerInterval;
 
+    // Fetch user's plan from server (passed via template)
+    const userPlan = "{{ get_user_subscription(session['user_id'])[0] if 'user_id' in session else 'free' }}";
+    const maxSessionDuration = userPlan === 'free' ? 30 * 60 : null; // 30 minutes in seconds for free plan only
+
     function updateTimer() {
       const elapsed = Math.floor((Date.now() - startTime) / 1000);
       const minutes = Math.floor(elapsed / 60);
       const seconds = elapsed % 60;
       sessionTimer.textContent = `Session Time: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
       socket.emit('session_update', { duration: Math.floor(elapsed / 60) });
+
+      if (maxSessionDuration && elapsed >= maxSessionDuration) {
+        clearInterval(timerInterval);
+        socket.emit('session_update', { duration: 30 }); // Cap at 30 minutes for free plan
+        alert("Your 30-minute session has ended.");
+        window.location.href = "/dashboard"; // Redirect to dashboard
+      }
     }
 
     const socket = io();
@@ -252,7 +263,7 @@
     window.addEventListener('beforeunload', () => {
       clearInterval(timerInterval);
       const elapsed = Math.floor((Date.now() - startTime) / 1000);
-      socket.emit('session_update', { duration: Math.floor(elapsed / 60) });
+      socket.emit('session_update', { duration: userPlan === 'free' ? Math.min(Math.floor(elapsed / 60), 30) : Math.floor(elapsed / 60) });
     });
   </script>
 {% endblock %}

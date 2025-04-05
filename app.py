@@ -214,7 +214,7 @@ def classroom(room_name):
     user = cursor.fetchone()
     user_id, role, lifetime_free = user
 
-    # Check session limits (exempt lifetime free users)
+    # Check session limits (exempt lifetime free and paid users)
     if not lifetime_free:
         now = datetime.utcnow()
         month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -225,6 +225,8 @@ def classroom(room_name):
         if plan == FREE_PLAN and session_count >= 4:
             flash("You’ve reached your free session limit (4 sessions/month). Please upgrade to continue.")
             return redirect(url_for('upgrade'))
+    else:
+        plan, status = get_user_subscription(user_id)
 
     # Check if user has access to the room
     if role == 'tutor':
@@ -244,7 +246,7 @@ def classroom(room_name):
     session['current_session_id'] = cursor.fetchone()[0]
     conn.commit()
 
-    return render_template('classroom.html', roomName=room_name)
+    return render_template('classroom.html', roomName=room_name, userPlan=plan)
 
 @app.route('/update_password', methods=['GET', 'POST'])
 def update_password():
