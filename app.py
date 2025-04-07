@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 import stripe
 import requests
 import logging
+import urllib3
 
 load_dotenv()
 
