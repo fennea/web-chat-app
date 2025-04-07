@@ -19,4 +19,6 @@ gunicorn==23.0.0
 psycopg2-binary==2.9.9
 bcrypt==4.2.0
 python-dotenv==1.0.1
-stripe==10.5.0
+stripe==12.0.0
+requests==2.32.3
+urllib3==1.26.19

@@ -9,6 +9,8 @@ import uuid
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import stripe
+import requests
+import logging
 
 load_dotenv()
 
