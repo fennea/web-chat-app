@@ -12,13 +12,41 @@ import stripe
 
 load_dotenv()
 
+# Set up logging to print errors to the console and file
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s:%(levelname)s:%(message)s',
+    handlers=[
+        logging.FileHandler('twotoro.log'),
+        logging.StreamHandler()  # This adds console output
+    ]
+)
+
+# Log dependency versions
+logging.info(f"Stripe version: {stripe._version}")
+logging.info(f"Requests version: {requests.__version__}")
+logging.info(f"Urllib3 version: {urllib3.__version__}")
+
+# Initialize Flask app
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24).hex()
 socketio = SocketIO(app, cors_allowed_origins="*")
 
+# Database connection
 DB_URL = os.environ.get('DATABASE_URL', 'postgres://anthonyfenner@localhost:5432/chitchat_db')
-conn = psycopg2.connect(DB_URL)
-cursor = conn.cursor()
+conn = None
+cursor = None
+db_connected = False
+
+try:
+    conn = psycopg2.connect(DB_URL)
+    cursor = conn.cursor()
+    cursor.execute("SELECT 1")  # Test the connection
+    db_connected = True
+    logging.info("Database connection established successfully")
+except Exception as e:
+    logging.error(f"Failed to establish database connection: {str(e)}", exc_info=True)
+    # Do not raise an exception here; allow the app to start
 
 EMAIL_ADDRESS = os.getenv('EMAIL_ADDRESS')
 EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD')
