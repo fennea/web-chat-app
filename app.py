@@ -541,8 +541,8 @@ def on_session_update(data):
     conn.commit()
 
 if __name__ == '__main__':
-    # socketio.run(app, host='0.0.0.0', port=8080, debug=True)
-    socketio.run(app, host='127.0.0.1', port=8080, debug=True)
+    socketio.run(app, host='0.0.0.0', port=8080, debug=True)
+    # socketio.run(app, host='127.0.0.1', port=8080, debug=True)
 
 def shutdown():
     cursor.close()
