@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}TwoToro - Tutors{% endblock %}
+
+{% block extra_styles %}
+  {{ super() }}
+  <style>
+    .tutor-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    .card {
+      margin-bottom: 1.5rem;
+      border: 1px solid #e0e3e5;
+      border-radius: 8px;
+    }
+    
+    .card-text {
+      color: #647173;
+    }
+    
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div class="tutor-container">
+    <h2 class="text-center mb-4">Tutor Plans</h2>
+    
+    <div class="row">
+      {% for product in products %}
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">{{ product[0] }}</h5>
+              <h6 class="card-subtitle mb-2 text-muted">${{ "%.2f" % product[1] }}</h6>
+              <p class="card-text">{{ product[2] }}</p>
+              {% if 'email' in session %}
+                {% if product[4] == True %}
+                  <a href="{{ url_for('upgrade') }}" class="btn btn-upgrade text-white">Choose Plan</a>
+                {% else %}
+                <a href="#" class="btn btn-disabled">Coming Soon</a>
+                {% endif %}
+              {% else %}
+                {% if product[4] == True %}
+                  <a href="{{ url_for('register') }}" class="btn btn-upgrade text-white">Sign Up</a>
+                {% else %}
+                  <a href="#" class="btn btn-disabled">Coming Soon</a>
+                {% endif %}
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    {% if not products %}
+      <p class="text-center text-muted">No active tutor plans available at this time.</p>
+    {% endif %}
+  </div>
+{% endblock %}

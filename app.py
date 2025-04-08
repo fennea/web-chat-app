@@ -36,7 +36,8 @@ app.config['SECRET_KEY'] = os.urandom(24).hex()
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Database connection
-DB_URL = os.environ.get('DATABASE_URL', 'postgres://anthonyfenner@localhost:5432/chitchat_db')
+DATABASE_URL = os.getenv('DATABASE_URL')
+DB_URL = os.environ.get('DATABASE_URL', DATABASE_URL)
 conn = None
 cursor = None
 db_connected = False
@@ -77,6 +78,24 @@ def send_verification_email(email, token):
     except Exception as e:
         print(f"Failed to send email: {e}")
 
+@app.route('/tutors')
+def tutors():
+    conn = psycopg2.connect(DB_URL) # Assuming you’ve added this helper function
+    cursor = conn.cursor()
+    try:
+        # Fetch only active products
+        cursor.execute("SELECT name, price, description, stripe_price_id, active FROM products;")
+        products = cursor.fetchall()
+        # print(products)
+        return render_template('tutors.html', products=products)
+    except Exception as e:
+        flash(f"Error loading tutors page: {str(e)}")
+        logging.error(f"Tutors page error: {str(e)}")
+        return redirect(url_for('index'))
+    finally:
+        cursor.close()
+        conn.close()
+
 def get_user_session_count(user_id, month_start, month_end):
     cursor.execute(
         "SELECT COUNT(*) FROM sessions WHERE user_id = %s AND start_time BETWEEN %s AND %s",
@@ -103,24 +122,139 @@ def about():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password').encode('utf-8')
-        cursor.execute("SELECT email, password, is_verified, role FROM users WHERE email = %s", (email,))
-        user = cursor.fetchone()
-        if user and bcrypt.checkpw(password, user[1].encode('utf-8')):
-            if user[2]:
-                session['email'] = email
-                session['role'] = user[3]
-                return redirect(url_for('dashboard'))
+    conn = psycopg2.connect(DB_URL)
+    cursor = conn.cursor()
+    try:
+        if request.method == 'POST':
+            email = request.form.get('email')
+            password = request.form.get('password').encode('utf-8')
+            cursor.execute("SELECT user_id, email, password, is_verified, role FROM users WHERE email = %s", (email,))
+            user = cursor.fetchone()
+            if user and bcrypt.checkpw(password, user[2].encode('utf-8')):
+                if user[3]:
+                    session['user_id'] = user[0]
+                    session['email'] = email
+                    session['role'] = user[4]
+                    if user[4] == 'admin':
+                        return redirect(url_for('admin_dashboard'))
+                    return redirect(url_for('dashboard'))
+                else:
+                    flash("Please verify your email before logging in.")
             else:
-                flash("Please verify your email before logging in.")
-        else:
-            flash("Invalid email or password. Please try again.")
-    return render_template('login.html')
+                flash("Invalid email or password. Please try again.")
+            logging.warning(f"Failed login attempt for email: {email}")
+        return render_template('login.html')
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/admin_dashboard', methods=['GET', 'POST'])
+def admin_dashboard():
+    if 'email' not in session or session['role'] != 'admin':
+        flash("You must be an admin to access this page.")
+        return redirect(url_for('login'))
+
+    # Create a new connection for this request
+    conn = psycopg2.connect(DB_URL)
+    cursor = conn.cursor()
+
+    try:
+        # Fetch user stats
+        cursor.execute("SELECT COUNT(*) FROM users")
+        total_users = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM subscriptions WHERE plan != 'free' AND plan != 'lifetime_free'")
+        paid_users = cursor.fetchone()[0]
+        free_users = total_users - paid_users
+
+        # Fetch active sessions
+        cursor.execute("SELECT COUNT(*) FROM sessions WHERE start_time >= NOW() - INTERVAL '30 minutes'")
+        active_sessions = cursor.fetchone()[0]
+
+        # Fetch products
+        cursor.execute("SELECT product_id, name, price, description, stripe_price_id, active FROM products")
+        products = cursor.fetchall()
+
+        if request.method == 'POST':
+            if 'add_product' in request.form:
+                name = request.form.get('name')
+                price = request.form.get('price')
+                description = request.form.get('description')
+                stripe_price_id = request.form.get('stripe_price_id')
+                active = request.form.get('active') == 'on'
+
+                # Validate price
+                try:
+                    price = float(price) if price else 0.0
+                except (ValueError, TypeError):
+                    flash("Price must be a valid number.")
+                    return redirect(url_for('admin_dashboard'))
+
+                try:
+                    cursor.execute(
+                        "INSERT INTO products (name, price, description, stripe_price_id, active) VALUES (%s, %s, %s, %s, %s)",
+                        (name, price, description, stripe_price_id, active)
+                    )
+                    conn.commit()
+                    flash("Product added successfully.")
+                    logging.info(f"Admin added product: {name}")
+                except Exception as e:
+                    conn.rollback()
+                    flash(f"Error adding product: {str(e)}")
+                    logging.error(f"Admin failed to add product: {str(e)}")
+
+            elif 'update_product' in request.form:
+                product_id = request.form.get('product_id')
+                name = request.form.get('name')
+                price = request.form.get('price')
+                description = request.form.get('description')
+                stripe_price_id = request.form.get('stripe_price_id')
+                active = request.form.get('active') == 'on'
+
+                # Validate price
+                try:
+                    price = float(price) if price else 0.0
+                except (ValueError, TypeError):
+                    flash("Price must be a valid number.")
+                    return redirect(url_for('admin_dashboard'))
+
+                try:
+                    cursor.execute(
+                        "UPDATE products SET name = %s, price = %s, description = %s, stripe_price_id = %s, active = %s WHERE product_id = %s",
+                        (name, price, description, stripe_price_id, active, product_id)
+                    )
+                    conn.commit()
+                    flash("Product updated successfully.")
+                    logging.info(f"Admin updated product ID {product_id}: {name}")
+                except Exception as e:
+                    conn.rollback()
+                    flash(f"Error updating product: {str(e)}")
+                    logging.error(f"Admin failed to update product ID {product_id}: {str(e)}")
+
+            return redirect(url_for('admin_dashboard'))
+
+        return render_template('admin_dashboard.html', total_users=total_users, paid_users=paid_users, free_users=free_users, active_sessions=active_sessions, products=products)
+
+    except Exception as e:
+        flash(f"An error occurred: {str(e)}")
+        logging.error(f"Admin dashboard error: {str(e)}")
+        return redirect(url_for('admin_dashboard'))
+
+    finally:
+        cursor.close()
+        conn.close()
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+
+    # Create a new connection for this request
+    conn = psycopg2.connect(DB_URL)
+    cursor = conn.cursor()
+
+    # Fetch products
+    cursor.execute("SELECT product_id, name, price, description, stripe_price_id, active FROM products WHERE active = True")
+    products = cursor.fetchall()
+
     if request.method == 'POST':
         first_name = request.form.get('first_name')
         last_name = request.form.get('last_name')
@@ -154,7 +288,7 @@ def register():
         except psycopg2.IntegrityError:
             conn.rollback()
             flash("Email already exists.")
-    return render_template('register.html')
+    return render_template('register.html', products=products)
 
 @app.route('/register_complete/<user_id>/<email>', methods=['GET', 'POST'])
 def register_complete(user_id, email):
@@ -407,7 +541,8 @@ def on_session_update(data):
     conn.commit()
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=8080, debug=True)
+    # socketio.run(app, host='0.0.0.0', port=8080, debug=True)
+    socketio.run(app, host='127.0.0.1', port=8080, debug=True)
 
 def shutdown():
     cursor.close()

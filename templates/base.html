@@ -4,167 +4,100 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% block title %}TwoToro{% endblock %}</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Arial', sans-serif;
-      color: #1c2526;
-      line-height: 1.6;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .navbar {
-      background-color: rgba(28, 37, 38, 0.9);
-      padding: 15px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-      width: 100%;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-
-    .navbar .brand {
-      color: #fff;
-      font-size: 24px;
-      font-weight: bold;
-      text-decoration: none;
-    }
-
-    .nav-links {
-      display: flex;
-      gap: 20px;
-    }
-
-    .nav-links a {
-      color: #fff;
-      text-decoration: none;
-      font-size: 16px;
-      padding: 8px 16px;
-      border-radius: 5px;
-      transition: background-color 0.3s ease;
-    }
-
-    .nav-links a:hover {
-      background-color: #2a9d8f;
-    }
-
-    /* Hamburger Menu */
-    .hamburger {
-      display: none;
-      font-size: 24px;
-      color: #fff;
-      cursor: pointer;
-      padding: 5px;
-    }
-
-    .menu {
-      display: flex;
-    }
-
-    .menu.active {
-      display: flex;
-      flex-direction: column;
-      position: absolute;
-      top: 60px;
-      right: 20px;
-      background-color: rgba(28, 37, 38, 0.9);
-      border-radius: 5px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-      padding: 10px 0;
-    }
-
-    .menu.active a {
-      padding: 10px 20px;
-      width: 150px;
-      text-align: right;
-    }
-
-    @media (max-width: 768px) {
-      .hamburger {
-        display: block;
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  {% block extra_styles %}
+    <style>
+      .btn-upgrade {
+        background-color: #2a9d8f;
+        border-color: #2a9d8f;
+        transition: background-color 0.3s ease;
+      }
+      .btn-upgrade:hover {
+        background-color: #21867a;
+        border-color: #21867a;
       }
 
-      .menu {
-        display: none;
-        flex-direction: column;
-      }
-
-      .navbar {
-        padding: 10px;
-      }
+      .card-title {
+      color: #2a9d8f;
     }
-  </style>
-  {% block extra_styles %}{% endblock %}
+    </style>
+  {% endblock %}
 </head>
 <body>
-  <nav class="navbar">
-    <a href="/" class="brand">TwoToro</a>
-    <div class="hamburger">☰</div>
-    <div class="nav-links menu">
-      <a href="{{ request.url_root }}#pricing">Pricing</a> <!-- Updated to use full URL -->
-      <a href="{{ url_for('about') }}">About</a>
-      {% if 'email' not in session %}
-        <a href="{{ url_for('login') }}">Login</a>
-        <a href="{{ url_for('register') }}">Register</a>
-      {% elif request.path.startswith('/classroom/') %}
-        <!-- Hide links in classroom pages -->
-      {% else %}
-        <a href="{{ url_for('logout') }}">Logout</a>
-      {% endif %}
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/">TwoToro</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+              aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('tutors') }}">Tutors</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('about') }}">About</a>
+          </li>
+          {% if 'email' not in session %}
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('login') }}">Login</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('register') }}">Register</a>
+            </li>
+          {% elif request.path.startswith('/classroom/') %}
+            <!-- Hide links in classroom pages -->
+          {% else %}
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+            </li>
+          {% endif %}
+        </ul>
+      </div>
     </div>
   </nav>
 
+  <!-- Main Content -->
   {% block content %}{% endblock %}
 
-  <script>
-    const hamburger = document.querySelector('.hamburger');
-    const menu = document.querySelector('.menu');
+  <!-- Footer -->
+  <footer class="bg-dark text-white pt-4 pb-2">
+    <div class="container">
+      <div class="row">
+        <!-- Address Column -->
+        <div class="col-md-6 mb-3">
+          <h5>TwoToro™</h5>
+          <address>
+            5473 Blair Rd Ste 100 PMB 824828<br>
+            Dallas, Texas 75231-4227 US
+          </address>
+        </div>
+        <!-- Map Column -->
+        <div class="col-md-6 mb-3">
+          <h5>Our Location</h5>
+          <div class="map-container" style="border: 2px solid #2a9d8f; border-radius: 5px; overflow: hidden;">
+            <iframe 
+              src="https://www.google.com/maps?q=5473+Blair+Rd+Ste+100+PMB+824828,+Dallas,+Texas+75231-4227,+US&output=embed" 
+              width="100%" 
+              height="200" 
+              style="border:0;" 
+              allowfullscreen="" 
+              loading="lazy">
+            </iframe>
+          </div>
+        </div>
+      </div>
+      <!-- Copyright -->
+      <div class="text-center mt-3">
+        <small>&copy; 2025 TwoToro™. All rights reserved.</small>
+      </div>
+    </div>
+  </footer>
 
-    hamburger.addEventListener('click', () => {
-      menu.classList.toggle('active');
-    });
-
-    document.addEventListener('click', (event) => {
-      if (window.innerWidth <= 768 && !navbar.contains(event.target)) {
-        menu.classList.remove('active');
-      }
-    });
-
-    window.addEventListener('resize', () => {
-      if (window.innerWidth > 768) {
-        menu.classList.remove('active');
-      }
-    });
-
-    // Enhanced smooth scrolling for anchor links
-    document.querySelectorAll('a[href*="#"]').forEach(anchor => {
-      anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const href = this.getAttribute('href');
-        if (href.includes('#')) {
-          const targetUrl = href.split('#')[0]; // Get the base URL
-          const targetId = '#' + href.split('#')[1]; // Get the anchor
-          if (window.location.pathname !== targetUrl) {
-            window.location.href = targetUrl + targetId; // Navigate to index and scroll
-          } else {
-            const targetElement = document.queryId(targetId);
-            if (targetElement) {
-              targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-          }
-        }
-      });
-    });
-  </script>
+  <!-- Bootstrap Bundle with Popper -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

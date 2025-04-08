@@ -1,0 +1,481 @@
+2025-04-06 19:35:26,752:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 19:35:26,752:INFO:Requests version: 2.32.3
+2025-04-06 19:35:26,752:INFO:Urllib3 version: 2.3.0
+2025-04-06 19:35:26,829:INFO:Database connection established successfully
+2025-04-06 19:35:26,847:INFO: * Restarting with stat
+2025-04-06 19:35:27,171:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 19:35:27,172:INFO:Requests version: 2.32.3
+2025-04-06 19:35:27,172:INFO:Urllib3 version: 2.3.0
+2025-04-06 19:35:27,228:INFO:Database connection established successfully
+2025-04-06 19:35:27,240:WARNING: * Debugger is active!
+2025-04-06 19:35:27,246:INFO: * Debugger PIN: 535-720-947
+2025-04-06 19:37:03,814:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 19:37:03,814:INFO:Requests version: 2.32.3
+2025-04-06 19:37:03,814:INFO:Urllib3 version: 2.3.0
+2025-04-06 19:37:03,876:INFO:Database connection established successfully
+2025-04-06 19:37:03,888:INFO: * Restarting with stat
+2025-04-06 19:37:04,197:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 19:37:04,197:INFO:Requests version: 2.32.3
+2025-04-06 19:37:04,198:INFO:Urllib3 version: 2.3.0
+2025-04-06 19:37:04,248:INFO:Database connection established successfully
+2025-04-06 19:37:04,259:WARNING: * Debugger is active!
+2025-04-06 19:37:04,263:INFO: * Debugger PIN: 535-720-947
+2025-04-06 19:48:44,946:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 19:48:44,946:INFO:Requests version: 2.32.3
+2025-04-06 19:48:44,946:INFO:Urllib3 version: 2.3.0
+2025-04-06 19:48:45,013:INFO:Database connection established successfully
+2025-04-06 19:48:45,027:INFO: * Restarting with stat
+2025-04-06 19:48:45,346:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 19:48:45,346:INFO:Requests version: 2.32.3
+2025-04-06 19:48:45,346:INFO:Urllib3 version: 2.3.0
+2025-04-06 19:48:45,401:INFO:Database connection established successfully
+2025-04-06 19:48:45,412:WARNING: * Debugger is active!
+2025-04-06 19:48:45,417:INFO: * Debugger PIN: 535-720-947
+2025-04-06 19:49:49,084:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 19:49:49,084:INFO:Requests version: 2.32.3
+2025-04-06 19:49:49,084:INFO:Urllib3 version: 2.3.0
+2025-04-06 19:49:49,135:INFO:Database connection established successfully
+2025-04-06 19:49:49,148:INFO: * Restarting with stat
+2025-04-06 19:49:49,487:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 19:49:49,487:INFO:Requests version: 2.32.3
+2025-04-06 19:49:49,487:INFO:Urllib3 version: 2.3.0
+2025-04-06 19:49:49,544:INFO:Database connection established successfully
+2025-04-06 19:49:49,563:WARNING: * Debugger is active!
+2025-04-06 19:49:49,570:INFO: * Debugger PIN: 535-720-947
+2025-04-06 19:53:15,174:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 19:53:15,174:INFO:Requests version: 2.32.3
+2025-04-06 19:53:15,174:INFO:Urllib3 version: 2.3.0
+2025-04-06 19:53:15,227:INFO:Database connection established successfully
+2025-04-06 19:53:15,238:INFO: * Restarting with stat
+2025-04-06 19:53:15,549:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 19:53:15,549:INFO:Requests version: 2.32.3
+2025-04-06 19:53:15,549:INFO:Urllib3 version: 2.3.0
+2025-04-06 19:53:15,599:INFO:Database connection established successfully
+2025-04-06 19:53:15,635:WARNING: * Debugger is active!
+2025-04-06 19:53:15,640:INFO: * Debugger PIN: 535-720-947
+2025-04-06 19:54:06,664:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 19:54:06,664:INFO:Requests version: 2.32.3
+2025-04-06 19:54:06,664:INFO:Urllib3 version: 2.3.0
+2025-04-06 19:54:06,723:INFO:Database connection established successfully
+2025-04-06 19:54:06,737:INFO: * Restarting with stat
+2025-04-06 19:54:07,081:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 19:54:07,081:INFO:Requests version: 2.32.3
+2025-04-06 19:54:07,081:INFO:Urllib3 version: 2.3.0
+2025-04-06 19:54:07,137:INFO:Database connection established successfully
+2025-04-06 19:54:07,151:WARNING: * Debugger is active!
+2025-04-06 19:54:07,157:INFO: * Debugger PIN: 535-720-947
+2025-04-06 19:56:33,139:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 19:56:33,139:INFO:Requests version: 2.32.3
+2025-04-06 19:56:33,139:INFO:Urllib3 version: 2.3.0
+2025-04-06 19:56:33,190:INFO:Database connection established successfully
+2025-04-06 19:56:33,200:INFO: * Restarting with stat
+2025-04-06 19:56:33,527:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 19:56:33,527:INFO:Requests version: 2.32.3
+2025-04-06 19:56:33,527:INFO:Urllib3 version: 2.3.0
+2025-04-06 19:56:33,584:INFO:Database connection established successfully
+2025-04-06 19:56:33,597:WARNING: * Debugger is active!
+2025-04-06 19:56:33,603:INFO: * Debugger PIN: 535-720-947
+2025-04-06 20:05:28,742:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 20:05:28,742:INFO:Requests version: 2.32.3
+2025-04-06 20:05:28,742:INFO:Urllib3 version: 2.3.0
+2025-04-06 20:05:28,819:ERROR:Failed to establish database connection: could not translate host name "dpg-cvkpb8pr0fns7385dp10-a" to address: nodename nor servname provided, or not known
+Traceback (most recent call last):
+  File "/Users/anthonyfenner/Documents/Video Classroom/app.py", line 45, in <module>
+    conn = psycopg2.connect(DB_URL)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/psycopg2/__init__.py", line 122, in connect
+    conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+psycopg2.OperationalError: could not translate host name "dpg-cvkpb8pr0fns7385dp10-a" to address: nodename nor servname provided, or not known
+
+2025-04-06 20:05:28,831:INFO: * Restarting with stat
+2025-04-06 20:05:29,165:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 20:05:29,165:INFO:Requests version: 2.32.3
+2025-04-06 20:05:29,165:INFO:Urllib3 version: 2.3.0
+2025-04-06 20:05:29,210:ERROR:Failed to establish database connection: could not translate host name "dpg-cvkpb8pr0fns7385dp10-a" to address: nodename nor servname provided, or not known
+Traceback (most recent call last):
+  File "/Users/anthonyfenner/Documents/Video Classroom/app.py", line 45, in <module>
+    conn = psycopg2.connect(DB_URL)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/psycopg2/__init__.py", line 122, in connect
+    conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+psycopg2.OperationalError: could not translate host name "dpg-cvkpb8pr0fns7385dp10-a" to address: nodename nor servname provided, or not known
+
+2025-04-06 20:05:29,247:WARNING: * Debugger is active!
+2025-04-06 20:05:29,253:INFO: * Debugger PIN: 535-720-947
+2025-04-06 20:05:44,543:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-06 20:05:44,744:INFO: * Restarting with stat
+2025-04-06 20:05:45,104:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 20:05:45,104:INFO:Requests version: 2.32.3
+2025-04-06 20:05:45,104:INFO:Urllib3 version: 2.3.0
+2025-04-06 20:05:45,824:INFO:Database connection established successfully
+2025-04-06 20:05:45,840:WARNING: * Debugger is active!
+2025-04-06 20:05:45,846:INFO: * Debugger PIN: 535-720-947
+2025-04-06 20:07:58,188:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-06 20:07:58,367:INFO: * Restarting with stat
+2025-04-06 20:07:58,840:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 20:07:58,841:INFO:Requests version: 2.32.3
+2025-04-06 20:07:58,841:INFO:Urllib3 version: 2.3.0
+2025-04-06 20:07:58,907:ERROR:Failed to establish database connection: connection to server on socket "/tmp/.s.PGSQL.5432" failed: FATAL:  database "anthonyfenner" does not exist
+Traceback (most recent call last):
+  File "/Users/anthonyfenner/Documents/Video Classroom/app.py", line 46, in <module>
+    conn = psycopg2.connect(DB_URL)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/psycopg2/__init__.py", line 122, in connect
+    conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+psycopg2.OperationalError: connection to server on socket "/tmp/.s.PGSQL.5432" failed: FATAL:  database "anthonyfenner" does not exist
+
+2025-04-06 20:07:58,919:WARNING: * Debugger is active!
+2025-04-06 20:07:58,925:INFO: * Debugger PIN: 535-720-947
+2025-04-06 20:09:11,301:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-06 20:09:11,451:INFO: * Restarting with stat
+2025-04-06 20:09:11,829:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 20:09:11,829:INFO:Requests version: 2.32.3
+2025-04-06 20:09:11,829:INFO:Urllib3 version: 2.3.0
+2025-04-06 20:09:12,535:INFO:Database connection established successfully
+2025-04-06 20:09:12,570:WARNING: * Debugger is active!
+2025-04-06 20:09:12,579:INFO: * Debugger PIN: 535-720-947
+2025-04-06 20:09:40,655:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 20:09:40,655:INFO:Requests version: 2.32.3
+2025-04-06 20:09:40,655:INFO:Urllib3 version: 2.3.0
+2025-04-06 20:09:41,438:INFO:Database connection established successfully
+2025-04-06 20:09:41,465:INFO: * Restarting with stat
+2025-04-06 20:09:41,810:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 20:09:41,810:INFO:Requests version: 2.32.3
+2025-04-06 20:09:41,810:INFO:Urllib3 version: 2.3.0
+2025-04-06 20:09:42,463:INFO:Database connection established successfully
+2025-04-06 20:09:42,483:WARNING: * Debugger is active!
+2025-04-06 20:09:42,491:INFO: * Debugger PIN: 535-720-947
+2025-04-06 20:22:27,352:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-06 20:22:27,478:INFO: * Restarting with stat
+2025-04-06 20:22:27,890:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 20:22:27,890:INFO:Requests version: 2.32.3
+2025-04-06 20:22:27,890:INFO:Urllib3 version: 2.3.0
+2025-04-06 20:22:28,752:INFO:Database connection established successfully
+2025-04-06 20:22:28,773:WARNING: * Debugger is active!
+2025-04-06 20:22:28,782:INFO: * Debugger PIN: 535-720-947
+2025-04-06 20:23:12,607:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-06 20:23:12,773:INFO: * Restarting with stat
+2025-04-06 20:23:13,157:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 20:23:13,157:INFO:Requests version: 2.32.3
+2025-04-06 20:23:13,157:INFO:Urllib3 version: 2.3.0
+2025-04-06 20:23:13,887:INFO:Database connection established successfully
+2025-04-06 20:23:13,903:WARNING: * Debugger is active!
+2025-04-06 20:23:13,911:INFO: * Debugger PIN: 535-720-947
+2025-04-06 20:24:45,746:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-06 20:24:45,901:INFO: * Restarting with stat
+2025-04-06 20:24:46,277:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 20:24:46,277:INFO:Requests version: 2.32.3
+2025-04-06 20:24:46,277:INFO:Urllib3 version: 2.3.0
+2025-04-06 20:24:46,898:INFO:Database connection established successfully
+2025-04-06 20:24:46,942:WARNING: * Debugger is active!
+2025-04-06 20:24:46,953:INFO: * Debugger PIN: 535-720-947
+2025-04-06 20:24:53,468:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 20:24:53,468:INFO:Requests version: 2.32.3
+2025-04-06 20:24:53,468:INFO:Urllib3 version: 2.3.0
+2025-04-06 20:24:54,118:INFO:Database connection established successfully
+2025-04-06 20:24:54,201:INFO: * Restarting with stat
+2025-04-06 20:24:54,554:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 20:24:54,554:INFO:Requests version: 2.32.3
+2025-04-06 20:24:54,554:INFO:Urllib3 version: 2.3.0
+2025-04-06 20:24:55,196:INFO:Database connection established successfully
+2025-04-06 20:24:55,228:WARNING: * Debugger is active!
+2025-04-06 20:24:55,236:INFO: * Debugger PIN: 535-720-947
+2025-04-06 20:25:06,333:ERROR:Admin dashboard error: admin_dashboard.html
+2025-04-06 20:25:07,130:ERROR:Admin dashboard error: admin_dashboard.html
+2025-04-06 20:25:07,949:ERROR:Admin dashboard error: admin_dashboard.html
+2025-04-06 20:25:08,755:ERROR:Admin dashboard error: admin_dashboard.html
+2025-04-06 20:25:09,598:ERROR:Admin dashboard error: admin_dashboard.html
+2025-04-06 20:25:10,512:ERROR:Admin dashboard error: admin_dashboard.html
+2025-04-06 20:25:11,329:ERROR:Admin dashboard error: admin_dashboard.html
+2025-04-06 20:25:12,140:ERROR:Admin dashboard error: admin_dashboard.html
+2025-04-06 20:25:12,953:ERROR:Admin dashboard error: admin_dashboard.html
+2025-04-06 20:25:13,874:ERROR:Admin dashboard error: admin_dashboard.html
+2025-04-06 20:25:14,777:ERROR:Admin dashboard error: admin_dashboard.html
+2025-04-06 20:25:15,611:ERROR:Admin dashboard error: admin_dashboard.html
+2025-04-06 20:25:16,693:ERROR:Admin dashboard error: admin_dashboard.html
+2025-04-06 20:25:17,516:ERROR:Admin dashboard error: admin_dashboard.html
+2025-04-06 20:25:18,223:ERROR:Admin dashboard error: admin_dashboard.html
+2025-04-06 20:25:19,122:ERROR:Admin dashboard error: admin_dashboard.html
+2025-04-06 20:25:20,065:ERROR:Admin dashboard error: admin_dashboard.html
+2025-04-06 20:25:20,736:ERROR:Admin dashboard error: admin_dashboard.html
+2025-04-06 20:28:41,283:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 20:28:41,283:INFO:Requests version: 2.32.3
+2025-04-06 20:28:41,283:INFO:Urllib3 version: 2.3.0
+2025-04-06 20:28:42,085:INFO:Database connection established successfully
+2025-04-06 20:28:42,119:INFO: * Restarting with stat
+2025-04-06 20:28:42,451:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 20:28:42,451:INFO:Requests version: 2.32.3
+2025-04-06 20:28:42,451:INFO:Urllib3 version: 2.3.0
+2025-04-06 20:28:43,063:INFO:Database connection established successfully
+2025-04-06 20:28:43,090:WARNING: * Debugger is active!
+2025-04-06 20:28:43,100:INFO: * Debugger PIN: 535-720-947
+2025-04-06 20:29:02,646:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:03,362:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:04,160:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:05,088:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:05,867:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:06,794:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:07,729:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:08,550:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:09,269:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:10,177:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:11,089:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:11,918:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:12,745:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:13,419:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:14,204:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:15,103:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:15,944:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:16,657:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:17,418:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:18,190:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:37,800:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:38,635:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:39,537:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:40,279:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:40,957:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:41,886:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:42,835:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:43,500:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:44,208:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:45,022:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:45,692:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:46,585:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:47,506:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:48,171:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:48,980:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:49,775:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:50,650:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:51,649:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:52,318:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:52,994:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:29:53,898:ERROR:Admin dashboard error: Could not build url for endpoint 'switch_role'. Did you mean 'static' instead?
+2025-04-06 20:31:16,069:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-06 20:31:16,254:INFO: * Restarting with stat
+2025-04-06 20:31:16,637:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 20:31:16,637:INFO:Requests version: 2.32.3
+2025-04-06 20:31:16,637:INFO:Urllib3 version: 2.3.0
+2025-04-06 20:31:17,277:INFO:Database connection established successfully
+2025-04-06 20:31:17,320:WARNING: * Debugger is active!
+2025-04-06 20:31:17,326:INFO: * Debugger PIN: 535-720-947
+2025-04-06 20:38:19,868:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-06 20:38:20,045:INFO: * Restarting with stat
+2025-04-06 20:38:20,460:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 20:38:20,460:INFO:Requests version: 2.32.3
+2025-04-06 20:38:20,460:INFO:Urllib3 version: 2.3.0
+2025-04-06 20:38:21,324:INFO:Database connection established successfully
+2025-04-06 20:38:21,358:WARNING: * Debugger is active!
+2025-04-06 20:38:21,368:INFO: * Debugger PIN: 535-720-947
+2025-04-06 20:41:26,024:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-06 20:41:26,154:INFO: * Restarting with stat
+2025-04-06 20:41:26,521:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 20:41:26,521:INFO:Requests version: 2.32.3
+2025-04-06 20:41:26,521:INFO:Urllib3 version: 2.3.0
+2025-04-06 20:41:27,653:INFO:Database connection established successfully
+2025-04-06 20:41:27,681:WARNING: * Debugger is active!
+2025-04-06 20:41:27,691:INFO: * Debugger PIN: 535-720-947
+2025-04-06 20:48:03,801:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-06 20:48:03,962:INFO: * Restarting with stat
+2025-04-06 20:48:04,370:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 20:48:04,370:INFO:Requests version: 2.32.3
+2025-04-06 20:48:04,370:INFO:Urllib3 version: 2.3.0
+2025-04-06 20:48:05,268:INFO:Database connection established successfully
+2025-04-06 20:48:05,302:WARNING: * Debugger is active!
+2025-04-06 20:48:05,313:INFO: * Debugger PIN: 535-720-947
+2025-04-06 20:50:30,066:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-06 20:50:30,184:INFO: * Restarting with stat
+2025-04-06 20:50:30,608:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 20:50:30,608:INFO:Requests version: 2.32.3
+2025-04-06 20:50:30,608:INFO:Urllib3 version: 2.3.0
+2025-04-06 20:50:31,304:INFO:Database connection established successfully
+2025-04-06 20:50:31,324:WARNING: * Debugger is active!
+2025-04-06 20:50:31,334:INFO: * Debugger PIN: 535-720-947
+2025-04-06 20:52:04,224:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-06 20:52:04,415:INFO: * Restarting with stat
+2025-04-06 20:52:04,757:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 20:52:04,757:INFO:Requests version: 2.32.3
+2025-04-06 20:52:04,757:INFO:Urllib3 version: 2.3.0
+2025-04-06 20:52:05,481:INFO:Database connection established successfully
+2025-04-06 20:52:05,498:WARNING: * Debugger is active!
+2025-04-06 20:52:05,505:INFO: * Debugger PIN: 535-720-947
+2025-04-06 21:03:46,479:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 21:03:46,480:INFO:Requests version: 2.32.3
+2025-04-06 21:03:46,480:INFO:Urllib3 version: 2.3.0
+2025-04-06 21:03:47,455:INFO:Database connection established successfully
+2025-04-06 21:03:47,492:INFO: * Restarting with stat
+2025-04-06 21:03:47,813:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 21:03:47,813:INFO:Requests version: 2.32.3
+2025-04-06 21:03:47,813:INFO:Urllib3 version: 2.3.0
+2025-04-06 21:03:48,443:INFO:Database connection established successfully
+2025-04-06 21:03:48,517:WARNING: * Debugger is active!
+2025-04-06 21:03:48,537:INFO: * Debugger PIN: 535-720-947
+2025-04-06 21:07:25,753:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-06 21:07:25,896:INFO: * Restarting with stat
+2025-04-06 21:07:26,284:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 21:07:26,284:INFO:Requests version: 2.32.3
+2025-04-06 21:07:26,284:INFO:Urllib3 version: 2.3.0
+2025-04-06 21:07:27,112:INFO:Database connection established successfully
+2025-04-06 21:07:27,130:WARNING: * Debugger is active!
+2025-04-06 21:07:27,138:INFO: * Debugger PIN: 535-720-947
+2025-04-06 21:09:50,090:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-06 21:09:50,283:INFO: * Restarting with stat
+2025-04-06 21:09:50,706:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-06 21:09:50,706:INFO:Requests version: 2.32.3
+2025-04-06 21:09:50,706:INFO:Urllib3 version: 2.3.0
+2025-04-06 21:09:51,404:INFO:Database connection established successfully
+2025-04-06 21:09:51,424:WARNING: * Debugger is active!
+2025-04-06 21:09:51,433:INFO: * Debugger PIN: 535-720-947
+2025-04-07 17:37:10,833:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-07 17:37:10,834:INFO:Requests version: 2.32.3
+2025-04-07 17:37:10,834:INFO:Urllib3 version: 2.3.0
+2025-04-07 17:37:11,595:INFO:Database connection established successfully
+2025-04-07 17:37:11,630:INFO: * Restarting with stat
+2025-04-07 17:37:11,949:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-07 17:37:11,949:INFO:Requests version: 2.32.3
+2025-04-07 17:37:11,949:INFO:Urllib3 version: 2.3.0
+2025-04-07 17:37:12,498:INFO:Database connection established successfully
+2025-04-07 17:37:12,524:WARNING: * Debugger is active!
+2025-04-07 17:37:12,535:INFO: * Debugger PIN: 535-720-947
+2025-04-07 18:53:38,566:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-07 18:53:38,567:INFO:Requests version: 2.32.3
+2025-04-07 18:53:38,567:INFO:Urllib3 version: 2.3.0
+2025-04-07 18:53:39,392:INFO:Database connection established successfully
+2025-04-07 18:53:39,422:INFO: * Restarting with stat
+2025-04-07 18:53:39,763:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-07 18:53:39,763:INFO:Requests version: 2.32.3
+2025-04-07 18:53:39,763:INFO:Urllib3 version: 2.3.0
+2025-04-07 18:53:40,332:INFO:Database connection established successfully
+2025-04-07 18:53:40,356:WARNING: * Debugger is active!
+2025-04-07 18:53:40,364:INFO: * Debugger PIN: 535-720-947
+2025-04-07 18:54:35,320:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-07 18:54:35,320:INFO:Requests version: 2.32.3
+2025-04-07 18:54:35,320:INFO:Urllib3 version: 2.3.0
+2025-04-07 18:54:35,904:INFO:Database connection established successfully
+2025-04-07 18:54:35,934:INFO: * Restarting with stat
+2025-04-07 18:54:36,259:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-07 18:54:36,259:INFO:Requests version: 2.32.3
+2025-04-07 18:54:36,259:INFO:Urllib3 version: 2.3.0
+2025-04-07 18:54:36,984:INFO:Database connection established successfully
+2025-04-07 18:54:37,016:WARNING: * Debugger is active!
+2025-04-07 18:54:37,025:INFO: * Debugger PIN: 535-720-947
+2025-04-07 18:55:46,912:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-07 18:55:46,913:INFO:Requests version: 2.32.3
+2025-04-07 18:55:46,913:INFO:Urllib3 version: 2.3.0
+2025-04-07 18:55:47,579:INFO:Database connection established successfully
+2025-04-07 18:55:47,608:INFO: * Restarting with stat
+2025-04-07 18:55:47,947:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-07 18:55:47,948:INFO:Requests version: 2.32.3
+2025-04-07 18:55:47,948:INFO:Urllib3 version: 2.3.0
+2025-04-07 18:55:48,513:INFO:Database connection established successfully
+2025-04-07 18:55:48,540:WARNING: * Debugger is active!
+2025-04-07 18:55:48,550:INFO: * Debugger PIN: 535-720-947
+2025-04-07 18:57:41,694:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-07 18:57:41,849:INFO: * Restarting with stat
+2025-04-07 18:57:42,168:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-07 18:57:42,168:INFO:Requests version: 2.32.3
+2025-04-07 18:57:42,168:INFO:Urllib3 version: 2.3.0
+2025-04-07 18:57:42,864:INFO:Database connection established successfully
+2025-04-07 18:57:42,911:WARNING: * Debugger is active!
+2025-04-07 18:57:42,917:INFO: * Debugger PIN: 535-720-947
+2025-04-07 18:57:53,245:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-07 18:57:53,245:INFO:Requests version: 2.32.3
+2025-04-07 18:57:53,245:INFO:Urllib3 version: 2.3.0
+2025-04-07 18:57:53,842:INFO:Database connection established successfully
+2025-04-07 18:57:53,873:INFO: * Restarting with stat
+2025-04-07 18:57:54,212:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-07 18:57:54,212:INFO:Requests version: 2.32.3
+2025-04-07 18:57:54,212:INFO:Urllib3 version: 2.3.0
+2025-04-07 18:57:54,865:INFO:Database connection established successfully
+2025-04-07 18:57:54,889:WARNING: * Debugger is active!
+2025-04-07 18:57:54,897:INFO: * Debugger PIN: 535-720-947
+2025-04-07 19:02:24,138:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-07 19:02:24,258:INFO: * Restarting with stat
+2025-04-07 19:02:24,668:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-07 19:02:24,668:INFO:Requests version: 2.32.3
+2025-04-07 19:02:24,668:INFO:Urllib3 version: 2.3.0
+2025-04-07 19:02:25,246:INFO:Database connection established successfully
+2025-04-07 19:02:25,262:WARNING: * Debugger is active!
+2025-04-07 19:02:25,270:INFO: * Debugger PIN: 535-720-947
+2025-04-07 19:05:55,324:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-07 19:05:55,324:INFO:Requests version: 2.32.3
+2025-04-07 19:05:55,324:INFO:Urllib3 version: 2.3.0
+2025-04-07 19:05:56,009:INFO:Database connection established successfully
+2025-04-07 19:05:56,028:INFO: * Restarting with stat
+2025-04-07 19:05:56,393:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-07 19:05:56,393:INFO:Requests version: 2.32.3
+2025-04-07 19:05:56,393:INFO:Urllib3 version: 2.3.0
+2025-04-07 19:05:56,979:INFO:Database connection established successfully
+2025-04-07 19:05:57,013:WARNING: * Debugger is active!
+2025-04-07 19:05:57,023:INFO: * Debugger PIN: 535-720-947
+2025-04-07 19:06:00,838:ERROR:Tutors page error: expected token 'end of statement block', got '='
+2025-04-07 19:06:05,422:ERROR:Tutors page error: expected token 'end of statement block', got '='
+2025-04-07 19:06:33,744:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-07 19:06:33,956:INFO: * Restarting with stat
+2025-04-07 19:06:34,393:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-07 19:06:34,393:INFO:Requests version: 2.32.3
+2025-04-07 19:06:34,394:INFO:Urllib3 version: 2.3.0
+2025-04-07 19:06:35,033:INFO:Database connection established successfully
+2025-04-07 19:06:35,069:WARNING: * Debugger is active!
+2025-04-07 19:06:35,076:INFO: * Debugger PIN: 535-720-947
+2025-04-07 19:06:39,279:ERROR:Tutors page error: expected token 'end of statement block', got '='
+2025-04-07 19:07:43,313:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-07 19:07:43,435:INFO: * Restarting with stat
+2025-04-07 19:07:43,784:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-07 19:07:43,784:INFO:Requests version: 2.32.3
+2025-04-07 19:07:43,784:INFO:Urllib3 version: 2.3.0
+2025-04-07 19:07:44,449:INFO:Database connection established successfully
+2025-04-07 19:07:44,464:WARNING: * Debugger is active!
+2025-04-07 19:07:44,472:INFO: * Debugger PIN: 535-720-947
+2025-04-07 19:07:51,537:ERROR:Tutors page error: expected token 'end of statement block', got '='
+2025-04-07 19:08:51,791:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-07 19:08:51,984:INFO: * Restarting with stat
+2025-04-07 19:08:52,357:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-07 19:08:52,357:INFO:Requests version: 2.32.3
+2025-04-07 19:08:52,357:INFO:Urllib3 version: 2.3.0
+2025-04-07 19:08:52,928:INFO:Database connection established successfully
+2025-04-07 19:08:52,945:WARNING: * Debugger is active!
+2025-04-07 19:08:52,954:INFO: * Debugger PIN: 535-720-947
+2025-04-07 19:09:37,782:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-07 19:09:38,052:INFO: * Restarting with stat
+2025-04-07 19:09:38,408:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-07 19:09:38,408:INFO:Requests version: 2.32.3
+2025-04-07 19:09:38,408:INFO:Urllib3 version: 2.3.0
+2025-04-07 19:09:38,996:INFO:Database connection established successfully
+2025-04-07 19:09:39,021:WARNING: * Debugger is active!
+2025-04-07 19:09:39,030:INFO: * Debugger PIN: 535-720-947
+2025-04-07 19:12:04,763:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-07 19:12:05,030:INFO: * Restarting with stat
+2025-04-07 19:12:05,413:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-07 19:12:05,414:INFO:Requests version: 2.32.3
+2025-04-07 19:12:05,414:INFO:Urllib3 version: 2.3.0
+2025-04-07 19:12:05,982:INFO:Database connection established successfully
+2025-04-07 19:12:05,998:WARNING: * Debugger is active!
+2025-04-07 19:12:06,006:INFO: * Debugger PIN: 535-720-947
+2025-04-07 19:15:07,464:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-07 19:15:07,593:INFO: * Restarting with stat
+2025-04-07 19:15:07,910:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-07 19:15:07,910:INFO:Requests version: 2.32.3
+2025-04-07 19:15:07,910:INFO:Urllib3 version: 2.3.0
+2025-04-07 19:15:08,603:INFO:Database connection established successfully
+2025-04-07 19:15:08,621:WARNING: * Debugger is active!
+2025-04-07 19:15:08,630:INFO: * Debugger PIN: 535-720-947
+2025-04-07 19:18:23,491:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-07 19:18:23,629:INFO: * Restarting with stat
+2025-04-07 19:18:24,057:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-07 19:18:24,057:INFO:Requests version: 2.32.3
+2025-04-07 19:18:24,057:INFO:Urllib3 version: 2.3.0
+2025-04-07 19:18:24,735:INFO:Database connection established successfully
+2025-04-07 19:18:24,760:WARNING: * Debugger is active!
+2025-04-07 19:18:24,769:INFO: * Debugger PIN: 535-720-947
+2025-04-07 19:19:16,722:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-07 19:19:16,850:INFO: * Restarting with stat
+2025-04-07 19:19:17,267:INFO:Stripe version: <module 'stripe._version' from '/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_version.py'>
+2025-04-07 19:19:17,267:INFO:Requests version: 2.32.3
+2025-04-07 19:19:17,267:INFO:Urllib3 version: 2.3.0
+2025-04-07 19:19:17,976:INFO:Database connection established successfully
+2025-04-07 19:19:18,014:WARNING: * Debugger is active!
+2025-04-07 19:19:18,084:INFO: * Debugger PIN: 535-720-947
+2025-04-07 19:24:35,739:WARNING:Failed login attempt for email: asdf@adsf.com
