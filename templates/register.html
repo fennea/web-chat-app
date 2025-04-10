@@ -145,34 +145,8 @@
                     </select>
                   </div>
 
-                  <!-- Lifetime Free Checkbox -->
-                  <div class="col-12">
-                    <div class="form-check">
-                      <input 
-                        type="checkbox" 
-                        class="form-check-input" 
-                        id="lifetime_free" 
-                        name="lifetime_free" 
-                        value="true"
-                      >
-                      <label class="form-check-label" for="lifetime_free">
-                        Claim Free Lifetime Membership (Unlimited Access to All Features)
-                      </label>
-                    </div>
-                  </div>
-
-                  <!-- Plan Selection -->
-                  <div class="col-12">
-                    <label for="plan" class="form-label">Select Your Plan:</label>
-                    <select class="form-select" id="plan" name="plan" required>
-                      <option value="free">Free Plan - $0/month (4 sessions)</option>
-                      {% for product in products %}
-                        <option value="{{ product[0] }}">{{ product[1] }} - ${{ product[2] }}/month</option>
-                      {% endfor %}
-                    </select>
-                  </div>
-                </div>
-
+                 
+                
                 <!-- Submit Button -->
                 <div class="d-grid mt-4">
                   <button type="submit" class="btn btn-upgrade text-white">
@@ -199,6 +173,17 @@
 {% endblock %}
 
 <script>
+
+  // Toggle tutor-only options based on role selection
+  document.getElementById("role").addEventListener("change", function() {
+    var tutorOptions = document.getElementById("tutorOptions");
+    if (this.value === "Tutor") {
+      tutorOptions.style.display = "block";
+    } else {
+      tutorOptions.style.display = "none";
+    }
+  });
+
   function showToast(message) {
     const toast = document.getElementById("toast");
     toast.textContent = message;

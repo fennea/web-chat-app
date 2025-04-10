@@ -60,8 +60,6 @@ STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY')
 # Stripe Product and Price IDs (set these in Stripe Dashboard)
 FREE_PLAN = 'free'
 LIFETIME_FREE_PLAN = 'lifetime_free'
-EARLY_ADOPTER_PRICE_ID = 'price_1...'  # Replace with your Early Adopter Price ID
-STANDARD_PRICE_ID = 'price_1...'      # Replace with your Standard Price ID
 
 def send_verification_email(email, token):
     msg = MIMEText(f"Please verify your email by clicking this link: https://twotoro.com/verify/{token}")
@@ -244,6 +242,90 @@ def admin_dashboard():
         conn.close()
 
 
+@app.route('/tutor_signup', methods=['GET', 'POST'])
+def tutor_signup():
+    conn = psycopg2.connect(DB_URL)
+    cursor = conn.cursor()
+
+    # First, try to get the email from query parameters or from the form submission.
+    email = request.args.get('email') or request.form.get('email')
+    # print("Email:", email)
+
+    # Get the current user based on the provided email.
+    cursor.execute(
+        "SELECT user_id, first_name, last_name, email, role FROM users WHERE email = %s",
+        (email,)
+    )
+    user = cursor.fetchone()
+    print("User:", user)
+    if not user:
+        return "Error: User not found", 404
+
+    user_id = user[0]
+
+    if request.method == 'POST':
+        # Retrieve the selected plan from the form
+        selected_plan = request.form.get('selected_plan')
+        print("Selected Plan:", selected_plan)
+        if not selected_plan:
+            flash("Please select a plan before proceeding.")
+            return redirect(url_for('tutor_signup', email=email))
+
+        # Retrieve the product from the database using a parameterized query.
+        cursor.execute(
+            "SELECT product_id, name, price, description, stripe_price_id, active FROM products WHERE product_id = %s",
+            (selected_plan,)
+        )
+        product = cursor.fetchone()
+        # print("Product:", product)
+        if not product:
+            return "Error: Selected plan not found", 404
+
+        # The stripe_price_id is in column index 4.
+        stripe_price_id = product[4]
+        product_name = product[1]
+
+        # Build a dynamic statement descriptor.
+        descriptor = f"TwoToro {product_name}"
+        max_length = 22
+        if len(descriptor) > max_length:
+            descriptor = descriptor[:max_length].rstrip()
+
+        try:
+            # Create a Stripe checkout session in subscription mode.
+            checkout_session = stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=[{
+                    'price': stripe_price_id,  # dynamically from the product record
+                    'quantity': 1,
+                }],
+                mode='subscription',
+                success_url='https://twotoro.com/verify_subscription?user_id={}&session_id={{CHECKOUT_SESSION_ID}}'.format(user_id),
+                cancel_url='https://twotoro.com/register?cancel=true',
+                customer_email=email,
+                payment_method_collection='if_required'
+            )
+            return redirect(checkout_session.url, code=303)
+        except Exception as e:
+            flash(f"Error creating checkout session: {str(e)}")
+            return redirect(url_for('register'))
+    else:
+        # GET: Fetch active products to populate the drop-down.
+        cursor.execute(
+            "SELECT product_id, name, price, description, stripe_price_id, active FROM products WHERE active = True"
+        )
+        products = cursor.fetchall()
+        return render_template('tutor_signup.html', user=user, products=products)
+
+@app.route('/verify_subscription', methods=['GET'])
+def verify_subscription():
+    user_id = request.args.get('user_id')
+    session_id = request.args.get('session_id')
+    # Here you might perform additional logic, such as retrieving the Stripe Checkout session
+    # and marking the subscription as active in your database.
+    flash("Please check your email for a verification link before logging in.")
+    return redirect(url_for('login'))
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
 
@@ -251,9 +333,9 @@ def register():
     conn = psycopg2.connect(DB_URL)
     cursor = conn.cursor()
 
-    # Fetch products
-    cursor.execute("SELECT product_id, name, price, description, stripe_price_id, active FROM products WHERE active = True")
-    products = cursor.fetchall()
+    # Fetch products - Not Needed
+    # cursor.execute("SELECT product_id, name, price, description, stripe_price_id, active FROM products WHERE active = True")
+    # products = cursor.fetchall()
 
     if request.method == 'POST':
         first_name = request.form.get('first_name')
@@ -263,6 +345,7 @@ def register():
         role = request.form.get('role')
         lifetime_free = request.form.get('lifetime_free') == 'true'
         plan = request.form.get('plan')  # Get selected plan
+        print("Role:", role)
 
         hashed_pw = bcrypt.hashpw(password, bcrypt.gensalt())
         verification_token = str(uuid.uuid4())
@@ -282,38 +365,64 @@ def register():
                     (user_id, '', FREE_PLAN if not lifetime_free else LIFETIME_FREE_PLAN, 'active')
                 )
                 conn.commit()
-                send_verification_email(email, verification_token)
-                flash("Registration successful! Please check your email to verify your account.")
-                return redirect(url_for('login'))
+                if role == 'tutor':
+                    send_verification_email(email, verification_token)
+                    return redirect(url_for('tutor_signup', email=email))
+                else:
+                    send_verification_email(email, verification_token)
+                    flash("Registration successful! Please check your email to verify your account.")
+                    return redirect(url_for('login'))
         except psycopg2.IntegrityError:
             conn.rollback()
             flash("Email already exists.")
-    return render_template('register.html', products=products)
+    return render_template('register.html')
 
-@app.route('/register_complete/<user_id>/<email>', methods=['GET', 'POST'])
-def register_complete(user_id, email):
-    if request.method == 'POST':
-        try:
-            checkout_session = stripe.checkout.Session.create(
-                payment_method_types=['card'],
-                line_items=[{
-                    'price': EARLY_ADOPTER_PRICE_ID,
-                    'quantity': 1,
-                }],
-                mode='subscription',
-                success_url='https://twotoro.com/verify_subscription?user_id={}&session_id={{CHECKOUT_SESSION_ID}}'.format(user_id),
-                cancel_url='https://twotoro.com/register?cancel=true',
-                customer_email=email,
-                payment_method_collection='if_required',
-                payment_intent_data={
-                    'statement_descriptor': 'TwoToro EarlyAdopter'
-                }
-            )
-            return redirect(checkout_session.url, code=303)
-        except Exception as e:
-            flash(f"Error creating checkout session: {str(e)}")
-            return redirect(url_for('register'))
-    return render_template('register_complete.html', user_id=user_id, email=email, stripe_publishable_key=STRIPE_PUBLISHABLE_KEY)
+# @app.route('/register_complete/<user_id>/<email>', methods=['GET', 'POST'])
+# def register_complete(user_id, email):
+
+#     selected_plan = request.args.get('selected_plan')
+
+
+#     # Retrieve the product from the database using a parameterized query.
+#     cursor.execute(
+#         "SELECT product_id, name, price, description, stripe_price_id, active FROM products WHERE product_id = %s",
+#         (selected_plan,)
+#     )
+#     product = cursor.fetchone()
+#     print("Product:", product)
+#     if not product:
+#         return "Error: Selected plan not found", 404
+
+#     # Assign the stripe_price_id based on the column index (4)
+#     stripe_price_id = product[4]
+
+#     if request.method == 'POST':
+#         try:
+#             product_name = product[1]
+#             descriptor = f"TwoToro {product_name}"
+#             max_length = 22
+#             if len(descriptor) > max_length:
+#                 descriptor = descriptor[:max_length].rstrip()  # Optionally truncate for length
+            
+#             # Create a checkout session in subscription mode without payment_intent_data.
+#             checkout_session = stripe.checkout.Session.create(
+#                 payment_method_types=['card'],
+#                 line_items=[{
+#                     'price': stripe_price_id,  # dynamic from your product record
+#                     'quantity': 1,
+#                 }],
+#                 mode='subscription',
+#                 success_url='https://twotoro.com/verify_subscription?user_id={}&session_id={{CHECKOUT_SESSION_ID}}'.format(user_id),
+#                 cancel_url='https://twotoro.com/register?cancel=true',
+#                 customer_email=email,
+#                 payment_method_collection='if_required'
+#                 # Removed payment_intent_data as it's not allowed in subscription mode.
+#             )
+#             return redirect(checkout_session.url, code=303)
+#         except Exception as e:
+#             flash(f"Error creating checkout session: {str(e)}")
+#             return redirect(url_for('register'))
+#     return render_template('register_complete.html', user_id=user_id, email=email, stripe_publishable_key=STRIPE_PUBLISHABLE_KEY, product=product)
 
 @app.route('/verify/<token>')
 def verify(token):

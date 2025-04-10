@@ -33,7 +33,7 @@
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">{{ product[0] }}</h5>
-              <h6 class="card-subtitle mb-2 text-muted">${{ "%.2f" % product[1] }}</h6>
+              <h6 class="card-subtitle mb-2 text-muted">${{ "%.2f" % product[1] }}/Month</h6>
               <p class="card-text">{{ product[2] }}</p>
               {% if 'email' in session %}
                 {% if product[4] == True %}

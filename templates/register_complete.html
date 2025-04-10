@@ -8,7 +8,6 @@
       background-color: #f4f4f4;
       padding: 20px;
     }
-
     .complete-container {
       max-width: 600px;
       margin: 0 auto;
@@ -18,22 +17,18 @@
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
       text-align: center;
     }
-
     h2 {
       color: #2a9d8f;
       margin-bottom: 1.5rem;
     }
-
     p {
       color: #647173;
       font-size: 1.1rem;
       margin-bottom: 1rem;
     }
-
     .messages {
       margin-bottom: 1rem;
     }
-
     .messages p {
       background: #e6f4f1;
       color: #2a9d8f;
@@ -41,7 +36,6 @@
       border-radius: 6px;
       font-size: 14px;
     }
-
     button {
       padding: 0.75rem 1.5rem;
       background: #2a9d8f;
@@ -52,7 +46,6 @@
       font-size: 1rem;
       transition: background 0.3s ease;
     }
-
     button:hover {
       background: #21867a;
     }
@@ -73,15 +66,18 @@
       {% endwith %}
     </div>
 
-    <p>Thank you for choosing the Early Adopter Plan ($4.99/month). Please complete the payment to activate your subscription.</p>
-    <form action="{{ url_for('register_complete', user_id=user_id, email=email) }}" method="POST">
+    <p>
+      Thank you for choosing the <strong>{{ product[1] }}</strong> Plan 
+      (${{ product[2] }}/month). Please complete the payment to activate your subscription.
+    </p>
+    <form action="{{ url_for('register_complete', user_id=user_id, email=email, selected_plan=product[0]) }}" method="POST">
       <script
         src="https://checkout.stripe.com/checkout.js"
         class="stripe-button"
         data-key="{{ stripe_publishable_key }}"
-        data-amount="499"  <!-- 4.99 USD in cents -->
-        data-name="TwoToro Early Adopter Plan"
-        data-description="Unlimited 30-minute sessions (lifetime price)"
+        data-amount="{{ (product[2] * 100) | int }}"
+        data-name="TwoToro {{ product[1] }} Plan"
+        data-description="{{ product[3] }}"
         data-locale="auto"
         data-currency="usd">
       </script>
