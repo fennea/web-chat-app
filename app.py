@@ -1,3 +1,4 @@
+import time  # Added import for time module
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_socketio import SocketIO, emit, join_room, leave_room
 import os
@@ -12,23 +13,33 @@ import stripe
 import requests
 import logging
 import urllib3
-import time
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
 
-load_dotenv()
+# Try to import psycopg2.pool, fall back to manual connection management if not available
+try:
+    import psycopg2.pool
+    POOL_AVAILABLE = True
+except ImportError:
+    POOL_AVAILABLE = False
+    logging.warning("psycopg2.pool not available, falling back to manual connection management")
 
-# Set up logging to print errors to the console and file
+# ... (rest of your imports remain the same)
+
+# Set up logging to print errors to stderr (Render captures stderr)
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s:%(levelname)s:%(message)s',
     handlers=[
-        logging.FileHandler('twotoro.log'),
-        logging.StreamHandler()  # This adds console output
+        logging.StreamHandler()  # Log to stderr
     ],
     force=True  # Ensure logging configuration is applied
 )
 
 # Log dependency versions
-logging.info(f"Stripe version: {stripe.VERSION}")  # Fixed: Use stripe.__version__
+logging.info(f"Stripe version: {stripe.VERSION}")
 logging.info(f"Requests version: {requests.__version__}")
 logging.info(f"Urllib3 version: {urllib3.__version__}")
 
@@ -40,71 +51,82 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 # Database connection
 DATABASE_URL = os.getenv('DATABASE_URL')
 DB_URL = os.environ.get('DATABASE_URL', DATABASE_URL)
+db_pool = None
 conn = None
 cursor = None
 db_connected = False
-db_pool = None
-db_connected = False
+
+# Parse the DATABASE_URL to extract components
+db_url = urlparse(DB_URL)
+conn_params = {
+    "host": db_url.hostname,
+    "port": db_url.port,
+    "dbname": db_url.path[1:],
+    "user": db_url.username,
+    "password": db_url.password,
+    "connect_timeout": 15  # Set a 15-second connection timeout
+}
 
 try:
-    # Parse the DATABASE_URL to extract components
-    from urllib.parse import urlparse
-    db_url = urlparse(DB_URL)
-    conn_params = {
-        "host": db_url.hostname,
-        "port": db_url.port,
-        "dbname": db_url.path[1:],
-        "user": db_url.username,
-        "password": db_url.password,
-        "connect_timeout": 10  # Set a 10-second connection timeout
-    }
-    db_pool = psycopg2.pool.SimpleConnectionPool(
-        1, 10,  # Minimum 1, maximum 10 connections (adjusted for Render's limits)
-        **conn_params
-    )
-    db_connected = True
-    logging.info("Database connection pool established successfully")
+    if POOL_AVAILABLE:
+        # Use connection pooling if available
+        db_pool = psycopg2.pool.SimpleConnectionPool(
+            1, 5,  # Minimum 1, maximum 5 connections (adjusted for Render's limits)
+            **conn_params
+        )
+        db_connected = True
+        logging.info("Database connection pool established successfully")
+    else:
+        # Fall back to manual connection management
+        conn = psycopg2.connect(**conn_params)
+        cursor = conn.cursor()
+        cursor.execute("SELECT 1")  # Test the connection
+        db_connected = True
+        logging.info("Database connection established successfully (manual management)")
 except Exception as e:
-    logging.error(f"Failed to establish database connection pool: {str(e)}", exc_info=True)
+    logging.error(f"Failed to establish database connection: {str(e)}", exc_info=True)
 
-def check_db_connection(max_retries=5, retry_delay=2):
-    global db_pool, db_connected
+def check_db_connection(max_retries=5, retry_delay=3):
+    global db_pool, conn, cursor, db_connected
     for attempt in range(max_retries):
         if not db_connected:
             try:
-                from urllib.parse import urlparse
-                db_url = urlparse(DB_URL)
-                conn_params = {
-                    "host": db_url.hostname,
-                    "port": db_url.port,
-                    "dbname": db_url.path[1:],
-                    "user": db_url.username,
-                    "password": db_url.password,
-                    "connect_timeout": 10  # Set a 10-second connection timeout
-                }
-                db_pool = psycopg2.pool.SimpleConnectionPool(
-                    1, 10, **conn_params
-                )
+                if POOL_AVAILABLE:
+                    db_pool = psycopg2.pool.SimpleConnectionPool(
+                        1, 5, **conn_params
+                    )
+                    logging.info(f"Database connection pool established successfully on retry {attempt + 1}/{max_retries}")
+                else:
+                    conn = psycopg2.connect(**conn_params)
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT 1")
+                    logging.info(f"Database connection established successfully on retry {attempt + 1}/{max_retries} (manual management)")
                 db_connected = True
-                logging.info(f"Database connection pool established successfully on retry {attempt + 1}/{max_retries}")
             except Exception as e:
-                logging.error(f"Failed to establish database connection pool on retry {attempt + 1}/{max_retries}: {str(e)}", exc_info=True)
+                logging.error(f"Failed to establish database connection on retry {attempt + 1}/{max_retries}: {str(e)}", exc_info=True)
                 if attempt < max_retries - 1:
                     time.sleep(retry_delay)
                     continue
                 return False, "The application is currently unable to connect to the database. Please try again later."
         
         try:
-            conn = db_pool.getconn()
-            cursor = conn.cursor()
-            cursor.execute("SELECT 1")
-            cursor.close()
-            db_pool.putconn(conn)
+            if POOL_AVAILABLE:
+                conn = db_pool.getconn()
+                cursor = conn.cursor()
+                cursor.execute("SELECT 1")
+                cursor.close()
+                db_pool.putconn(conn)
+            else:
+                cursor.execute("SELECT 1")
             logging.info(f"Database connection check succeeded on attempt {attempt + 1}/{max_retries}")
             return True, None
         except Exception as e:
             logging.error(f"Database connection check failed on attempt {attempt + 1}/{max_retries}: {str(e)}", exc_info=True)
             if attempt < max_retries - 1:
+                if POOL_AVAILABLE and db_pool:
+                    db_pool.closeall()
+                elif conn and not conn.closed:
+                    conn.close()
                 time.sleep(retry_delay)
                 continue
             db_connected = False
