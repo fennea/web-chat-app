@@ -4,64 +4,12 @@
 
 {% block extra_styles %}
   <style>
-    body {
-      background-color: #f0f2f5;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-
-    .controls {
-      padding: 15px;
-      background-color: #fff;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 15px;
-    }
-
-    .timer {
-      font-size: 1rem;
-      color: #647173;
-    }
-
-    .btn {
-      background-color: #2a9d8f;
-      color: #fff;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 16px;
-      transition: background-color 0.3s ease;
-    }
-
-    .btn:hover {
-      background-color: #21867a;
-    }
-
-    .status-messages {
-      max-width: 800px;
-      margin: 15px auto;
-      background: #fff;
-      border-radius: 8px;
-      padding: 15px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-      flex-grow: 1;
-      overflow-y: auto;
-    }
-
-    .status-messages p {
-      margin: 5px 0;
-      color: #647173;
-    }
-
+    /* Custom styles to complement Bootstrap */
     .video-container {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 20px;
-      padding: 20px;
+      gap: 1.5rem;
+      padding: 1.5rem;
       max-width: 1200px;
       margin: 0 auto;
       flex-grow: 1;
@@ -71,49 +19,38 @@
       width: 100%;
       height: auto;
       background-color: #000;
-      border-radius: 10px;
-      border: 2px solid #e0e3e5;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-      transition: transform 0.3s ease;
+      border-radius: 0.5rem;
+      border: 2px solid #dee2e6;
+      box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
     }
 
-    @media (max-width: 768px) {
-      .controls {
-        padding: 10px;
-        flex-direction: column;
-        gap: 10px;
-      }
-
-      .btn {
-        width: 100%;
-        padding: 8px 16px;
-        font-size: 14px;
-      }
-
-      .video-container {
-        grid-template-columns: 1fr;
-        padding: 10px;
-      }
-
-      .status-messages {
-        margin: 10px;
-      }
+    .status-messages {
+      max-height: 200px;
+      overflow-y: auto;
     }
   </style>
 {% endblock %}
 
 {% block content %}
-  <div class="controls">
-    <span class="timer" id="sessionTimer">Session Time: 00:00</span>
-    <button id="shareScreenBtn" class="btn">Share Screen</button>
-    <button id="flipRemoteBtn" class="btn">Flip Student Video</button>
-  </div>
+  <div class="container-fluid py-3">
+    <!-- Controls -->
+    <div class="d-flex justify-content-center align-items-center gap-3 mb-3 bg-white shadow-sm p-3 rounded">
+      <span class="badge bg-secondary" id="sessionTimer">Session Time: 00:00</span>
+      <button id="shareScreenBtn" class="btn btn-primary">Share Screen</button>
+      <button id="flipRemoteBtn" class="btn btn-secondary">Flip Student Video</button>
+      <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
+    </div>
 
-  <div id="statusMessages" class="status-messages"></div>
+    <!-- Status Messages -->
+    <div class="card mx-auto mb-3" style="max-width: 800px;">
+      <div class="card-body status-messages" id="statusMessages"></div>
+    </div>
 
-  <div class="video-container">
-    <video id="localVideo" autoplay muted playsinline></video>
-    <video id="remoteVideo" autoplay playsinline></video>
+    <!-- Video Container -->
+    <div class="video-container">
+      <video id="localVideo" autoplay muted playsinline></video>
+      <video id="remoteVideo" autoplay playsinline></video>
+    </div>
   </div>
 
   <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
@@ -127,14 +64,18 @@
 
     let localStream;
     let peerConnection;
-    let isOfferer = false; // Default to false, set by server
+    let isOfferer = false;
     let isFlipped = false;
+    let lastSessionUpdate = 0;
     const room = "{{ roomName }}";
     const config = {
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
-        // Add TURN server for production (replace with your credentials)
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun3.l.google.com:19302' },
+        { urls: 'stun:stun4.l.google.com:19302' },
+        // Add TURN server for production
         // {
         //   urls: 'turn:your.turn.server:3478',
         //   username: 'your_username',
@@ -146,16 +87,20 @@
     let startTime = Date.now();
     let timerInterval;
 
-    // User plan for session limits
     const userPlan = "{{ userPlan }}";
-    const maxSessionDuration = userPlan === 'free' ? 30 * 60 : null; // 30 minutes for free plan
+    const maxSessionDuration = userPlan === 'free' ? 30 * 60 : null;
 
     function updateTimer() {
       const elapsed = Math.floor((Date.now() - startTime) / 1000);
       const minutes = Math.floor(elapsed / 60);
       const seconds = elapsed % 60;
       sessionTimer.textContent = `Session Time: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-      socket.emit('session_update', { duration: Math.floor(elapsed / 60) });
+
+      // Emit session_update every 30 seconds
+      if (elapsed - lastSessionUpdate >= 30) {
+        socket.emit('session_update', { duration: Math.floor(elapsed / 60) });
+        lastSessionUpdate = elapsed;
+      }
 
       if (maxSessionDuration && elapsed >= maxSessionDuration) {
         clearInterval(timerInterval);
@@ -174,17 +119,19 @@
 
     function initPeerConnection() {
       if (peerConnection) {
+        console.log('Closing existing peer connection');
         peerConnection.close();
       }
       peerConnection = new RTCPeerConnection(config);
 
       localStream.getTracks().forEach(track => {
+        console.log('Adding track to peer connection:', track);
         peerConnection.addTrack(track, localStream);
       });
 
       peerConnection.onicecandidate = (event) => {
         if (event.candidate) {
-          console.log('Sending ICE candidate');
+          console.log('Sending ICE candidate:', event.candidate);
           socket.emit('signal', { room, type: 'candidate', payload: event.candidate });
         }
       };
@@ -197,10 +144,18 @@
         }
       };
 
+      peerConnection.oniceconnectionstatechange = () => {
+        console.log('ICE connection state:', peerConnection.iceConnectionState);
+        if (peerConnection.iceConnectionState === 'failed') {
+          addStatusMessage('ICE connection failed, retrying...');
+          initPeerConnection();
+        }
+      };
+
       peerConnection.onconnectionstatechange = () => {
         console.log('Connection state:', peerConnection.connectionState);
         if (peerConnection.connectionState === 'failed') {
-          addStatusMessage('Connection failed, retrying...');
+          addStatusMessage('WebRTC connection failed, retrying...');
           initPeerConnection();
         } else if (peerConnection.connectionState === 'connected') {
           addStatusMessage('WebRTC connection established');
@@ -208,8 +163,12 @@
       };
 
       if (isOfferer) {
+        console.log('Creating offer as offerer');
         peerConnection.createOffer()
-          .then(offer => peerConnection.setLocalDescription(offer))
+          .then(offer => {
+            console.log('Setting local description (offer):', offer);
+            return peerConnection.setLocalDescription(offer);
+          })
           .then(() => {
             console.log('Sending offer');
             socket.emit('signal', { room, type: 'offer', payload: peerConnection.localDescription });
@@ -226,24 +185,45 @@
       timerInterval = setInterval(updateTimer, 1000);
     });
 
+    socket.on('disconnect', () => {
+      console.log('Socket.IO disconnected');
+      addStatusMessage('Disconnected from server, attempting to reconnect...');
+    });
+
+    socket.on('reconnect', () => {
+      console.log('Socket.IO reconnected');
+      addStatusMessage('Reconnected to server');
+      socket.emit('join', { room });
+      if (isOfferer && localStream) {
+        initPeerConnection();
+      }
+    });
+
     socket.on('role', ({ role }) => {
       console.log('Assigned role:', role);
       isOfferer = role === 'offerer';
       if (isOfferer && localStream) {
+        addStatusMessage('Initiating connection as offerer');
         initPeerConnection();
       }
     });
 
     socket.on('user-joined', (data) => {
       console.log('User joined:', data);
-      addStatusMessage(data.msg || 'Another user joined');
+      addStatusMessage(data.msg || 'A new user has joined the room!');
       if (isOfferer && localStream) {
-        initPeerConnection(); // Restart connection for new user
+        addStatusMessage('New user joined, restarting connection');
+        initPeerConnection();
       }
     });
 
     socket.on('signal', async (data) => {
       console.log('Received signal:', data);
+      if (!localStream) {
+        console.warn('Local stream not ready, ignoring signal');
+        return;
+      }
+
       if (!peerConnection) {
         console.warn('PeerConnection not initialized, creating now');
         initPeerConnection();
@@ -251,14 +231,19 @@
 
       try {
         if (data.type === 'offer') {
+          console.log('Setting remote description (offer):', data.payload);
           await peerConnection.setRemoteDescription(new RTCSessionDescription(data.payload));
+          console.log('Creating answer');
           const answer = await peerConnection.createAnswer();
+          console.log('Setting local description (answer):', answer);
           await peerConnection.setLocalDescription(answer);
           console.log('Sending answer');
           socket.emit('signal', { room, type: 'answer', payload: peerConnection.localDescription });
         } else if (data.type === 'answer') {
+          console.log('Setting remote description (answer):', data.payload);
           await peerConnection.setRemoteDescription(new RTCSessionDescription(data.payload));
         } else if (data.type === 'candidate') {
+          console.log('Adding ICE candidate:', data.payload);
           await peerConnection.addIceCandidate(new RTCIceCandidate(data.payload));
         }
       } catch (err) {
@@ -273,7 +258,6 @@
         localStream = stream;
         localVideo.srcObject = stream;
         addStatusMessage('Local camera connected');
-        // Wait for server role assignment before initializing peer connection
       })
       .catch(err => {
         console.error('Error accessing media devices:', err);

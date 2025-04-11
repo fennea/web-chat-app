@@ -48,9 +48,6 @@
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('register') }}">Register</a>
             </li>
-          {% elif request.path.startswith('/classroom/') %}
-            <!-- Hide links in classroom pages -->
-          {% else %}
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
             </li>
