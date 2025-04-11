@@ -339,6 +339,26 @@ def tutor_signup():
                 (selected_plan,)
             )
             product = cursor.fetchone()
+
+            if selected_plan == 1 or selected_plan == 2:
+
+                # Update the subscriptions table
+                cursor.execute(
+                    "INSERT INTO subscriptions (user_id, plan, status) VALUES (%s, %s, %s)"
+                    (user_id, selected_plan, 'active',)
+                )
+                conn.commit()
+
+                if selected_plan == 1:
+                    cursor.execute("UPDATE users SET lifetime_free = true WHERE user_id = %s", (user_id,))
+                    conn.commit()
+                    flash("Registration successful! Please check your email to verify your account.")
+                    return redirect(url_for('login'))
+
+                if selected_plan == 2:
+                    flash("Registration successful! Please check your email to verify your account.")
+                    return redirect(url_for('login'))
+
             logging.info(f"Product fetched for selected_plan {selected_plan}: {product}")
             if not product:
                 flash("Error: Selected plan not found")
@@ -363,7 +383,7 @@ def tutor_signup():
                         'quantity': 1,
                     }],
                     mode='subscription',
-                    success_url='https://twotoro.com/verify_subscription?user_id={}&session_id={{CHECKOUT_SESSION_ID}}'.format(user_id),
+                    success_url=f'https://twotoro.com/verify_subscription?user_id={user_id}&session_id={{CHECKOUT_SESSION_ID}}&product_id={selected_plan}',
                     cancel_url='https://twotoro.com/register?cancel=true',
                     customer_email=email,
                     payment_method_collection='if_required'
@@ -392,6 +412,7 @@ def tutor_signup():
 def verify_subscription():
     user_id = request.args.get('user_id')
     session_id = request.args.get('session_id')
+    selected_plan = request.args.get('selected_plan')
 
     # Check database connection
     db_status, db_error = check_db_connection()
@@ -409,7 +430,7 @@ def verify_subscription():
         # Update the subscriptions table
         cursor.execute(
             "INSERT INTO subscriptions (user_id, stripe_subscription_id, plan, status) VALUES (%s, %s, %s, %s) ON CONFLICT (user_id) DO UPDATE SET stripe_subscription_id = %s, plan = %s, status = %s",
-            (user_id, subscription_id, 'early_adopter', 'active', subscription_id, 'early_adopter', 'active')
+            (user_id, subscription_id, selected_plan, 'active', subscription_id, selected_plan, 'active')
         )
         conn.commit()
         logging.info(f"Subscription updated for user_id {user_id}: subscription_id {subscription_id}")
@@ -435,9 +456,9 @@ def register():
             email = request.form.get('email')
             password = request.form.get('password').encode('utf-8')
             role = request.form.get('role')
-            lifetime_free = request.form.get('lifetime_free') == 'true'
-            plan = request.form.get('plan')  # Get selected plan
-            logging.info(f"Register attempt for email {email}, role: {role}, lifetime_free: {lifetime_free}, plan: {plan}")
+            # lifetime_free = request.form.get('lifetime_free') == 'true'
+            # plan = request.form.get('plan')  # Get selected plan
+            logging.info(f"Register attempt for email {email}, role: {role}, lifetime_free: Flase")
 
             # Validate role
             if role not in ['tutor', 'student']:
@@ -449,19 +470,12 @@ def register():
             verification_token = str(uuid.uuid4())
 
             cursor.execute(
-                "INSERT INTO users (first_name, last_name, email, password, role, verification_token, is_verified, early_adopter, lifetime_free) "
+                "INSERT INTO users (first_name, last_name, email, password, role, verification_token, is_verified, lifetime_free) "
                 "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING user_id",
-                (first_name, last_name, email, hashed_pw.decode('utf-8'), role, verification_token, False, plan == 'early_adopter', lifetime_free)
+                (first_name, last_name, email, hashed_pw.decode('utf-8'), role, verification_token, False, False)
             )
             user_id = cursor.fetchone()[0]
             logging.info(f"User created with user_id {user_id}")
-
-            cursor.execute(
-                "INSERT INTO subscriptions (user_id, stripe_subscription_id, plan, status) VALUES (%s, %s, %s, %s)",
-                (user_id, '', FREE_PLAN if not lifetime_free else LIFETIME_FREE_PLAN, 'active')
-            )
-            conn.commit()
-            logging.info(f"Subscription created for user_id {user_id}")
 
             if role == 'tutor':
                 send_verification_email(email, verification_token)
@@ -606,14 +620,14 @@ def classroom(room_name):
         user_id, role, lifetime_free = user
 
         # Check session limits (exempt lifetime free and paid users)
-        if not lifetime_free:
+        if not user[2] and user[1] != 'student':
             now = datetime.utcnow()
             month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
             month_end = (month_start + timedelta(days=32)).replace(day=1) - timedelta(seconds=1)
             session_count = get_user_session_count(user_id, month_start, month_end)
             plan, status = get_user_subscription(user_id)
 
-            if plan == FREE_PLAN and session_count >= 4:
+            if plan == 2 and session_count >= 4:
                 flash("You’ve reached your free session limit (4 sessions/month). Please upgrade to continue.")
                 logging.info(f"User {user_id} reached free session limit")
                 return redirect(url_for('upgrade'))
