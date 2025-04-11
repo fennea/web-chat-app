@@ -311,6 +311,9 @@ def tutor_signup():
         logging.error(f"Database connection failed for tutor_signup: {db_error}")
         flash(db_error)
         return redirect(url_for('register'))
+    
+    conn = psycopg2.connect(DB_URL)
+    cursor = conn.cursor()
 
     # First, try to get the email from query parameters or from the form submission
     email = request.args.get('email') or request.form.get('email')
@@ -348,7 +351,7 @@ def tutor_signup():
 
                 # Update the subscriptions table
                 cursor.execute(
-                    "INSERT INTO subscriptions (user_id, plan, status) VALUES (%s, %s, %s)"
+                    "INSERT INTO subscriptions (user_id, plan, status) VALUES (%s, %s, %s)",
                     (user_id, selected_plan, 'active',)
                 )
                 conn.commit()
@@ -455,6 +458,9 @@ def register():
 
     try:
         if request.method == 'POST':
+            conn = psycopg2.connect(DB_URL)
+            cursor = conn.cursor()
+
             first_name = request.form.get('first_name')
             last_name = request.form.get('last_name')
             email = request.form.get('email')
@@ -462,7 +468,7 @@ def register():
             role = request.form.get('role')
             # lifetime_free = request.form.get('lifetime_free') == 'true'
             # plan = request.form.get('plan')  # Get selected plan
-            logging.info(f"Register attempt for email {email}, role: {role}, lifetime_free: Flase")
+            logging.info(f"Register attempt for email {email}, role: {role}, lifetime_free: False")
 
             # Validate role
             if role not in ['tutor', 'student']:
@@ -476,10 +482,11 @@ def register():
             cursor.execute(
                 "INSERT INTO users (first_name, last_name, email, password, role, verification_token, is_verified, lifetime_free) "
                 "VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING user_id",
-                (first_name, last_name, email, hashed_pw.decode('utf-8'), role, verification_token, False, False)
+                (first_name, last_name, email, hashed_pw.decode('utf-8'), role, verification_token, False, False,)
             )
             user_id = cursor.fetchone()[0]
-            logging.info(f"User created with user_id {user_id}")
+            conn.commit()
+            logging.info(f"User created with user_id:: {user_id}")
 
             if role == 'tutor':
                 send_verification_email(email, verification_token)

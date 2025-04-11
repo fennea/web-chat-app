@@ -1165,3 +1165,144 @@ psycopg2.OperationalError: could not translate host name "dpg-cvkpb8pr0fns7385dp
 2025-04-10 22:15:39,020:INFO:Database connection established successfully
 2025-04-10 22:15:39,064:WARNING: * Debugger is active!
 2025-04-10 22:15:39,072:INFO: * Debugger PIN: 535-720-947
+2025-04-11 14:14:20,528:INFO:Stripe version: 10.5.0
+2025-04-11 14:14:20,531:INFO:Requests version: 2.32.3
+2025-04-11 14:14:20,531:INFO:Urllib3 version: 2.3.0
+2025-04-11 14:14:21,510:INFO:Database connection established successfully
+2025-04-11 14:14:21,541:INFO: * Restarting with stat
+2025-04-11 14:14:21,870:INFO:Stripe version: 10.5.0
+2025-04-11 14:14:21,870:INFO:Requests version: 2.32.3
+2025-04-11 14:14:21,870:INFO:Urllib3 version: 2.3.0
+2025-04-11 14:14:22,430:INFO:Database connection established successfully
+2025-04-11 14:14:22,455:WARNING: * Debugger is active!
+2025-04-11 14:14:22,471:INFO: * Debugger PIN: 535-720-947
+2025-04-11 14:14:25,042:INFO:Incoming request: GET http://127.0.0.1:8080/
+2025-04-11 14:14:25,072:INFO:Incoming request: GET http://127.0.0.1:8080/static/background.mp4
+2025-04-11 14:14:25,085:INFO:Incoming request: GET http://127.0.0.1:8080/static/background.mp4
+2025-04-11 14:14:26,723:INFO:Incoming request: GET http://127.0.0.1:8080/register
+2025-04-11 14:14:45,703:INFO:Incoming request: POST http://127.0.0.1:8080/register
+2025-04-11 14:14:45,766:INFO:Register attempt for email anthony.fenner@outlook.com, role: tutor, lifetime_free: Flase
+2025-04-11 14:14:46,042:INFO:User created with user_id 16
+2025-04-11 14:14:47,379:INFO:Verification email sent to anthony.fenner@outlook.com
+2025-04-11 14:14:47,395:INFO:Incoming request: GET http://127.0.0.1:8080/tutor_signup?email=anthony.fenner@outlook.com
+2025-04-11 14:14:47,529:INFO:User fetched for tutor_signup with email anthony.fenner@outlook.com: (16, 'Anthony', 'Fenner', 'anthony.fenner@outlook.com', 'tutor')
+2025-04-11 14:14:47,601:INFO:Products fetched for tutor_signup: [(1, 'Family & Friends Free Pass', Decimal('0.00'), 'Free access for loved ones to connect and learn together anytime, anywhere, forever.', 'N/A', True), (3, 'Early Adopter Elite', Decimal('4.99'), 'Lifetime introductory rate, unlimited sessions, first to upgrade, endless learning.', 'price_1RALZjIBUKDQLTeJBKx1sqML', True), (4, 'Classroom Pro Plan', Decimal('6.99'), 'Unlimited sessions and time, perfect for classroom needs, learning without limits.', 'price_1RALZjIBUKDQLTeJBKx1sqML', True), (5, 'AI Mentor Master', Decimal('11.99'), 'AI tutor companion, text chat, sees student AI messages, tailored support for learning.', 'price_1RALZjIBUKDQLTeJBKx1sqML', True)]
+2025-04-11 14:15:03,246:INFO:Incoming request: POST http://127.0.0.1:8080/tutor_signup?user_id=16&email=anthony.fenner@outlook.com
+2025-04-11 14:15:03,390:INFO:User fetched for tutor_signup with email anthony.fenner@outlook.com: (16, 'Anthony', 'Fenner', 'anthony.fenner@outlook.com', 'tutor')
+2025-04-11 14:15:03,391:INFO:Selected plan for user_id 16: 1
+2025-04-11 14:15:03,474:INFO:Product fetched for selected_plan 1: (1, 'Family & Friends Free Pass', Decimal('0.00'), 'Free access for loved ones to connect and learn together anytime, anywhere, forever.', 'N/A', True)
+2025-04-11 14:15:03,514:INFO:message='Request to Stripe api' method=post url=https://api.stripe.com/v1/checkout/sessions
+2025-04-11 14:15:03,829:INFO:message='Stripe API response' path=https://api.stripe.com/v1/checkout/sessions response_code=400
+2025-04-11 14:15:03,830:INFO:error_code=resource_missing error_message="No such price: 'N/A'" error_param=line_items[0][price] error_type=invalid_request_error message='Stripe API error received'
+2025-04-11 14:15:03,831:ERROR:Error creating checkout session for user_id 16: Request req_CZrFC2RjpW8BFY: No such price: 'N/A'
+Traceback (most recent call last):
+  File "/Users/anthonyfenner/Documents/Video Classroom/app.py", line 383, in tutor_signup
+    checkout_session = stripe.checkout.Session.create(
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/checkout/_session.py", line 4061, in create
+    cls._static_request(
+  File "/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_api_resource.py", line 177, in _static_request
+    return _APIRequestor._global_instance().request(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_api_requestor.py", line 196, in request
+    resp = requestor._interpret_response(rbody, rcode, rheaders)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_api_requestor.py", line 732, in _interpret_response
+    self.handle_error_response(rbody, rcode, resp.data, rheaders)
+  File "/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/stripe/_api_requestor.py", line 321, in handle_error_response
+    raise err
+stripe._error.InvalidRequestError: Request req_CZrFC2RjpW8BFY: No such price: 'N/A'
+2025-04-11 14:15:03,852:INFO:Incoming request: GET http://127.0.0.1:8080/register
+2025-04-11 14:15:20,590:INFO:Incoming request: GET http://127.0.0.1:8080/tutors
+2025-04-11 14:15:20,719:INFO:Products fetched for tutors page: [('Family & Friends Free Pass', Decimal('0.00'), 'Free access for loved ones to connect and learn together anytime, anywhere, forever.', 'N/A', True), ('Early Adopter Elite', Decimal('4.99'), 'Lifetime introductory rate, unlimited sessions, first to upgrade, endless learning.', 'price_1RALZjIBUKDQLTeJBKx1sqML', True), ('Classroom Pro Plan', Decimal('6.99'), 'Unlimited sessions and time, perfect for classroom needs, learning without limits.', 'price_1RALZjIBUKDQLTeJBKx1sqML', True), ('AI Mentor Master', Decimal('11.99'), 'AI tutor companion, text chat, sees student AI messages, tailored support for learning.', 'price_1RALZjIBUKDQLTeJBKx1sqML', True)]
+2025-04-11 14:15:22,624:INFO:Incoming request: GET http://127.0.0.1:8080/login
+2025-04-11 14:22:18,586:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-11 14:22:18,726:INFO: * Restarting with stat
+2025-04-11 14:22:19,128:INFO:Stripe version: 10.5.0
+2025-04-11 14:22:19,128:INFO:Requests version: 2.32.3
+2025-04-11 14:22:19,128:INFO:Urllib3 version: 2.3.0
+2025-04-11 14:22:19,904:INFO:Database connection established successfully
+2025-04-11 14:22:19,923:WARNING: * Debugger is active!
+2025-04-11 14:22:19,929:INFO: * Debugger PIN: 535-720-947
+2025-04-11 14:22:46,439:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-11 14:22:46,634:INFO: * Restarting with stat
+2025-04-11 14:22:46,966:INFO:Stripe version: 10.5.0
+2025-04-11 14:22:46,966:INFO:Requests version: 2.32.3
+2025-04-11 14:22:46,966:INFO:Urllib3 version: 2.3.0
+2025-04-11 14:22:47,509:INFO:Database connection established successfully
+2025-04-11 14:22:47,523:WARNING: * Debugger is active!
+2025-04-11 14:22:47,531:INFO: * Debugger PIN: 535-720-947
+2025-04-11 14:22:49,122:INFO:Incoming request: GET http://127.0.0.1:8080/login
+2025-04-11 14:22:51,369:INFO:Incoming request: GET http://127.0.0.1:8080/register
+2025-04-11 14:23:09,609:INFO:Incoming request: POST http://127.0.0.1:8080/register
+2025-04-11 14:23:10,092:INFO:Register attempt for email anthony.fenner@outlook.com, role: tutor, lifetime_free: Flase
+2025-04-11 14:23:10,443:INFO:User created with user_id 17
+2025-04-11 14:23:11,451:INFO:Verification email sent to anthony.fenner@outlook.com
+2025-04-11 14:23:11,466:INFO:Incoming request: GET http://127.0.0.1:8080/tutor_signup?email=anthony.fenner@outlook.com
+2025-04-11 14:23:11,587:INFO:User fetched for tutor_signup with email anthony.fenner@outlook.com: None
+2025-04-11 14:23:11,602:INFO:Incoming request: GET http://127.0.0.1:8080/register
+2025-04-11 14:23:56,876:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-11 14:23:57,005:INFO: * Restarting with stat
+2025-04-11 14:23:57,419:INFO:Stripe version: 10.5.0
+2025-04-11 14:23:57,420:INFO:Requests version: 2.32.3
+2025-04-11 14:23:57,420:INFO:Urllib3 version: 2.3.0
+2025-04-11 14:23:58,120:INFO:Database connection established successfully
+2025-04-11 14:23:58,140:WARNING: * Debugger is active!
+2025-04-11 14:23:58,147:INFO: * Debugger PIN: 535-720-947
+2025-04-11 14:24:01,407:INFO:Incoming request: GET http://127.0.0.1:8080/register
+2025-04-11 14:24:17,746:INFO:Incoming request: POST http://127.0.0.1:8080/register
+2025-04-11 14:24:18,490:INFO:Register attempt for email anthony.fenner@outlook.com, role: tutor, lifetime_free: Flase
+2025-04-11 14:24:18,873:INFO:User created with user_id:: 18
+2025-04-11 14:24:20,272:INFO:Verification email sent to anthony.fenner@outlook.com
+2025-04-11 14:24:20,281:INFO:Incoming request: GET http://127.0.0.1:8080/tutor_signup?email=anthony.fenner@outlook.com
+2025-04-11 14:24:20,426:INFO:User fetched for tutor_signup with email anthony.fenner@outlook.com: None
+2025-04-11 14:24:20,433:INFO:Incoming request: GET http://127.0.0.1:8080/register
+2025-04-11 14:24:42,977:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-11 14:24:43,174:INFO: * Restarting with stat
+2025-04-11 14:24:43,604:INFO:Stripe version: 10.5.0
+2025-04-11 14:24:43,604:INFO:Requests version: 2.32.3
+2025-04-11 14:24:43,604:INFO:Urllib3 version: 2.3.0
+2025-04-11 14:24:44,282:INFO:Database connection established successfully
+2025-04-11 14:24:44,303:WARNING: * Debugger is active!
+2025-04-11 14:24:44,310:INFO: * Debugger PIN: 535-720-947
+2025-04-11 14:25:29,117:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-11 14:25:29,343:INFO: * Restarting with stat
+2025-04-11 14:25:29,683:INFO:Stripe version: 10.5.0
+2025-04-11 14:25:29,683:INFO:Requests version: 2.32.3
+2025-04-11 14:25:29,683:INFO:Urllib3 version: 2.3.0
+2025-04-11 14:25:30,460:INFO:Database connection established successfully
+2025-04-11 14:25:30,476:WARNING: * Debugger is active!
+2025-04-11 14:25:30,484:INFO: * Debugger PIN: 535-720-947
+2025-04-11 14:25:33,546:INFO:Incoming request: GET http://127.0.0.1:8080/register
+2025-04-11 14:25:37,796:INFO:Incoming request: GET http://127.0.0.1:8080/register
+2025-04-11 14:25:55,360:INFO:Incoming request: POST http://127.0.0.1:8080/register
+2025-04-11 14:25:55,860:INFO:Register attempt for email anthony.fenner@outlook.com, role: tutor, lifetime_free: False
+2025-04-11 14:25:56,192:INFO:User created with user_id:: 19
+2025-04-11 14:25:57,428:INFO:Verification email sent to anthony.fenner@outlook.com
+2025-04-11 14:25:57,442:INFO:Incoming request: GET http://127.0.0.1:8080/tutor_signup?email=anthony.fenner@outlook.com
+2025-04-11 14:25:57,614:INFO:User fetched for tutor_signup with email anthony.fenner@outlook.com: None
+2025-04-11 14:25:57,630:INFO:Incoming request: GET http://127.0.0.1:8080/register
+2025-04-11 14:33:50,367:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-11 14:33:50,490:INFO: * Restarting with stat
+2025-04-11 14:33:50,938:INFO:Stripe version: 10.5.0
+2025-04-11 14:33:50,938:INFO:Requests version: 2.32.3
+2025-04-11 14:33:50,938:INFO:Urllib3 version: 2.3.0
+2025-04-11 14:33:51,859:INFO:Database connection established successfully
+2025-04-11 14:33:51,887:WARNING: * Debugger is active!
+2025-04-11 14:33:51,896:INFO: * Debugger PIN: 535-720-947
+2025-04-11 14:34:57,120:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-11 14:34:57,284:INFO: * Restarting with stat
+2025-04-11 14:34:57,595:INFO:Stripe version: 10.5.0
+2025-04-11 14:34:57,595:INFO:Requests version: 2.32.3
+2025-04-11 14:34:57,595:INFO:Urllib3 version: 2.3.0
+2025-04-11 14:34:58,326:INFO:Database connection established successfully
+2025-04-11 14:34:58,339:WARNING: * Debugger is active!
+2025-04-11 14:34:58,345:INFO: * Debugger PIN: 535-720-947
+2025-04-11 14:35:34,991:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-11 14:35:35,251:INFO: * Restarting with stat
+2025-04-11 14:35:35,718:INFO:Stripe version: 10.5.0
+2025-04-11 14:35:35,718:INFO:Requests version: 2.32.3
+2025-04-11 14:35:35,718:INFO:Urllib3 version: 2.3.0
+2025-04-11 14:35:36,386:INFO:Database connection established successfully
+2025-04-11 14:35:36,409:WARNING: * Debugger is active!
+2025-04-11 14:35:36,420:INFO: * Debugger PIN: 535-720-947
