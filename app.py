@@ -42,35 +42,70 @@ DB_URL = os.environ.get('DATABASE_URL', DATABASE_URL)
 conn = None
 cursor = None
 db_connected = False
+db_pool = None
+db_connected = False
 
 try:
-    conn = psycopg2.connect(DB_URL)
-    cursor = conn.cursor()
-    cursor.execute("SELECT 1")  # Test the connection
+    # Parse the DATABASE_URL to extract components
+    from urllib.parse import urlparse
+    db_url = urlparse(DB_URL)
+    conn_params = {
+        "host": db_url.hostname,
+        "port": db_url.port,
+        "dbname": db_url.path[1:],
+        "user": db_url.username,
+        "password": db_url.password,
+        "connect_timeout": 10  # Set a 10-second connection timeout
+    }
+    db_pool = psycopg2.pool.SimpleConnectionPool(
+        1, 10,  # Minimum 1, maximum 10 connections (adjusted for Render's limits)
+        **conn_params
+    )
     db_connected = True
-    logging.info("Database connection established successfully")
+    logging.info("Database connection pool established successfully")
 except Exception as e:
-    logging.error(f"Failed to establish database connection: {str(e)}", exc_info=True)
+    logging.error(f"Failed to establish database connection pool: {str(e)}", exc_info=True)
 
-def check_db_connection():
-    global conn, cursor, db_connected
-    if not db_connected:
-        return False, "The application is currently unable to connect to the database. Please try again later."
-    try:
-        cursor.execute("SELECT 1")
-        return True, None
-    except Exception as e:
-        logging.error(f"Database connection check failed: {str(e)}", exc_info=True)
-        # Attempt to reconnect
+def check_db_connection(max_retries=5, retry_delay=2):
+    global db_pool, db_connected
+    for attempt in range(max_retries):
+        if not db_connected:
+            try:
+                from urllib.parse import urlparse
+                db_url = urlparse(DB_URL)
+                conn_params = {
+                    "host": db_url.hostname,
+                    "port": db_url.port,
+                    "dbname": db_url.path[1:],
+                    "user": db_url.username,
+                    "password": db_url.password,
+                    "connect_timeout": 10  # Set a 10-second connection timeout
+                }
+                db_pool = psycopg2.pool.SimpleConnectionPool(
+                    1, 10, **conn_params
+                )
+                db_connected = True
+                logging.info(f"Database connection pool established successfully on retry {attempt + 1}/{max_retries}")
+            except Exception as e:
+                logging.error(f"Failed to establish database connection pool on retry {attempt + 1}/{max_retries}: {str(e)}", exc_info=True)
+                if attempt < max_retries - 1:
+                    time.sleep(retry_delay)
+                    continue
+                return False, "The application is currently unable to connect to the database. Please try again later."
+        
         try:
-            conn = psycopg2.connect(DB_URL)
+            conn = db_pool.getconn()
             cursor = conn.cursor()
             cursor.execute("SELECT 1")
-            db_connected = True
-            logging.info("Database connection re-established successfully")
+            cursor.close()
+            db_pool.putconn(conn)
+            logging.info(f"Database connection check succeeded on attempt {attempt + 1}/{max_retries}")
             return True, None
-        except Exception as reconnect_error:
-            logging.error(f"Failed to reconnect to database: {str(reconnect_error)}", exc_info=True)
+        except Exception as e:
+            logging.error(f"Database connection check failed on attempt {attempt + 1}/{max_retries}: {str(e)}", exc_info=True)
+            if attempt < max_retries - 1:
+                time.sleep(retry_delay)
+                continue
             db_connected = False
             return False, "The application is currently unable to connect to the database. Please try again later."
 
