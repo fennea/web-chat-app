@@ -333,10 +333,6 @@ def register():
     conn = psycopg2.connect(DB_URL)
     cursor = conn.cursor()
 
-    # Fetch products - Not Needed
-    # cursor.execute("SELECT product_id, name, price, description, stripe_price_id, active FROM products WHERE active = True")
-    # products = cursor.fetchall()
-
     if request.method == 'POST':
         first_name = request.form.get('first_name')
         last_name = request.form.get('last_name')
@@ -357,83 +353,47 @@ def register():
                 (first_name, last_name, email, hashed_pw.decode('utf-8'), role, verification_token, False, plan == 'early_adopter', lifetime_free)
             )
             user_id = cursor.fetchone()[0]
-            if plan == 'early_adopter':
-                return redirect(url_for('register_complete', user_id=user_id, email=email))
+
+            cursor.execute(
+                "INSERT INTO subscriptions (user_id, stripe_subscription_id, plan, status) VALUES (%s, %s, %s, %s)",
+                (user_id, '', FREE_PLAN if not lifetime_free else LIFETIME_FREE_PLAN, 'active')
+            )
+            conn.commit()
+            if role == 'tutor':
+                send_verification_email(email, verification_token)
+                return redirect(url_for('tutor_signup', email=email))
             else:
-                cursor.execute(
-                    "INSERT INTO subscriptions (user_id, stripe_subscription_id, plan, status) VALUES (%s, %s, %s, %s)",
-                    (user_id, '', FREE_PLAN if not lifetime_free else LIFETIME_FREE_PLAN, 'active')
-                )
-                conn.commit()
-                if role == 'tutor':
-                    send_verification_email(email, verification_token)
-                    return redirect(url_for('tutor_signup', email=email))
-                else:
-                    send_verification_email(email, verification_token)
-                    flash("Registration successful! Please check your email to verify your account.")
-                    return redirect(url_for('login'))
+                send_verification_email(email, verification_token)
+                flash("Registration successful! Please check your email to verify your account.")
+                return redirect(url_for('login'))
         except psycopg2.IntegrityError:
             conn.rollback()
             flash("Email already exists.")
     return render_template('register.html')
 
-# @app.route('/register_complete/<user_id>/<email>', methods=['GET', 'POST'])
-# def register_complete(user_id, email):
-
-#     selected_plan = request.args.get('selected_plan')
-
-
-#     # Retrieve the product from the database using a parameterized query.
-#     cursor.execute(
-#         "SELECT product_id, name, price, description, stripe_price_id, active FROM products WHERE product_id = %s",
-#         (selected_plan,)
-#     )
-#     product = cursor.fetchone()
-#     print("Product:", product)
-#     if not product:
-#         return "Error: Selected plan not found", 404
-
-#     # Assign the stripe_price_id based on the column index (4)
-#     stripe_price_id = product[4]
-
-#     if request.method == 'POST':
-#         try:
-#             product_name = product[1]
-#             descriptor = f"TwoToro {product_name}"
-#             max_length = 22
-#             if len(descriptor) > max_length:
-#                 descriptor = descriptor[:max_length].rstrip()  # Optionally truncate for length
-            
-#             # Create a checkout session in subscription mode without payment_intent_data.
-#             checkout_session = stripe.checkout.Session.create(
-#                 payment_method_types=['card'],
-#                 line_items=[{
-#                     'price': stripe_price_id,  # dynamic from your product record
-#                     'quantity': 1,
-#                 }],
-#                 mode='subscription',
-#                 success_url='https://twotoro.com/verify_subscription?user_id={}&session_id={{CHECKOUT_SESSION_ID}}'.format(user_id),
-#                 cancel_url='https://twotoro.com/register?cancel=true',
-#                 customer_email=email,
-#                 payment_method_collection='if_required'
-#                 # Removed payment_intent_data as it's not allowed in subscription mode.
-#             )
-#             return redirect(checkout_session.url, code=303)
-#         except Exception as e:
-#             flash(f"Error creating checkout session: {str(e)}")
-#             return redirect(url_for('register'))
-#     return render_template('register_complete.html', user_id=user_id, email=email, stripe_publishable_key=STRIPE_PUBLISHABLE_KEY, product=product)
-
 @app.route('/verify/<token>')
 def verify(token):
-    cursor.execute("SELECT email FROM users WHERE verification_token = %s AND is_verified = FALSE", (token,))
-    user = cursor.fetchone()
-    if user:
-        cursor.execute("UPDATE users SET is_verified = TRUE, verification_token = NULL WHERE verification_token = %s", (token,))
-        conn.commit()
-        flash("Email verified! You can now log in.")
-    else:
-        flash("Invalid or expired verification link.")
+    # Check database connection
+    print("Here")
+    conn = psycopg2.connect(DB_URL)
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("SELECT email FROM users WHERE verification_token = '%s' AND is_verified = FALSE", (token,))
+        print(cursor)
+        user = cursor.fetchone()
+        print(user)
+        if user:
+            cursor.execute("UPDATE users SET is_verified = TRUE, verification_token = NULL WHERE verification_token = '%s'", (token,))
+            conn.commit()
+            flash("Email verified! You can now log in.")
+            logging.info(f"Email verified for token: {token}")
+        else:
+            flash("Invalid or expired verification link.")
+            logging.warning(f"Invalid verification token: {token}")
+    except Exception as e:
+        logging.error(f"Error verifying token {token}: {str(e)}", exc_info=True)
+        flash("An error occurred during email verification. Please try again.")
     return redirect(url_for('login'))
 
 @app.route('/logout')
@@ -650,8 +610,8 @@ def on_session_update(data):
     conn.commit()
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=8080, debug=True)
-    # socketio.run(app, host='127.0.0.1', port=8080, debug=True)
+    # socketio.run(app, host='0.0.0.0', port=8080, debug=True)
+    socketio.run(app, host='127.0.0.1', port=8080, debug=True)
 
 def shutdown():
     cursor.close()
