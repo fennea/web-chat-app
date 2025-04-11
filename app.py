@@ -639,6 +639,7 @@ def classroom(room_name):
         session['current_session_id'] = cursor.fetchone()[0]
         conn.commit()
 
+        plan, status = get_user_subscription(user_id)
         return render_template('classroom.html', roomName=room_name, userPlan=plan)
     except Exception as e:
         logging.error(f"Error in classroom for email {session['email']}: {str(e)}", exc_info=True)

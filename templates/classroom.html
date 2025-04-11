@@ -140,7 +140,7 @@
     let timerInterval;
 
     // Fetch user's plan from server (passed via template)
-    const userPlan = "{{ get_user_subscription(session['user_id'])[0] if 'user_id' in session else 'free' }}";
+    const userPlan =  "{{ userPlan }}";
     const maxSessionDuration = userPlan === 'free' ? 30 * 60 : null; // 30 minutes in seconds for free plan only
 
     function updateTimer() {
