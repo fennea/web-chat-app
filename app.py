@@ -12,6 +12,7 @@ import stripe
 import requests
 import logging
 import urllib3
+import time
 
 load_dotenv()
 
@@ -44,11 +45,14 @@ cursor = None
 db_connected = False
 
 try:
-    conn = psycopg2.connect(DB_URL)
-    cursor = conn.cursor()
-    cursor.execute("SELECT 1")  # Test the connection
-    db_connected = True
-    logging.info("Database connection established successfully")
+    start_time = time.time()
+    while time.time() - start_time < 10:
+        conn = psycopg2.connect(DB_URL)
+        cursor = conn.cursor()
+        cursor.execute("SELECT 1")  # Test the connection
+        db_connected = True
+        time.sleep(1)
+        logging.info("Database connection established successfully")
 except Exception as e:
     logging.error(f"Failed to establish database connection: {str(e)}", exc_info=True)
 
