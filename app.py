@@ -45,14 +45,11 @@ cursor = None
 db_connected = False
 
 try:
-    start_time = time.time()
-    while time.time() - start_time < 10:
-        conn = psycopg2.connect(DB_URL)
-        cursor = conn.cursor()
-        cursor.execute("SELECT 1")  # Test the connection
-        db_connected = True
-        time.sleep(1)
-        logging.info("Database connection established successfully")
+    conn = psycopg2.connect(DB_URL)
+    cursor = conn.cursor()
+    cursor.execute("SELECT 1")  # Test the connection
+    db_connected = True
+    logging.info("Database connection established successfully")
 except Exception as e:
     logging.error(f"Failed to establish database connection: {str(e)}", exc_info=True)
 
@@ -60,23 +57,26 @@ def check_db_connection():
     global conn, cursor, db_connected
     if not db_connected:
         return False, "The application is currently unable to connect to the database. Please try again later."
-    try:
-        cursor.execute("SELECT 1")
-        return True, None
-    except Exception as e:
-        logging.error(f"Database connection check failed: {str(e)}", exc_info=True)
-        # Attempt to reconnect
+    start_time = time.time()
+    while time.time() - start_time < 10:    
         try:
-            conn = psycopg2.connect(DB_URL)
-            cursor = conn.cursor()
             cursor.execute("SELECT 1")
-            db_connected = True
-            logging.info("Database connection re-established successfully")
             return True, None
-        except Exception as reconnect_error:
-            logging.error(f"Failed to reconnect to database: {str(reconnect_error)}", exc_info=True)
-            db_connected = False
-            return False, "The application is currently unable to connect to the database. Please try again later."
+        except Exception as e:
+            logging.error(f"Database connection check failed: {str(e)}", exc_info=True)
+            # Attempt to reconnect
+            try:
+                conn = psycopg2.connect(DB_URL)
+                cursor = conn.cursor()
+                cursor.execute("SELECT 1")
+                db_connected = True
+                logging.info("Database connection re-established successfully")
+                return True, None
+            except Exception as reconnect_error:
+                logging.error(f"Failed to reconnect to database: {str(reconnect_error)}", exc_info=True)
+                db_connected = False
+                return False, "The application is currently unable to connect to the database. Please try again later."
+        time.sleep(1)
 
 # Add a before_request hook to log all incoming requests
 @app.before_request
