@@ -471,7 +471,7 @@ def register():
 
             cursor.execute(
                 "INSERT INTO users (first_name, last_name, email, password, role, verification_token, is_verified, lifetime_free) "
-                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING user_id",
+                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING user_id",
                 (first_name, last_name, email, hashed_pw.decode('utf-8'), role, verification_token, False, False)
             )
             user_id = cursor.fetchone()[0]
