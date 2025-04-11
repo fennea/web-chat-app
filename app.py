@@ -645,9 +645,10 @@ def classroom(room_name):
                 return redirect(url_for('upgrade'))
 
         # Verify room access
-        query = (
-            "SELECT 1 FROM invitations WHERE room_name = %s AND %s = %s"
-        ).format('tutor_id' if role == 'tutor' else 'student_id')
+        if role == 'tutor':
+            query = "SELECT 1 FROM invitations WHERE room_name = %s AND tutor_id = %s"
+        else:
+            query = "SELECT 1 FROM invitations WHERE room_name = %s AND student_id = %s"
         cursor.execute(query, (room_name, user_id))
         if not cursor.fetchone():
             flash("You don’t have access to this room.")
