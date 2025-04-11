@@ -390,7 +390,7 @@ def tutor_signup():
                         'quantity': 1,
                     }],
                     mode='subscription',
-                    success_url=f'https://twotoro.com/verify_subscription?user_id={user_id}&session_id={{CHECKOUT_SESSION_ID}}&product_id={selected_plan}',
+                    success_url=f'https://twotoro.com/verify_subscription?user_id={user_id}&session_id={{CHECKOUT_SESSION_ID}}&selected_plan={selected_plan}',
                     cancel_url='https://twotoro.com/register?cancel=true',
                     customer_email=email,
                     payment_method_collection='if_required'
