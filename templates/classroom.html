@@ -127,21 +127,28 @@
 
     let localStream;
     let peerConnection;
-    let isOfferer = true;
+    let isOfferer = false; // Default to false, set by server
     let isFlipped = false;
     const room = "{{ roomName }}";
     const config = {
       iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' }
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        // Add TURN server for production (replace with your credentials)
+        // {
+        //   urls: 'turn:your.turn.server:3478',
+        //   username: 'your_username',
+        //   credential: 'your_password'
+        // }
       ]
     };
 
     let startTime = Date.now();
     let timerInterval;
 
-    // Fetch user's plan from server (passed via template)
-    const userPlan =  "{{ userPlan }}";
-    const maxSessionDuration = userPlan === 'free' ? 30 * 60 : null; // 30 minutes in seconds for free plan only
+    // User plan for session limits
+    const userPlan = "{{ userPlan }}";
+    const maxSessionDuration = userPlan === 'free' ? 30 * 60 : null; // 30 minutes for free plan
 
     function updateTimer() {
       const elapsed = Math.floor((Date.now() - startTime) / 1000);
@@ -152,87 +159,125 @@
 
       if (maxSessionDuration && elapsed >= maxSessionDuration) {
         clearInterval(timerInterval);
-        socket.emit('session_update', { duration: 30 }); // Cap at 30 minutes for free plan
-        alert("Your 30-minute session has ended.");
-        window.location.href = "/dashboard"; // Redirect to dashboard
+        socket.emit('session_update', { duration: 30 });
+        alert('Your 30-minute session has ended.');
+        window.location.href = '/dashboard';
       }
     }
 
-    const socket = io();
-
-    socket.on('connect', () => {
-      console.log('SocketIO connected');
-      socket.emit('join', { room: room });
-      timerInterval = setInterval(updateTimer, 1000);
-    });
-
-    socket.on('user-joined', (data) => {
-      if (data && data.msg) {
-        const p = document.createElement('p');
-        p.textContent = data.msg;
-        statusMessages.appendChild(p);
-      }
-    });
-
-    socket.on('signal', (data) => {
-      if (!peerConnection) return;
-      
-      console.log('Received signal:', data.type);
-      if (data.type === 'offer') {
-        isOfferer = false;
-        peerConnection.setRemoteDescription(new RTCSessionDescription(data.payload))
-          .then(() => peerConnection.createAnswer())
-          .then(answer => peerConnection.setLocalDescription(answer))
-          .then(() => {
-            socket.emit('signal', { room: room, type: 'answer', payload: peerConnection.localDescription });
-          })
-          .catch(err => console.error('Error handling offer:', err));
-      } else if (data.type === 'answer') {
-        peerConnection.setRemoteDescription(new RTCSessionDescription(data.payload))
-          .catch(err => console.error('Error setting answer:', err));
-      } else if (data.type === 'candidate') {
-        peerConnection.addIceCandidate(new RTCIceCandidate(data.payload))
-          .catch(err => console.error('Error adding ICE candidate:', err));
-      }
-    });
+    function addStatusMessage(msg) {
+      const p = document.createElement('p');
+      p.textContent = msg;
+      statusMessages.appendChild(p);
+      statusMessages.scrollTop = statusMessages.scrollHeight;
+    }
 
     function initPeerConnection() {
+      if (peerConnection) {
+        peerConnection.close();
+      }
       peerConnection = new RTCPeerConnection(config);
-      
+
       localStream.getTracks().forEach(track => {
         peerConnection.addTrack(track, localStream);
       });
 
       peerConnection.onicecandidate = (event) => {
         if (event.candidate) {
-          socket.emit('signal', { room: room, type: 'candidate', payload: event.candidate });
+          console.log('Sending ICE candidate');
+          socket.emit('signal', { room, type: 'candidate', payload: event.candidate });
         }
       };
 
       peerConnection.ontrack = (event) => {
-        console.log('Remote track received');
-        remoteVideo.srcObject = event.streams[0];
+        console.log('ontrack event:', event.streams);
+        if (event.streams && event.streams[0]) {
+          remoteVideo.srcObject = event.streams[0];
+          addStatusMessage('Connected to remote video');
+        }
+      };
+
+      peerConnection.onconnectionstatechange = () => {
+        console.log('Connection state:', peerConnection.connectionState);
+        if (peerConnection.connectionState === 'failed') {
+          addStatusMessage('Connection failed, retrying...');
+          initPeerConnection();
+        } else if (peerConnection.connectionState === 'connected') {
+          addStatusMessage('WebRTC connection established');
+        }
       };
 
       if (isOfferer) {
         peerConnection.createOffer()
           .then(offer => peerConnection.setLocalDescription(offer))
           .then(() => {
-            socket.emit('signal', { room: room, type: 'offer', payload: peerConnection.localDescription });
+            console.log('Sending offer');
+            socket.emit('signal', { room, type: 'offer', payload: peerConnection.localDescription });
           })
           .catch(err => console.error('Error creating offer:', err));
       }
     }
 
+    const socket = io();
+
+    socket.on('connect', () => {
+      console.log('Socket.IO connected');
+      socket.emit('join', { room });
+      timerInterval = setInterval(updateTimer, 1000);
+    });
+
+    socket.on('role', ({ role }) => {
+      console.log('Assigned role:', role);
+      isOfferer = role === 'offerer';
+      if (isOfferer && localStream) {
+        initPeerConnection();
+      }
+    });
+
+    socket.on('user-joined', (data) => {
+      console.log('User joined:', data);
+      addStatusMessage(data.msg || 'Another user joined');
+      if (isOfferer && localStream) {
+        initPeerConnection(); // Restart connection for new user
+      }
+    });
+
+    socket.on('signal', async (data) => {
+      console.log('Received signal:', data);
+      if (!peerConnection) {
+        console.warn('PeerConnection not initialized, creating now');
+        initPeerConnection();
+      }
+
+      try {
+        if (data.type === 'offer') {
+          await peerConnection.setRemoteDescription(new RTCSessionDescription(data.payload));
+          const answer = await peerConnection.createAnswer();
+          await peerConnection.setLocalDescription(answer);
+          console.log('Sending answer');
+          socket.emit('signal', { room, type: 'answer', payload: peerConnection.localDescription });
+        } else if (data.type === 'answer') {
+          await peerConnection.setRemoteDescription(new RTCSessionDescription(data.payload));
+        } else if (data.type === 'candidate') {
+          await peerConnection.addIceCandidate(new RTCIceCandidate(data.payload));
+        }
+      } catch (err) {
+        console.error(`Error handling signal (${data.type}):`, err);
+        addStatusMessage('Error in video connection, please refresh.');
+      }
+    });
+
     navigator.mediaDevices.getUserMedia({ video: true, audio: true })
       .then(stream => {
-        console.log('Local stream acquired');
+        console.log('Local stream acquired:', stream.getTracks());
         localStream = stream;
         localVideo.srcObject = stream;
-        initPeerConnection();
+        addStatusMessage('Local camera connected');
+        // Wait for server role assignment before initializing peer connection
       })
       .catch(err => {
         console.error('Error accessing media devices:', err);
+        addStatusMessage('Failed to access camera/microphone. Check permissions.');
         alert('Camera/microphone access denied or unavailable. Please check permissions.');
       });
 
@@ -240,17 +285,22 @@
       try {
         const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
         const screenTrack = screenStream.getVideoTracks()[0];
-        const sender = peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
+        const sender = peerConnection?.getSenders().find(s => s.track && s.track.kind === 'video');
         if (sender) {
           sender.replaceTrack(screenTrack);
+          localVideo.srcObject = screenStream;
+          addStatusMessage('Screen sharing started');
         }
-        localVideo.srcObject = screenStream;
         screenTrack.onended = () => {
-          sender.replaceTrack(localStream.getVideoTracks()[0]);
-          localVideo.srcObject = localStream;
+          if (sender && localStream) {
+            sender.replaceTrack(localStream.getVideoTracks()[0]);
+            localVideo.srcObject = localStream;
+            addStatusMessage('Screen sharing stopped');
+          }
         };
       } catch (err) {
         console.error('Error sharing screen:', err);
+        addStatusMessage('Failed to share screen');
       }
     });
 
@@ -263,7 +313,12 @@
     window.addEventListener('beforeunload', () => {
       clearInterval(timerInterval);
       const elapsed = Math.floor((Date.now() - startTime) / 1000);
-      socket.emit('session_update', { duration: userPlan === 'free' ? Math.min(Math.floor(elapsed / 60), 30) : Math.floor(elapsed / 60) });
+      socket.emit('session_update', {
+        duration: userPlan === 'free' ? Math.min(Math.floor(elapsed / 60), 30) : Math.floor(elapsed / 60)
+      });
+      if (peerConnection) {
+        peerConnection.close();
+      }
     });
   </script>
 {% endblock %}

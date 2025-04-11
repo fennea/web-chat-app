@@ -1306,3 +1306,11 @@ stripe._error.InvalidRequestError: Request req_CZrFC2RjpW8BFY: No such price: 'N
 2025-04-11 14:35:36,386:INFO:Database connection established successfully
 2025-04-11 14:35:36,409:WARNING: * Debugger is active!
 2025-04-11 14:35:36,420:INFO: * Debugger PIN: 535-720-947
+2025-04-11 14:51:25,285:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-11 14:51:25,460:INFO: * Restarting with stat
+2025-04-11 14:51:25,923:INFO:Stripe version: 10.5.0
+2025-04-11 14:51:25,923:INFO:Requests version: 2.32.3
+2025-04-11 14:51:25,923:INFO:Urllib3 version: 2.3.0
+2025-04-11 14:51:26,901:INFO:Database connection established successfully
+2025-04-11 14:51:26,936:WARNING: * Debugger is active!
+2025-04-11 14:51:26,943:INFO: * Debugger PIN: 535-720-947

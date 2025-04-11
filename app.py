@@ -609,18 +609,20 @@ def dashboard():
 
 @app.route('/classroom/<room_name>')
 def classroom(room_name):
+    # Check if user is logged in
     if 'email' not in session:
         flash("Please log in to access the classroom.")
         return redirect(url_for('login'))
 
-    # Check database connection
+    # Verify database connection
     db_status, db_error = check_db_connection()
     if not db_status:
-        logging.error(f"Database connection failed for classroom: {db_error}")
-        flash(db_error)
+        logging.error(f"Database connection failed: {db_error}")
+        flash("Database error. Please try again later.")
         return redirect(url_for('login'))
 
     try:
+        # Fetch user details
         cursor.execute("SELECT user_id, role, lifetime_free FROM users WHERE email = %s", (session['email'],))
         user = cursor.fetchone()
         if not user:
@@ -630,27 +632,23 @@ def classroom(room_name):
 
         user_id, role, lifetime_free = user
 
-        # Check session limits (exempt lifetime free and paid users)
-        if not user[2] and user[1] != 'student':
+        # Check session limits for non-students without lifetime free access
+        plan, status = get_user_subscription(user_id)
+        if not lifetime_free and role != 'student' and plan == 2:
             now = datetime.utcnow()
             month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
             month_end = (month_start + timedelta(days=32)).replace(day=1) - timedelta(seconds=1)
             session_count = get_user_session_count(user_id, month_start, month_end)
-            plan, status = get_user_subscription(user_id)
-
-            if plan == 2 and session_count >= 4:
-                flash("You’ve reached your free session limit (4 sessions/month). Please upgrade to continue.")
+            if session_count >= 4:
+                flash("You’ve reached your free session limit (4 sessions/month). Please upgrade.")
                 logging.info(f"User {user_id} reached free session limit")
                 return redirect(url_for('upgrade'))
-        else:
-            plan, status = get_user_subscription(user_id)
 
-        # Check if user has access to the room
-        if role == 'tutor':
-            cursor.execute("SELECT 1 FROM invitations WHERE tutor_id = %s AND room_name = %s", (user_id, room_name))
-        else:
-            cursor.execute("SELECT 1 FROM invitations WHERE student_id = %s AND room_name = %s", (user_id, room_name))
-        
+        # Verify room access
+        query = (
+            "SELECT 1 FROM invitations WHERE room_name = %s AND %s = %s"
+        ).format('tutor_id' if role == 'tutor' else 'student_id')
+        cursor.execute(query, (room_name, user_id))
         if not cursor.fetchone():
             flash("You don’t have access to this room.")
             logging.warning(f"User {user_id} attempted to access unauthorized room: {room_name}")
@@ -664,11 +662,12 @@ def classroom(room_name):
         session['current_session_id'] = cursor.fetchone()[0]
         conn.commit()
 
-        plan, status = get_user_subscription(user_id)
+        # Render classroom
         return render_template('classroom.html', roomName=room_name, userPlan=plan)
+
     except Exception as e:
         logging.error(f"Error in classroom for email {session['email']}: {str(e)}", exc_info=True)
-        flash(f"Error loading classroom: {str(e)}")
+        flash("An error occurred. Please try again.")
         return redirect(url_for('dashboard'))
 
 @app.route('/tutors')
