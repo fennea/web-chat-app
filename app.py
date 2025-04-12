@@ -329,7 +329,6 @@ def tutor_signup():
         )
         user = cursor.fetchone()
         logging.info(f"User fetched for tutor_signup with email {email}: {user}")
-        logging.info(f"Selected plan (type: {type(selected_plan)}): {selected_plan}")
 
         if not user:
             flash("Error: User not found")
@@ -340,6 +339,7 @@ def tutor_signup():
         if request.method == 'POST':
             # Retrieve the selected plan from the form
             selected_plan = request.form.get('selected_plan')
+            logging.info(f"Selected plan (type: {type(selected_plan)}): {selected_plan}")
             logging.info(f"Selected plan for user_id {user_id}: {selected_plan}")
             if not selected_plan:
                 flash("Please select a plan before proceeding.")
