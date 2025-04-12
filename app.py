@@ -905,7 +905,12 @@ def on_disconnect():
 def handle_signal(data):
     room = data.get('room')
     if room:
+        logging.info(f"Incoming WebRTC signal: {data}")
         emit('signal', data, room=room, include_self=False)
+        logging.info(f"Emitted WebRTC signal to room {room}")
+    else:
+        logging.warning("Signal received without room specified.")
+
 
 @socketio.on('session_update')
 def on_session_update(data):
