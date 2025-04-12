@@ -897,7 +897,7 @@ def on_join(data):
 
 @socketio.on('disconnect')
 def on_disconnect():
-    pass  # Add decrement logic if needed later
+    pass
 
 @socketio.on('signal')
 def handle_signal(data):
