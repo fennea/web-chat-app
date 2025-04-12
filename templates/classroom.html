@@ -38,7 +38,6 @@
       <span class="badge bg-secondary" id="sessionTimer">Session Time: 00:00</span>
       <button id="shareScreenBtn" class="btn btn-primary">Share Screen</button>
       <button id="flipRemoteBtn" class="btn btn-secondary">Flip Student Video</button>
-      // <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
     </div>
 
     <!-- Status Messages -->
@@ -55,6 +54,11 @@
 
   <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
   <script>
+
+    let signalQueue = [];
+    let localStreamReady = false;
+
+
     const localVideo = document.getElementById('localVideo');
     const remoteVideo = document.getElementById('remoteVideo');
     const shareScreenBtn = document.getElementById('shareScreenBtn');
@@ -219,11 +223,17 @@
 
     socket.on('signal', async (data) => {
       console.log('Received signal:', data);
-      if (!localStream) {
-        console.warn('Local stream not ready, ignoring signal');
+      
+      if (!localStreamReady) {
+        console.warn('Local stream not ready, queueing signal');
+        signalQueue.push(data);
         return;
       }
 
+      await handleSignal(data); // Separate your existing logic into handleSignal()
+    });
+
+    async function handleSignal(data) {
       if (!peerConnection) {
         console.warn('PeerConnection not initialized, creating now');
         initPeerConnection();
@@ -231,39 +241,46 @@
 
       try {
         if (data.type === 'offer') {
-          console.log('Setting remote description (offer):', data.payload);
           await peerConnection.setRemoteDescription(new RTCSessionDescription(data.payload));
-          console.log('Creating answer');
           const answer = await peerConnection.createAnswer();
-          console.log('Setting local description (answer):', answer);
           await peerConnection.setLocalDescription(answer);
-          console.log('Sending answer');
           socket.emit('signal', { room, type: 'answer', payload: peerConnection.localDescription });
         } else if (data.type === 'answer') {
-          console.log('Setting remote description (answer):', data.payload);
           await peerConnection.setRemoteDescription(new RTCSessionDescription(data.payload));
         } else if (data.type === 'candidate') {
-          console.log('Adding ICE candidate:', data.payload);
           await peerConnection.addIceCandidate(new RTCIceCandidate(data.payload));
         }
       } catch (err) {
         console.error(`Error handling signal (${data.type}):`, err);
         addStatusMessage('Error in video connection, please refresh.');
       }
-    });
+    }
+
+
 
     navigator.mediaDevices.getUserMedia({ video: true, audio: true })
       .then(stream => {
         console.log('Local stream acquired:', stream.getTracks());
         localStream = stream;
         localVideo.srcObject = stream;
+        localStreamReady = true;  // Mark local stream as ready
         addStatusMessage('Local camera connected');
+
+        // Immediately process any queued signals
+        if (signalQueue.length > 0) {
+          console.log(`Processing ${signalQueue.length} queued signals.`);
+          signalQueue.forEach(async (signal) => {
+            await handleSignal(signal);
+          });
+          signalQueue = []; // Clear queue after processing
+        }
       })
       .catch(err => {
         console.error('Error accessing media devices:', err);
         addStatusMessage('Failed to access camera/microphone. Check permissions.');
         alert('Camera/microphone access denied or unavailable. Please check permissions.');
       });
+
 
     shareScreenBtn.addEventListener('click', async () => {
       try {
