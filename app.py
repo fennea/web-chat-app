@@ -329,6 +329,8 @@ def tutor_signup():
         )
         user = cursor.fetchone()
         logging.info(f"User fetched for tutor_signup with email {email}: {user}")
+        logging.info(f"Selected plan (type: {type(selected_plan)}): {selected_plan}")
+
         if not user:
             flash("Error: User not found")
             return redirect(url_for('register'))
