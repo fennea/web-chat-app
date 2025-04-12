@@ -196,7 +196,7 @@
                   <input type="text" name="name" value="{{ product[1] }}" required>
                   <input type="number" name="price" step="0.01" value="{{ product[2] }}" required>
                   <textarea name="description" required>{{ product[3] }}</textarea>
-                  <input type="text" name="stripe_price_id" value="{{ product[4] }}" required>
+                  <input type="text" name="stripe_price_id" value="{{ product[4] }}">
                   <label><input type="checkbox" name="active" {{ 'checked' if product[5] else '' }}> Active</label>
                   <button type="submit">Update</button>
                 </form>
