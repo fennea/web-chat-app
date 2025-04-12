@@ -1,3 +1,4 @@
+from collections import defaultdict
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_socketio import SocketIO, emit, join_room, leave_room
 import os
@@ -883,8 +884,20 @@ def on_join(data):
     room = data.get('room')
     if room:
         join_room(room)
-        logging.info(f"User joined room: {room}")
+        user_counts[room] += 1
+        logging.info(f"User joined room: {room}, total users now: {user_counts[room]}")
+        
+        if user_counts[room] == 1:
+            emit('role', {'role': 'offerer'})
+        else:
+            emit('role', {'role': 'answerer'})
+
         emit('user-joined', {'msg': 'A new user has joined the room!'}, room=room)
+
+
+@socketio.on('disconnect')
+def on_disconnect():
+    pass  # Add decrement logic if needed later
 
 @socketio.on('signal')
 def handle_signal(data):
