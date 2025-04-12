@@ -359,13 +359,13 @@ def tutor_signup():
                 )
                 conn.commit()
 
-                if selected_plan == 1:
+                if selected_plan == '1':
                     cursor.execute("UPDATE users SET lifetime_free = true WHERE user_id = %s", (user_id,))
                     conn.commit()
                     flash("Registration successful! Please check your email to verify your account.")
                     return redirect(url_for('login'))
 
-                if selected_plan == 2:
+                if selected_plan == '2':
                     flash("Registration successful! Please check your email to verify your account.")
                     return redirect(url_for('login'))
 
