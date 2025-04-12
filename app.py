@@ -350,7 +350,7 @@ def tutor_signup():
             )
             product = cursor.fetchone()
 
-            if selected_plan == 1 or selected_plan == 2:
+            if selected_plan == '1' or selected_plan == '2':
 
                 # Update the subscriptions table
                 cursor.execute(
