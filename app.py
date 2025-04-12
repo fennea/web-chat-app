@@ -35,7 +35,7 @@ logging.info(f"Urllib3 version: {urllib3.__version__}")
 # Initialize Flask app
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24).hex()
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, async_mode='gevent')
 
 # Database connection
 DATABASE_URL = os.getenv('DATABASE_URL')
@@ -908,9 +908,10 @@ def on_session_update(data):
     except Exception as e:
         logging.error(f"Error updating session for user_id {session['user_id']}: {str(e)}", exc_info=True)
 
+# Only used when running locally
 if __name__ == '__main__':
-    # socketio.run(app, host='127.0.0.1', port=8080, debug=True)
-    socketio.run(app, host='0.0.0.0', port=8080, debug=True)
+    port = int(os.environ.get("PORT", 8080))
+    socketio.run(app, host='0.0.0.0', port=port, debug=True)
 
 def shutdown():
     try:
