@@ -45,6 +45,8 @@ conn = None
 cursor = None
 db_connected = False
 
+user_counts = defaultdict(int)
+
 try:
     conn = psycopg2.connect(DB_URL)
     cursor = conn.cursor()
