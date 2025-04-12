@@ -884,18 +884,23 @@ def upgrade():
 @socketio.on('join')
 def on_join(data):
     room = data.get('room')
+    sid = request.sid
     if room:
         join_room(room)
-        user_counts[room] += 1
-        logging.info(f"User joined room: {room}, total users now: {user_counts[room]}")
-        
-        if user_counts[room] == 1:
-            emit('role', {'role': 'offerer'})
+
+        # Get the current number of users in this room explicitly
+        room_members = socketio.server.manager.rooms.get('/', {}).get(room, set())
+        user_count = len(room_members)
+
+        logging.info(f"User {sid} joined room: {room}, total users now: {user_count}")
+
+        # First user becomes offerer
+        if user_count == 1:
+            emit('role', {'role': 'offerer'}, room=sid)
         else:
-            emit('role', {'role': 'answerer'})
+            emit('role', {'role': 'answerer'}, room=sid)
 
         emit('user-joined', {'msg': 'A new user has joined the room!'}, room=room)
-
 
 @socketio.on('disconnect')
 def on_disconnect():
