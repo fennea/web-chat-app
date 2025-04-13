@@ -1314,3 +1314,63 @@ stripe._error.InvalidRequestError: Request req_CZrFC2RjpW8BFY: No such price: 'N
 2025-04-11 14:51:26,901:INFO:Database connection established successfully
 2025-04-11 14:51:26,936:WARNING: * Debugger is active!
 2025-04-11 14:51:26,943:INFO: * Debugger PIN: 535-720-947
+2025-04-13 15:51:18,047:INFO:Stripe version: 10.5.0
+2025-04-13 15:51:18,049:INFO:Requests version: 2.32.3
+2025-04-13 15:51:18,049:INFO:Urllib3 version: 2.3.0
+2025-04-13 15:51:19,441:ERROR:Failed to establish database connection: could not translate host name "dpg-cvkpb8pr0fns7385dp10-a" to address: nodename nor servname provided, or not known
+Traceback (most recent call last):
+  File "/Users/anthonyfenner/Documents/Video Classroom/app.py", line 59, in <module>
+    conn = psycopg2.connect(DB_URL)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/psycopg2/__init__.py", line 122, in connect
+    conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+psycopg2.OperationalError: could not translate host name "dpg-cvkpb8pr0fns7385dp10-a" to address: nodename nor servname provided, or not known
+
+2025-04-13 15:51:19,747:INFO: * Restarting with stat
+2025-04-13 15:51:20,110:INFO:Stripe version: 10.5.0
+2025-04-13 15:51:20,110:INFO:Requests version: 2.32.3
+2025-04-13 15:51:20,110:INFO:Urllib3 version: 2.3.0
+2025-04-13 15:51:20,127:ERROR:Failed to establish database connection: could not translate host name "dpg-cvkpb8pr0fns7385dp10-a" to address: nodename nor servname provided, or not known
+Traceback (most recent call last):
+  File "/Users/anthonyfenner/Documents/Video Classroom/app.py", line 59, in <module>
+    conn = psycopg2.connect(DB_URL)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/psycopg2/__init__.py", line 122, in connect
+    conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+psycopg2.OperationalError: could not translate host name "dpg-cvkpb8pr0fns7385dp10-a" to address: nodename nor servname provided, or not known
+
+2025-04-13 15:51:20,142:WARNING: * Debugger is active!
+2025-04-13 15:51:20,150:INFO: * Debugger PIN: 535-720-947
+2025-04-13 15:51:57,474:ERROR:Error closing database connection: 'NoneType' object has no attribute 'close'
+2025-04-13 15:51:57,652:ERROR:Error closing database connection: 'NoneType' object has no attribute 'close'
+2025-04-13 15:51:58,297:INFO:Stripe version: 10.5.0
+2025-04-13 15:51:58,297:INFO:Requests version: 2.32.3
+2025-04-13 15:51:58,297:INFO:Urllib3 version: 2.3.0
+2025-04-13 15:51:58,321:ERROR:Failed to establish database connection: could not translate host name "dpg-cvkpb8pr0fns7385dp10-a" to address: nodename nor servname provided, or not known
+Traceback (most recent call last):
+  File "/Users/anthonyfenner/Documents/Video Classroom/app.py", line 59, in <module>
+    conn = psycopg2.connect(DB_URL)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/psycopg2/__init__.py", line 122, in connect
+    conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+psycopg2.OperationalError: could not translate host name "dpg-cvkpb8pr0fns7385dp10-a" to address: nodename nor servname provided, or not known
+
+2025-04-13 15:51:58,364:INFO: * Restarting with stat
+2025-04-13 15:51:58,729:INFO:Stripe version: 10.5.0
+2025-04-13 15:51:58,729:INFO:Requests version: 2.32.3
+2025-04-13 15:51:58,729:INFO:Urllib3 version: 2.3.0
+2025-04-13 15:51:58,747:ERROR:Failed to establish database connection: could not translate host name "dpg-cvkpb8pr0fns7385dp10-a" to address: nodename nor servname provided, or not known
+Traceback (most recent call last):
+  File "/Users/anthonyfenner/Documents/Video Classroom/app.py", line 59, in <module>
+    conn = psycopg2.connect(DB_URL)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/psycopg2/__init__.py", line 122, in connect
+    conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+psycopg2.OperationalError: could not translate host name "dpg-cvkpb8pr0fns7385dp10-a" to address: nodename nor servname provided, or not known
+
+2025-04-13 15:51:58,762:WARNING: * Debugger is active!
+2025-04-13 15:51:58,767:INFO: * Debugger PIN: 535-720-947

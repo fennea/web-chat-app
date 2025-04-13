@@ -137,31 +137,33 @@
       text-decoration: none;
     }
 
-    /* Calendar Specific Styles */
-    #calendar {
+    /* Calendar Styles */
+    #calendar, #test-calendar {
       max-width: 900px;
       margin: 20px auto;
-      min-height: 500px; /* Ensure space for rendering */
-      display: block !important; /* Prevent hiding */
+      min-height: 500px;
+      visibility: visible !important;
+      display: block !important;
+      border: 1px solid #ccc; /* Debug */
     }
 
-    #calendar .fc {
+    .fc {
       background: #fff;
       border-radius: 6px;
       border: 1px solid #e0e3e5;
     }
 
-    #calendar .fc-button {
+    .fc-button {
       background: #2a9d8f;
       border: none;
       color: #fff;
     }
 
-    #calendar .fc-button:hover {
+    .fc-button:hover {
       background: #21867a;
     }
 
-    #calendar .fc-event {
+    .fc-event {
       background: #e6f4f1;
       border-color: #2a9d8f;
       color: #333;
@@ -224,8 +226,9 @@
       }
     }
   </style>
-  <!-- FullCalendar CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet" />
+  <link href="{{ url_for('static', filename='css/fullcalendar.min.css') }}" rel="stylesheet" />
+  <!-- Fallback CDN (optional, remove after local works) -->
+  <link href="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.8/main.min.css" rel="stylesheet" />
 {% endblock %}
 
 {% block content %}
@@ -289,10 +292,9 @@
           </form>
         </div>
 
-        <!-- Tutor: Scheduling Form -->
         <div class="section">
           <h3>Schedule a Class</h3>
-          <form id="schedule-class-form" method="POST" action="{{ url_for('schedule_class') }}">
+          <form id="schedule-class-form" method="POST">
             <select name="room_name" required>
               {% for room in classrooms %}
                 <option value="{{ room }}">{{ room }}</option>
@@ -321,142 +323,12 @@
           </ul>
         </div>
       {% endif %}
-
-      <div class="section">
-        <h3>Test Calendar</h3>
-        <div id="test-calendar"></div>
-      </div>
     </div>
 
-    <!-- Calendar Section -->
-    <div class="section">
-      <h3>Schedule Calendar</h3>
-      <p>Debug: Calendar should appear below.</p>
-      <div id="calendar"></div>
-    </div>
 
     <div class="links">
       <a href="{{ url_for('update_info') }}">Update Personal Info</a>
       <a href="{{ url_for('update_password') }}">Update Password</a>
     </div>
   </div>
-{% endblock %}
-
-{% block extra_scripts %}
-  <!-- FullCalendar JS (Standard Bundle) -->
-  <script src="{{ url_for('static', filename='js/index.global.js') }}"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      console.log('Initializing FullCalendar...'); // Debug log
-      const calendarEl = document.getElementById('calendar');
-      if (!calendarEl) {
-        console.error('Calendar element not found!');
-        return;
-      }
-
-      const calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
-        headerToolbar: {
-          left: 'prev,next today',
-          center: 'title',
-          right: 'dayGridMonth,timeGridWeek,listWeek'
-        },
-        eventTimeFormat: {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: true
-        },
-        // Remove events: '/api/events'
-        events: function(fetchInfo, successCallback, failureCallback) {
-          fetch('/api/events', { credentials: 'same-origin' })
-            .then(response => {
-              if (!response.ok) {
-                throw new Error('Failed to fetch events: ' + response.status);
-              }
-              return response.json();
-            })
-            .then(data => {
-              console.log('Events fetched:', data); // Debug log
-              successCallback(data);
-            })
-            .catch(error => {
-              console.error('Error fetching events:', error);
-              alert('Failed to load calendar events. Please try refreshing the page.');
-              failureCallback(error);
-            });
-        },
-        eventClick: function(info) {
-          if (info.event.url) {
-            window.open(info.event.url, '_blank');
-            info.jsEvent.preventDefault();
-          } else {
-            alert('Event: ' + info.event.title + '\nDate: ' + info.event.start.toLocaleString());
-          }
-        },
-        eventDidMount: function(info) {
-          info.el.title = info.event.title + ' at ' + info.event.start.toLocaleString();
-        },
-        loading: function(isLoading) {
-          calendarEl.style.opacity = isLoading ? '0.5' : '1';
-        }
-      });
-
-      calendar.render();
-      setTimeout(() => calendar.render(), 100);
-      console.log('Calendar rendered');
-
-      // AJAX for scheduling form
-      const scheduleForm = document.getElementById('schedule-class-form');
-      if (scheduleForm) {
-        scheduleForm.addEventListener('submit', function(e) {
-          e.preventDefault();
-          console.log('Form submitted via AJAX'); // Debug log
-          const formData = new FormData(this);
-          fetch(this.action, {
-            method: 'POST',
-            body: formData,
-            credentials: 'same-origin',
-            headers: {
-              'Accept': 'application/json'
-            }
-          })
-          .then(response => {
-            if (!response.ok) {
-              throw new Error('Network response was not ok: ' + response.status);
-            }
-            return response.json();
-          })
-          .then(data => {
-            if (data.success) {
-              alert('Class scheduled successfully!');
-              calendar.refetchEvents();
-              scheduleForm.reset();
-            } else {
-              alert('Error scheduling class: ' + (data.error || 'Unknown error'));
-            }
-          })
-          .catch(error => {
-            console.error('Error scheduling class:', error);
-            alert('Error scheduling class: ' + error.message);
-          });
-        });
-      } else {
-        console.error('Schedule form not found!');
-      }
-    });
-
-    const testCalendarEl = document.getElementById('test-calendar');
-      if (testCalendarEl) {
-        const testCalendar = new FullCalendar.Calendar(testCalendarEl, {
-          initialView: 'dayGridMonth',
-          events: [
-            { title: 'Test Event', start: '2025-04-13T10:00:00' }
-          ]
-        });
-        testCalendar.render();
-        console.log('Test calendar rendered');
-      }
-
-
-  </script>
 {% endblock %}
