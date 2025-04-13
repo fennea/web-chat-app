@@ -321,6 +321,11 @@
           </ul>
         </div>
       {% endif %}
+
+      <div class="section">
+        <h3>Test Calendar</h3>
+        <div id="test-calendar"></div>
+      </div>
     </div>
 
     <!-- Calendar Section -->
@@ -397,6 +402,8 @@
       });
 
       calendar.render();
+      setTimeout(() => calendar.render(), 100);
+      console.log('Calendar rendered');
 
       // AJAX for scheduling form
       const scheduleForm = document.getElementById('schedule-class-form');
@@ -437,5 +444,19 @@
         console.error('Schedule form not found!');
       }
     });
+
+    const testCalendarEl = document.getElementById('test-calendar');
+      if (testCalendarEl) {
+        const testCalendar = new FullCalendar.Calendar(testCalendarEl, {
+          initialView: 'dayGridMonth',
+          events: [
+            { title: 'Test Event', start: '2025-04-13T10:00:00' }
+          ]
+        });
+        testCalendar.render();
+        console.log('Test calendar rendered');
+      }
+
+
   </script>
 {% endblock %}

@@ -687,7 +687,7 @@ def api_events():
         for row in rows:
             room_name, scheduled_date, join_link = row
             # Ensure UTC formatting
-            scheduled_date_iso = scheduled_date.astimezone(utc_tz).strftime('%Y-%m-%dT%H:%M:%S') if scheduled_date else None
+            scheduled_date_iso = scheduled_date.astimezone(utc_tz).isoformat() if scheduled_date else None
             event = {
                 'title': room_name,
                 'start': scheduled_date_iso,
