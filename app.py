@@ -676,6 +676,14 @@ def classroom(room_name):
         flash("An error occurred. Please try again.")
         return redirect(url_for('dashboard'))
 
+@socketio.on('whiteboard')
+def handle_whiteboard_event(data):
+    # Assuming you have a way to identify the room,
+    # you could attach the room name to the data payload or determine it from the session.
+    room = data.get('room', 'defaultRoom')
+    # Broadcast the drawing event to all users except the one who emitted it
+    emit('whiteboard', data, room=room, include_self=False)
+
 @app.route('/tutors')
 def tutors():
     # Check database connection
