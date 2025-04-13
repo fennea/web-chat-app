@@ -654,7 +654,6 @@ def classroom(room_slug):
             flash("User not found.")
             logging.warning(f"User not found for email: {session['email']}")
             return redirect(url_for('login'))
-
         user_id, role, lifetime_free = user
 
         # Check session limits for non-students without lifetime free access
@@ -669,15 +668,15 @@ def classroom(room_slug):
                 logging.info(f"User {user_id} reached free session limit")
                 return redirect(url_for('upgrade'))
 
-        # Verify room access
+        # Verify room access using room_slug instead of room_name
         if role == 'tutor':
-            query = "SELECT 1 FROM invitations WHERE room_name = %s AND tutor_id = %s"
+            query = "SELECT 1 FROM invitations WHERE room_slug = %s AND tutor_id = %s"
         else:
-            query = "SELECT 1 FROM invitations WHERE room_name = %s AND student_id = %s"
-        cursor.execute(query, (room_name, user_id))
+            query = "SELECT 1 FROM invitations WHERE room_slug = %s AND student_id = %s"
+        cursor.execute(query, (room_slug, user_id))
         if not cursor.fetchone():
             flash("You don’t have access to this room.")
-            logging.warning(f"User {user_id} attempted to access unauthorized room: {room_name}")
+            logging.warning(f"User {user_id} attempted to access unauthorized room: {room_slug}")
             return redirect(url_for('dashboard'))
 
         # Start session tracking
@@ -688,7 +687,7 @@ def classroom(room_slug):
         session['current_session_id'] = cursor.fetchone()[0]
         conn.commit()
 
-        # Optionally, fetch the friendly room name from the database
+        # Fetch the friendly room name using the room_slug
         cursor.execute("SELECT room_name FROM invitations WHERE room_slug = %s LIMIT 1", (room_slug,))
         room_row = cursor.fetchone()
         room_name = room_row[0] if room_row else "Unknown Classroom"
@@ -700,6 +699,7 @@ def classroom(room_slug):
         logging.error(f"Error in classroom for email {session['email']}: {str(e)}", exc_info=True)
         flash("An error occurred. Please try again.")
         return redirect(url_for('dashboard'))
+
 
 @socketio.on('whiteboard')
 def handle_whiteboard_event(data):
