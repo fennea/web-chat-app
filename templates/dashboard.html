@@ -141,6 +141,30 @@
     #calendar {
       max-width: 900px;
       margin: 20px auto;
+      min-height: 500px; /* Ensure space for rendering */
+      display: block !important; /* Prevent hiding */
+    }
+
+    #calendar .fc {
+      background: #fff;
+      border-radius: 6px;
+      border: 1px solid #e0e3e5;
+    }
+
+    #calendar .fc-button {
+      background: #2a9d8f;
+      border: none;
+      color: #fff;
+    }
+
+    #calendar .fc-button:hover {
+      background: #21867a;
+    }
+
+    #calendar .fc-event {
+      background: #e6f4f1;
+      border-color: #2a9d8f;
+      color: #333;
     }
 
     /* Desktop Layout */
@@ -280,7 +304,6 @@
               {% endfor %}
             </select>
             <input type="datetime-local" name="scheduled_date" required />
-            <!-- Optional: Add join_link input -->
             <input type="url" name="join_link" placeholder="Join Link (optional)" />
             <button type="submit">Schedule Class</button>
           </form>
@@ -303,6 +326,7 @@
     <!-- Calendar Section -->
     <div class="section">
       <h3>Schedule Calendar</h3>
+      <p>Debug: Calendar should appear below.</p>
       <div id="calendar"></div>
     </div>
 
@@ -314,12 +338,18 @@
 {% endblock %}
 
 {% block extra_scripts %}
-  <!-- FullCalendar JS -->
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.js"></script>
+  <!-- FullCalendar JS (Standard Bundle) -->
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      var calendarEl = document.getElementById('calendar');
-      var calendar = new FullCalendar.Calendar(calendarEl, {
+      console.log('Initializing FullCalendar...'); // Debug log
+      const calendarEl = document.getElementById('calendar');
+      if (!calendarEl) {
+        console.error('Calendar element not found!');
+        return;
+      }
+
+      const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
         headerToolbar: {
           left: 'prev,next today',
@@ -333,63 +363,78 @@
         },
         events: '/api/events',
         eventClick: function(info) {
-          // If event has a URL, open it; otherwise, show details
           if (info.event.url) {
             window.open(info.event.url, '_blank');
-            info.jsEvent.preventDefault(); // Prevent default redirect
+            info.jsEvent.preventDefault();
           } else {
             alert('Event: ' + info.event.title + '\nDate: ' + info.event.start.toLocaleString());
           }
         },
         eventDidMount: function(info) {
-          // Add tooltip with event details
           info.el.title = info.event.title + ' at ' + info.event.start.toLocaleString();
         },
         loading: function(isLoading) {
-          // Visual feedback during loading
           calendarEl.style.opacity = isLoading ? '0.5' : '1';
         },
         eventsFetch: function(fetchInfo, successCallback, failureCallback) {
           fetch('/api/events', { credentials: 'same-origin' })
             .then(response => {
-              if (!response.ok) throw new Error('Failed to fetch events: ' + response.status);
+              if (!response.ok) {
+                throw new Error('Failed to fetch events: ' + response.status);
+              }
               return response.json();
             })
-            .then(data => successCallback(data))
+            .then(data => {
+              console.log('Events fetched:', data); // Debug log
+              successCallback(data);
+            })
             .catch(error => {
               console.error('Error fetching events:', error);
-              alert('Failed to load calendar events. Please try refreshing.');
+              alert('Failed to load calendar events. Please try refreshing the page.');
               failureCallback(error);
             });
         }
       });
       calendar.render();
-    });
-  </script>
 
-  <script>
-    document.getElementById('schedule-class-form').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const formData = new FormData(this);
-      fetch(this.action, {
-        method: 'POST',
-        body: formData,
-        credentials: 'same-origin'
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          alert('Class scheduled successfully!');
-          calendar.refetchEvents(); // Refresh calendar
-          this.reset(); // Clear form
-        } else {
-          alert('Error scheduling class: ' + data.error);
-        }
-      })
-      .catch(error => {
-        alert('Error scheduling class.');
-        console.error('Error:', error);
-      });
+      // AJAX for scheduling form
+      const scheduleForm = document.getElementById('schedule-class-form');
+      if (scheduleForm) {
+        scheduleForm.addEventListener('submit', function(e) {
+          e.preventDefault();
+          console.log('Form submitted via AJAX'); // Debug log
+          const formData = new FormData(this);
+          fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin',
+            headers: {
+              'Accept': 'application/json'
+            }
+          })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Network response was not ok: ' + response.status);
+            }
+            return response.json();
+          })
+          .then(data => {
+            if (data.success) {
+              alert('Class scheduled successfully!');
+              calendar.refetchEvents();
+              scheduleForm.reset();
+            } else {
+              alert('Error scheduling class: ' + (data.error || 'Unknown error'));
+            }
+          })
+          .catch(error => {
+            console.error('Error scheduling class:', error);
+            alert('Error scheduling class: ' + error.message);
+          });
+        });
+      } else {
+        console.error('Schedule form not found!');
+      }
     });
   </script>
 {% endblock %}
