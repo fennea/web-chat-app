@@ -61,14 +61,15 @@
 
     form {
       display: flex;
-      flex-direction: column; /* Stack elements vertically */
+      flex-direction: column;
       gap: 15px;
       margin-bottom: 1rem;
-      align-items: flex-start; /* Align items to the left */
+      align-items: flex-start;
     }
 
     input[type="text"],
     input[type="email"],
+    input[type="datetime-local"],
     select {
       padding: 0.75rem;
       border: 1px solid #ccc;
@@ -79,10 +80,10 @@
     }
 
     select[multiple] {
-      height: 120px; /* Fixed height for multi-select */
+      height: 120px;
       width: 100%;
       max-width: 300px;
-      overflow-y: auto; /* Scroll if too many options */
+      overflow-y: auto;
     }
 
     button {
@@ -94,7 +95,7 @@
       cursor: pointer;
       transition: background 0.3s ease;
       font-size: 1rem;
-      align-self: flex-start; /* Align button with inputs */
+      align-self: flex-start;
     }
 
     button:hover {
@@ -136,6 +137,12 @@
       text-decoration: none;
     }
 
+    /* Calendar Specific Styles */
+    #calendar {
+      max-width: 900px;
+      margin: 20px auto;
+    }
+
     /* Desktop Layout */
     @media (min-width: 769px) {
       .dashboard-container {
@@ -153,7 +160,7 @@
       }
 
       form {
-        flex-direction: column; /* Keep vertical for clarity */
+        flex-direction: column;
         align-items: flex-start;
       }
 
@@ -193,6 +200,8 @@
       }
     }
   </style>
+  <!-- FullCalendar CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet" />
 {% endblock %}
 
 {% block content %}
@@ -271,11 +280,9 @@
               {% endfor %}
             </select>
             <input type="datetime-local" name="scheduled_date" required />
-            <input type="text" name="join_link" placeholder="Class join link" required />
             <button type="submit">Schedule Class</button>
           </form>
         </div>
-
       {% else %}
         <!-- Student Dashboard -->
         <div class="section">
@@ -317,14 +324,7 @@
           center: 'title',
           right: 'dayGridMonth,timeGridWeek,listWeek'
         },
-        events: '/api/events',
-        eventClick: function(info) {
-          // If the event has a join link, redirect the user.
-          if (info.event.url) {
-            window.location.href = info.event.url;
-            info.jsEvent.preventDefault();
-          }
-        }
+        events: '/api/events'
       });
       calendar.render();
     });
