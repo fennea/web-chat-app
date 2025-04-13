@@ -621,8 +621,8 @@ def dashboard():
                     return redirect(url_for('dashboard'))
 
         else:
-            cursor.execute("SELECT room_name FROM invitations WHERE student_id = %s", (user_id,))
-            classrooms = [row[0] for row in cursor.fetchall()]
+            cursor.execute("SELECT DISTINCT room_slug, room_name FROM invitations WHERE tutor_id = %s", (user_id,))
+            classrooms = cursor.fetchall()   # Each row is now (room_slug, room_name)
             students = None
 
         return render_template('dashboard.html', role=role, first_name=first_name, last_name=last_name, email=email, classrooms=classrooms, students=students)
@@ -632,8 +632,8 @@ def dashboard():
         return redirect(url_for('login'))
 
 
-@app.route('/classroom/<room_name>')
-def classroom(room_name):
+@app.route('/classroom/<room_slug>')
+def classroom(room_slug):
     # Check if user is logged in
     if 'email' not in session:
         flash("Please log in to access the classroom.")
@@ -687,6 +687,11 @@ def classroom(room_name):
         )
         session['current_session_id'] = cursor.fetchone()[0]
         conn.commit()
+
+        # Optionally, fetch the friendly room name from the database
+        cursor.execute("SELECT room_name FROM invitations WHERE room_slug = %s LIMIT 1", (room_slug,))
+        room_row = cursor.fetchone()
+        room_name = room_row[0] if room_row else "Unknown Classroom"
 
         # Render classroom
         return render_template('classroom.html', roomName=room_name, userPlan=plan)
