@@ -63,7 +63,16 @@
     <div class="d-flex justify-content-center align-items-center gap-3 mb-3 bg-white shadow-sm p-3 rounded">
       <span class="badge bg-secondary" id="sessionTimer">Session Time: 00:00</span>
       <button id="shareScreenBtn" class="btn btn-primary">Share Screen</button>
-      <button id="flipRemoteBtn" class="btn btn-secondary">Flip Student Video</button>
+      <button id="flipRemoteBtn" class="btn btn-secondary">
+        {% if role == 'tutor' %}
+          Flip Student Video
+        {% elif role == 'student' %}
+          Flip Teacher Video
+        {% else %}
+          Flip Remote Video
+        {% endif %}
+      </button>
+      <button id="dashboardBtn" lass="btn btn-info" onclick="window.location.href='{{ url_for('dashboard') }}'">Dashboard</button>
     </div>
 
     <!-- Status Messages -->
@@ -360,17 +369,17 @@
   </script>
 
   <script>
-    // Initialize the canvas context and variables
+    // Initialize canvas context and variables
     const whiteboard = document.getElementById('whiteboard');
     const context = whiteboard.getContext('2d');
     let drawing = false;
     let eraserMode = false;
-    
+
     // Set line widths for drawing and erasing
     const drawingWidth = 2;
     const eraserWidth = 10;
 
-    // Utility function to resize the canvas gracefully (if needed)
+    // Utility function to resize the canvas gracefully
     function resizeCanvas() {
       whiteboard.width = whiteboard.offsetWidth;
       whiteboard.height = whiteboard.offsetHeight;
@@ -378,60 +387,90 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    // Mouse event handlers for drawing on the canvas
-    whiteboard.addEventListener('mousedown', (e) => {
+    // Utility: get canvas-relative coordinates for both mouse and touch events
+    function getCanvasCoords(e) {
+      const rect = whiteboard.getBoundingClientRect();
+      let x, y;
+      if (e.touches && e.touches[0]) {
+        x = e.touches[0].clientX - rect.left;
+        y = e.touches[0].clientY - rect.top;
+      } else {
+        x = e.offsetX;
+        y = e.offsetY;
+      }
+      return { x, y };
+    }
+
+    // Start drawing (common for mouse and touch)
+    function startDrawing(e) {
+      e.preventDefault(); // Prevent scrolling on touch devices
+      const { x, y } = getCanvasCoords(e);
       drawing = true;
       context.beginPath();
-      context.moveTo(e.offsetX, e.offsetY);
-      socket.emit('whiteboard', { 
-        type: 'start', 
-        x: e.offsetX, 
-        y: e.offsetY, 
-        eraser: eraserMode, 
-        room: room 
+      context.moveTo(x, y);
+      socket.emit('whiteboard', {
+        type: 'start',
+        x: x,
+        y: y,
+        eraser: eraserMode,
+        room: room
       });
-    });
-    
-    whiteboard.addEventListener('mousemove', (e) => {
-      if (!drawing) return;
+    }
 
-      // Set line width and stroke style based on the current mode
+    // Drawing in progress (common for mouse and touch)
+    function draw(e) {
+      if (!drawing) return;
+      e.preventDefault();
+      const { x, y } = getCanvasCoords(e);
+
+      // Set line width and style based on mode
       if (eraserMode) {
         context.lineWidth = eraserWidth;
-        context.strokeStyle = '#fff';  // White color to mimic erasing
+        context.strokeStyle = '#fff';
       } else {
         context.lineWidth = drawingWidth;
-        context.strokeStyle = '#000';  // Black for drawing
+        context.strokeStyle = '#000';
       }
       context.lineCap = 'round';
 
-      context.lineTo(e.offsetX, e.offsetY);
+      context.lineTo(x, y);
       context.stroke();
-      socket.emit('whiteboard', { 
-        type: 'draw', 
-        x: e.offsetX, 
-        y: e.offsetY, 
-        eraser: eraserMode, 
-        room: room 
+      socket.emit('whiteboard', {
+        type: 'draw',
+        x: x,
+        y: y,
+        eraser: eraserMode,
+        room: room
       });
-    });
+    }
 
-    ['mouseup', 'mouseout'].forEach(event => {
-      whiteboard.addEventListener(event, (e) => {
-        if (!drawing) return;
-        drawing = false;
-        context.closePath();
-        socket.emit('whiteboard', { type: 'end', room: room });
-      });
-    });
+    // End drawing (common for mouse and touch)
+    function endDrawing(e) {
+      if (!drawing) return;
+      e.preventDefault();
+      drawing = false;
+      context.closePath();
+      socket.emit('whiteboard', { type: 'end', room: room });
+    }
 
-    // Toolbar button for clearing the whiteboard
+    // Mouse event listeners
+    whiteboard.addEventListener('mousedown', startDrawing);
+    whiteboard.addEventListener('mousemove', draw);
+    whiteboard.addEventListener('mouseup', endDrawing);
+    whiteboard.addEventListener('mouseout', endDrawing);
+
+    // Touch event listeners
+    whiteboard.addEventListener('touchstart', startDrawing);
+    whiteboard.addEventListener('touchmove', draw);
+    whiteboard.addEventListener('touchend', endDrawing);
+    whiteboard.addEventListener('touchcancel', endDrawing);
+
+    // Toolbar functionality
     document.getElementById('clearBoard').addEventListener('click', () => {
       context.clearRect(0, 0, whiteboard.width, whiteboard.height);
       socket.emit('whiteboard', { type: 'clear', room: room });
     });
 
-    // Toolbar button for toggling the eraser on and off
     document.getElementById('toggleEraser').addEventListener('click', function() {
       eraserMode = !eraserMode;
       this.textContent = eraserMode ? 'Switch to Draw' : 'Toggle Eraser';
@@ -460,6 +499,7 @@
       }
     });
   </script>
+
 
 
 
