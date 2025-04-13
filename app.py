@@ -15,6 +15,8 @@ import logging
 import urllib3
 import time
 import pytz
+import uuid
+import re
 
 load_dotenv()
 
@@ -88,6 +90,14 @@ def check_db_connection():
                 db_connected = False
                 return False, "The application is currently unable to connect to the database. Please try again later."
         time.sleep(1)
+
+
+def generate_room_slug(room_name):
+    # Remove unwanted characters and convert spaces to dashes
+    base = re.sub(r'\W+', '-', room_name.lower())
+    # Append a short token, e.g., part of a UUID
+    token = str(uuid.uuid4())[:8]
+    return f"{base}-{token}"
 
 # Add a before_request hook to log all incoming requests
 @app.before_request
@@ -593,16 +603,17 @@ def dashboard():
             if request.method == 'POST':
                 if 'create_room' in request.form:
                     room_name = request.form.get('room_name')
+                    room_slug = generate_room_slug(room_name)
                     student_ids = request.form.getlist('students')
                     try:
                         for student_id in student_ids:
                             cursor.execute(
-                                "INSERT INTO invitations (tutor_id, student_id, room_name) VALUES (%s, %s, %s)",
-                                (user_id, student_id, room_name)
+                                "INSERT INTO invitations (tutor_id, student_id, room_name, room_slug) VALUES (%s, %s, %s, %s)",
+                                (user_id, student_id, room_name, room_slug)
                             )
                         conn.commit()
                         flash(f"Classroom '{room_name}' created and students invited.")
-                        logging.info(f"Tutor {user_id} created classroom: {room_name}")
+                        logging.info(f"Tutor {user_id} created classroom: {room_name} with slug {room_slug}")
                     except Exception as e:
                         conn.rollback()
                         flash(f"Error creating classroom: {str(e)}")

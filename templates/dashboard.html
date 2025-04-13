@@ -266,7 +266,7 @@
           <h3>Your Classrooms</h3>
           <ul class="classroom-list">
             {% for room in classrooms %}
-              <li><a href="{{ url_for('classroom', room_name=room) }}">{{ room }}</a></li>
+              <li><a href="{{ url_for('classroom', room_slug=room[0]) }}">{{ room[1] }}</a></li>
             {% else %}
               <li>No classrooms created yet.</li>
             {% endfor %}
