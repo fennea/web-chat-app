@@ -255,6 +255,27 @@
             <button type="submit">Assign Student</button>
           </form>
         </div>
+
+        <!-- Tutor: Scheduling Form -->
+        <div class="section">
+          <h3>Schedule a Class</h3>
+          <form method="POST" action="{{ url_for('schedule_class') }}">
+            <select name="room_name" required>
+              {% for room in classrooms %}
+                <option value="{{ room }}">{{ room }}</option>
+              {% endfor %}
+            </select>
+            <select name="student_id" required>
+              {% for student in students %}
+                <option value="{{ student[0] }}">{{ student[1] }} {{ student[2] }}</option>
+              {% endfor %}
+            </select>
+            <input type="datetime-local" name="scheduled_date" required />
+            <input type="text" name="join_link" placeholder="Class join link" required />
+            <button type="submit">Schedule Class</button>
+          </form>
+        </div>
+
       {% else %}
         <!-- Student Dashboard -->
         <div class="section">
@@ -270,9 +291,42 @@
       {% endif %}
     </div>
 
+    <!-- Calendar Section -->
+    <div class="section">
+      <h3>Schedule Calendar</h3>
+      <div id="calendar"></div>
+    </div>
+
     <div class="links">
       <a href="{{ url_for('update_info') }}">Update Personal Info</a>
       <a href="{{ url_for('update_password') }}">Update Password</a>
     </div>
   </div>
+{% endblock %}
+
+{% block extra_scripts %}
+  <!-- FullCalendar JS -->
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var calendarEl = document.getElementById('calendar');
+      var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'title',
+          right: 'dayGridMonth,timeGridWeek,listWeek'
+        },
+        events: '/api/events',
+        eventClick: function(info) {
+          // If the event has a join link, redirect the user.
+          if (info.event.url) {
+            window.location.href = info.event.url;
+            info.jsEvent.preventDefault();
+          }
+        }
+      });
+      calendar.render();
+    });
+  </script>
 {% endblock %}

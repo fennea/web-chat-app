@@ -1,5 +1,5 @@
 from collections import defaultdict
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from flask_socketio import SocketIO, emit, join_room, leave_room
 import os
 import psycopg2
@@ -611,6 +611,66 @@ def dashboard():
         logging.error(f"Error in dashboard for email {session['email']}: {str(e)}", exc_info=True)
         flash(f"Error loading dashboard: {str(e)}")
         return redirect(url_for('login'))
+
+@app.route('/schedule_class', methods=['POST'])
+def schedule_class():
+    # Ensure the tutor is logged in.
+    if 'email' not in session:
+        flash("Please log in.")
+        return redirect(url_for('login'))
+
+    cursor.execute("SELECT user_id, role FROM users WHERE email = %s", (session['email'],))
+    user = cursor.fetchone()
+    if not user or user[1] != 'tutor':
+        flash("Unauthorized access.")
+        return redirect(url_for('dashboard'))
+    tutor_id = user[0]
+
+    # Get form data for scheduling.
+    room_name = request.form.get('room_name')
+    scheduled_date = request.form.get('scheduled_date')  # in ISO string format from datetime-local input
+    join_link = request.form.get('join_link')
+    # For simplicity, we assume tutors schedule with one student at a time.
+    student_id = request.form.get('student_id')
+
+    try:
+        # Optionally, you can convert scheduled_date string into a datetime object.
+        scheduled_dt = datetime.fromisoformat(scheduled_date)
+        cursor.execute(
+            "INSERT INTO scheduled_classes (tutor_id, student_id, room_name, scheduled_date, join_link) VALUES (%s, %s, %s, %s, %s)",
+            (tutor_id, student_id, room_name, scheduled_dt, join_link)
+        )
+        conn.commit()
+        flash("Class scheduled successfully!")
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error scheduling class: {str(e)}")
+        logging.error("Error scheduling class: %s", str(e))
+    return redirect(url_for('dashboard'))
+
+
+@app.route('/api/events')
+def api_events():
+    # This endpoint returns scheduled classes as events for the calendar.
+    events = []
+    try:
+        cursor.execute(
+            "SELECT room_name, scheduled_date, join_link FROM scheduled_classes"
+        )
+        rows = cursor.fetchall()
+        for row in rows:
+            # Format the date as an ISO formatted string.
+            scheduled_date_iso = row[1].isoformat() if isinstance(row[1], datetime) else row[1]
+            event = {
+                'title': row[0],  # classroom name
+                'start': scheduled_date_iso,
+                'url': row[2]     # join link
+            }
+            events.append(event)
+        return jsonify(events)
+    except Exception as e:
+        logging.error("Error fetching events: %s", str(e))
+        return jsonify([]), 500
 
 @app.route('/classroom/<room_name>')
 def classroom(room_name):
