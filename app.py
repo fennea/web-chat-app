@@ -14,6 +14,7 @@ import requests
 import logging
 import urllib3
 import time
+import pytz
 
 load_dotenv()
 
@@ -46,6 +47,13 @@ cursor = None
 db_connected = False
 
 user_counts = defaultdict(int)
+
+# Set global timezone in app config
+app.config['TIMEZONE'] = 'UTC'
+
+# Optional: Define a helper to get the timezone
+def get_app_timezone():
+    return pytz.timezone(app.config['TIMEZONE'])
 
 try:
     conn = psycopg2.connect(DB_URL)
@@ -615,47 +623,75 @@ def dashboard():
 @app.route('/schedule_class', methods=['POST'])
 def schedule_class():
     if 'email' not in session:
-        flash("Please log in.")
-        return redirect(url_for('login'))
+        return jsonify({'success': False, 'error': 'Please log in.'}), 401
 
     cursor.execute("SELECT user_id, role FROM users WHERE email = %s", (session['email'],))
     user = cursor.fetchone()
     if not user or user[1] != 'tutor':
-        flash("Unauthorized access.")
-        return redirect(url_for('dashboard'))
+        return jsonify({'success': False, 'error': 'Unauthorized access.'}), 403
     tutor_id = user[0]
 
     room_name = request.form.get('room_name')
-    scheduled_date = request.form.get('scheduled_date')  # ISO format from datetime-local input
+    scheduled_date = request.form.get('scheduled_date')
     student_id = request.form.get('student_id')
+    join_link = request.form.get('join_link', None)
 
     try:
         from datetime import datetime
-        scheduled_dt = datetime.fromisoformat(scheduled_date)
-        # Insert without join_link (assumes scheduled_classes table supports NULL for join_link)
+        import pytz
+        # Parse input and convert to UTC
+        scheduled_dt = datetime.fromisoformat(scheduled_date.replace('Z', ''))
+        utc_tz = get_app_timezone()
+        scheduled_dt = scheduled_dt.astimezone(utc_tz)
         cursor.execute("""
-            INSERT INTO scheduled_classes (tutor_id, student_id, room_name, scheduled_date)
-            VALUES (%s, %s, %s, %s)
-        """, (tutor_id, student_id, room_name, scheduled_dt))
+            INSERT INTO scheduled_classes (tutor_id, student_id, room_name, scheduled_date, join_link)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (tutor_id, student_id, room_name, scheduled_dt, join_link))
         conn.commit()
-        flash("Class scheduled successfully!")
+        return jsonify({'success': True})
     except Exception as e:
         conn.rollback()
-        flash(f"Error scheduling class: {str(e)}")
         logging.error("Error scheduling class: %s", str(e))
-    return redirect(url_for('dashboard'))
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/events')
 def api_events():
+    if 'email' not in session:
+        return jsonify([]), 401
+
     events = []
     try:
-        cursor.execute("SELECT room_name, scheduled_date FROM scheduled_classes")
+        cursor.execute("SELECT user_id, role FROM users WHERE email = %s", (session['email'],))
+        user = cursor.fetchone()
+        if not user:
+            return jsonify([]), 404
+        user_id, role = user
+
+        if role == 'tutor':
+            query = """
+                SELECT room_name, scheduled_date, join_link
+                FROM scheduled_classes
+                WHERE tutor_id = %s
+            """
+            cursor.execute(query, (user_id,))
+        else:
+            query = """
+                SELECT room_name, scheduled_date, join_link
+                FROM scheduled_classes
+                WHERE student_id = %s
+            """
+            cursor.execute(query, (user_id,))
+
         rows = cursor.fetchall()
+        utc_tz = get_app_timezone()
         for row in rows:
-            scheduled_date_iso = row[1].isoformat() if hasattr(row[1], 'isoformat') else row[1]
+            room_name, scheduled_date, join_link = row
+            # Ensure UTC formatting
+            scheduled_date_iso = scheduled_date.astimezone(utc_tz).strftime('%Y-%m-%dT%H:%M:%S') if scheduled_date else None
             event = {
-                'title': row[0],  # classroom name, could also add student details if desired
-                'start': scheduled_date_iso
+                'title': room_name,
+                'start': scheduled_date_iso,
+                'url': join_link if join_link else None
             }
             events.append(event)
         return jsonify(events)

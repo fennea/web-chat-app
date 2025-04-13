@@ -268,7 +268,7 @@
         <!-- Tutor: Scheduling Form -->
         <div class="section">
           <h3>Schedule a Class</h3>
-          <form method="POST" action="{{ url_for('schedule_class') }}">
+          <form id="schedule-class-form" method="POST" action="{{ url_for('schedule_class') }}">
             <select name="room_name" required>
               {% for room in classrooms %}
                 <option value="{{ room }}">{{ room }}</option>
@@ -280,6 +280,8 @@
               {% endfor %}
             </select>
             <input type="datetime-local" name="scheduled_date" required />
+            <!-- Optional: Add join_link input -->
+            <input type="url" name="join_link" placeholder="Join Link (optional)" />
             <button type="submit">Schedule Class</button>
           </form>
         </div>
@@ -324,9 +326,70 @@
           center: 'title',
           right: 'dayGridMonth,timeGridWeek,listWeek'
         },
-        events: '/api/events'
+        eventTimeFormat: {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        },
+        events: '/api/events',
+        eventClick: function(info) {
+          // If event has a URL, open it; otherwise, show details
+          if (info.event.url) {
+            window.open(info.event.url, '_blank');
+            info.jsEvent.preventDefault(); // Prevent default redirect
+          } else {
+            alert('Event: ' + info.event.title + '\nDate: ' + info.event.start.toLocaleString());
+          }
+        },
+        eventDidMount: function(info) {
+          // Add tooltip with event details
+          info.el.title = info.event.title + ' at ' + info.event.start.toLocaleString();
+        },
+        loading: function(isLoading) {
+          // Visual feedback during loading
+          calendarEl.style.opacity = isLoading ? '0.5' : '1';
+        },
+        eventsFetch: function(fetchInfo, successCallback, failureCallback) {
+          fetch('/api/events', { credentials: 'same-origin' })
+            .then(response => {
+              if (!response.ok) throw new Error('Failed to fetch events: ' + response.status);
+              return response.json();
+            })
+            .then(data => successCallback(data))
+            .catch(error => {
+              console.error('Error fetching events:', error);
+              alert('Failed to load calendar events. Please try refreshing.');
+              failureCallback(error);
+            });
+        }
       });
       calendar.render();
+    });
+  </script>
+
+  <script>
+    document.getElementById('schedule-class-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      fetch(this.action, {
+        method: 'POST',
+        body: formData,
+        credentials: 'same-origin'
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert('Class scheduled successfully!');
+          calendar.refetchEvents(); // Refresh calendar
+          this.reset(); // Clear form
+        } else {
+          alert('Error scheduling class: ' + data.error);
+        }
+      })
+      .catch(error => {
+        alert('Error scheduling class.');
+        console.error('Error:', error);
+      });
     });
   </script>
 {% endblock %}
