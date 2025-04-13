@@ -296,7 +296,7 @@
           <ul class="classroom-list">
             {% for room_slug, room_name in classrooms %}
                 <a href="{{ url_for('classroom', room_slug=room_slug) }}">{{ room_name }}</a>
-            {% endfor %}
+            {% endif %}
               <li>No classroom invitations yet.</li>
             {% endfor %}
           </ul>
