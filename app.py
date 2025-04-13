@@ -597,8 +597,9 @@ def dashboard():
                           "FROM users u JOIN tutor_student ts ON u.user_id = ts.student_id "
                           "WHERE ts.tutor_id = %s", (user_id,))
             students = cursor.fetchall()
-            cursor.execute("SELECT DISTINCT room_name FROM invitations WHERE tutor_id = %s", (user_id,))
-            classrooms = [row[0] for row in cursor.fetchall()]
+            cursor.execute("SELECT DISTINCT room_slug, room_name FROM invitations WHERE tutor_id = %s", (user_id,))
+            classrooms = cursor.fetchall()
+            conn.commit()
 
             if request.method == 'POST':
                 if 'create_room' in request.form:
@@ -623,7 +624,10 @@ def dashboard():
         else:
             cursor.execute("SELECT DISTINCT room_slug, room_name FROM invitations WHERE student_id = %s", (user_id,))
             classrooms = cursor.fetchall()  # Check student_id, not tutor_id
+            conn.commit()
             students = None
+        
+        print("Classrooms:", classrooms)
 
         return render_template('dashboard.html', role=role, first_name=first_name, last_name=last_name, email=email, classrooms=classrooms, students=students)
     except Exception as e:
@@ -978,6 +982,7 @@ def on_session_update(data):
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8080))
     socketio.run(app, host='0.0.0.0', port=port, debug=True)
+    # socketio.run(app, host='127.0.0.1', port=8080, debug=True)
 
 def shutdown():
     try:

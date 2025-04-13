@@ -1374,3 +1374,318 @@ psycopg2.OperationalError: could not translate host name "dpg-cvkpb8pr0fns7385dp
 
 2025-04-13 15:51:58,762:WARNING: * Debugger is active!
 2025-04-13 15:51:58,767:INFO: * Debugger PIN: 535-720-947
+2025-04-13 17:22:59,170:INFO:Stripe version: 10.5.0
+2025-04-13 17:22:59,172:INFO:Requests version: 2.32.3
+2025-04-13 17:22:59,172:INFO:Urllib3 version: 2.3.0
+2025-04-13 17:22:59,863:INFO:Database connection established successfully
+2025-04-13 17:22:59,951:INFO: * Restarting with stat
+2025-04-13 17:23:00,368:INFO:Stripe version: 10.5.0
+2025-04-13 17:23:00,368:INFO:Requests version: 2.32.3
+2025-04-13 17:23:00,368:INFO:Urllib3 version: 2.3.0
+2025-04-13 17:23:01,028:INFO:Database connection established successfully
+2025-04-13 17:23:01,054:WARNING: * Debugger is active!
+2025-04-13 17:23:01,063:INFO: * Debugger PIN: 535-720-947
+2025-04-13 17:23:22,172:INFO:Incoming request: GET http://127.0.0.1:8080/
+2025-04-13 17:23:22,184:INFO:127.0.0.1 - - [2025-04-13 17:23:22] "GET / HTTP/1.1" 200 4017 0.012510
+2025-04-13 17:23:26,891:INFO:Incoming request: GET http://127.0.0.1:8080/static/background.mp4
+2025-04-13 17:23:26,897:INFO:127.0.0.1 - - [2025-04-13 17:23:26] "GET /static/background.mp4 HTTP/1.1" 206 343 0.006752
+2025-04-13 17:23:26,899:INFO:Incoming request: GET http://127.0.0.1:8080/static/background.mp4
+2025-04-13 17:23:26,944:INFO:127.0.0.1 - - [2025-04-13 17:23:26] "GET /static/background.mp4 HTTP/1.1" 206 8356010 0.045519
+2025-04-13 17:23:29,442:INFO:Incoming request: GET http://127.0.0.1:8080/login
+2025-04-13 17:23:29,525:INFO:127.0.0.1 - - [2025-04-13 17:23:29] "GET /login HTTP/1.1" 200 4641 0.083960
+2025-04-13 17:23:29,531:INFO:127.0.0.1 - - [2025-04-13 17:23:29] "GET /login?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 304 159 0.001732
+2025-04-13 17:23:29,533:INFO:127.0.0.1 - - [2025-04-13 17:23:29] "GET /login?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 304 160 0.001083
+2025-04-13 17:23:32,626:INFO:Incoming request: POST http://127.0.0.1:8080/login
+2025-04-13 17:23:33,007:INFO:Successful login for email: admin@twotoro.com, role: admin
+2025-04-13 17:23:33,008:INFO:127.0.0.1 - - [2025-04-13 17:23:33] "POST /login HTTP/1.1" 302 531 0.382680
+2025-04-13 17:23:33,016:INFO:Incoming request: GET http://127.0.0.1:8080/admin_dashboard
+2025-04-13 17:23:33,251:INFO:Total users: 5, Paid users: 2, Free users: 3
+2025-04-13 17:23:33,327:INFO:Active sessions: 0
+2025-04-13 17:23:33,406:INFO:Products fetched: 5
+2025-04-13 17:23:33,417:INFO:127.0.0.1 - - [2025-04-13 17:23:33] "GET /admin_dashboard HTTP/1.1" 200 11939 0.400363
+2025-04-13 17:23:43,170:INFO:Incoming request: GET http://127.0.0.1:8080/logout
+2025-04-13 17:23:43,171:INFO:User logged out: unknown
+2025-04-13 17:23:43,172:INFO:127.0.0.1 - - [2025-04-13 17:23:43] "GET /logout HTTP/1.1" 302 441 0.002414
+2025-04-13 17:23:43,181:INFO:Incoming request: GET http://127.0.0.1:8080/login
+2025-04-13 17:23:43,263:INFO:127.0.0.1 - - [2025-04-13 17:23:43] "GET /login HTTP/1.1" 200 4641 0.083260
+2025-04-13 17:24:08,135:INFO:Incoming request: POST http://127.0.0.1:8080/login
+2025-04-13 17:24:08,509:INFO:Successful login for email: anthony.fenner@outlook.com, role: tutor
+2025-04-13 17:24:08,510:INFO:127.0.0.1 - - [2025-04-13 17:24:08] "POST /login HTTP/1.1" 302 526 0.374975
+2025-04-13 17:24:08,519:INFO:Incoming request: GET http://127.0.0.1:8080/dashboard
+2025-04-13 17:24:08,846:INFO:127.0.0.1 - - [2025-04-13 17:24:08] "GET /dashboard HTTP/1.1" 200 8972 0.326754
+2025-04-13 17:24:13,278:INFO:Incoming request: GET http://127.0.0.1:8080/classroom/t
+2025-04-13 17:24:13,280:INFO:Accessing classroom with slug: t for user email: anthony.fenner@outlook.com
+2025-04-13 17:24:13,280:WARNING:Invalid room_slug format: t
+2025-04-13 17:24:13,281:INFO:127.0.0.1 - - [2025-04-13 17:24:13] "GET /classroom/t HTTP/1.1" 302 597 0.003746
+2025-04-13 17:24:13,290:INFO:Incoming request: GET http://127.0.0.1:8080/dashboard
+2025-04-13 17:24:13,687:INFO:127.0.0.1 - - [2025-04-13 17:24:13] "GET /dashboard HTTP/1.1" 200 9208 0.398011
+2025-04-13 17:25:51,637:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-13 17:25:51,797:INFO: * Restarting with stat
+2025-04-13 17:25:52,296:INFO:Stripe version: 10.5.0
+2025-04-13 17:25:52,298:INFO:Requests version: 2.32.3
+2025-04-13 17:25:52,298:INFO:Urllib3 version: 2.3.0
+2025-04-13 17:25:53,005:INFO:Database connection established successfully
+2025-04-13 17:25:53,028:WARNING: * Debugger is active!
+2025-04-13 17:25:53,037:INFO: * Debugger PIN: 535-720-947
+2025-04-13 17:25:55,921:INFO:Incoming request: GET http://127.0.0.1:8080/dashboard
+2025-04-13 17:25:55,922:INFO:127.0.0.1 - - [2025-04-13 17:25:55] "GET /dashboard HTTP/1.1" 302 525 0.001081
+2025-04-13 17:25:55,924:INFO:Incoming request: GET http://127.0.0.1:8080/login
+2025-04-13 17:25:56,013:INFO:127.0.0.1 - - [2025-04-13 17:25:56] "GET /login HTTP/1.1" 200 4875 0.088521
+2025-04-13 17:26:00,777:INFO:Incoming request: POST http://127.0.0.1:8080/login
+2025-04-13 17:26:01,162:INFO:Successful login for email: anthony.fenner@outlook.com, role: tutor
+2025-04-13 17:26:01,163:INFO:127.0.0.1 - - [2025-04-13 17:26:01] "POST /login HTTP/1.1" 302 526 0.386523
+2025-04-13 17:26:01,173:INFO:Incoming request: GET http://127.0.0.1:8080/dashboard
+2025-04-13 17:26:01,508:INFO:127.0.0.1 - - [2025-04-13 17:26:01] "GET /dashboard HTTP/1.1" 200 8972 0.335269
+2025-04-13 17:26:05,556:INFO:Incoming request: GET http://127.0.0.1:8080/classroom/t
+2025-04-13 17:26:05,557:INFO:Accessing classroom with slug: t for user email: anthony.fenner@outlook.com
+2025-04-13 17:26:05,557:WARNING:Invalid room_slug format: t
+2025-04-13 17:26:05,558:INFO:127.0.0.1 - - [2025-04-13 17:26:05] "GET /classroom/t HTTP/1.1" 302 597 0.003307
+2025-04-13 17:26:05,567:INFO:Incoming request: GET http://127.0.0.1:8080/dashboard
+2025-04-13 17:26:05,903:INFO:127.0.0.1 - - [2025-04-13 17:26:05] "GET /dashboard HTTP/1.1" 200 9208 0.336751
+2025-04-13 17:26:23,723:INFO:Incoming request: GET http://127.0.0.1:8080/logout
+2025-04-13 17:26:23,724:INFO:User logged out: unknown
+2025-04-13 17:26:23,725:INFO:127.0.0.1 - - [2025-04-13 17:26:23] "GET /logout HTTP/1.1" 302 441 0.002830
+2025-04-13 17:26:23,734:INFO:Incoming request: GET http://127.0.0.1:8080/login
+2025-04-13 17:26:23,826:INFO:127.0.0.1 - - [2025-04-13 17:26:23] "GET /login HTTP/1.1" 200 4641 0.092294
+2025-04-13 17:26:29,482:INFO:Incoming request: GET http://127.0.0.1:8080/
+2025-04-13 17:26:29,484:INFO:127.0.0.1 - - [2025-04-13 17:26:29] "GET / HTTP/1.1" 200 4017 0.001817
+2025-04-13 17:26:31,867:INFO:Incoming request: GET http://127.0.0.1:8080/static/background.mp4
+2025-04-13 17:26:31,873:INFO:127.0.0.1 - - [2025-04-13 17:26:31] "GET /static/background.mp4 HTTP/1.1" 206 343 0.006809
+2025-04-13 17:26:31,875:INFO:Incoming request: GET http://127.0.0.1:8080/static/background.mp4
+2025-04-13 17:26:31,890:INFO:127.0.0.1 - - [2025-04-13 17:26:31] "GET /static/background.mp4 HTTP/1.1" 206 8356010 0.015080
+2025-04-13 17:26:33,496:INFO:Incoming request: GET http://127.0.0.1:8080/login
+2025-04-13 17:26:33,583:INFO:127.0.0.1 - - [2025-04-13 17:26:33] "GET /login HTTP/1.1" 200 4641 0.088157
+2025-04-13 17:26:33,590:INFO:127.0.0.1 - - [2025-04-13 17:26:33] "GET /login?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 304 159 0.002311
+2025-04-13 17:26:33,593:INFO:127.0.0.1 - - [2025-04-13 17:26:33] "GET /login?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 304 160 0.001330
+2025-04-13 17:26:38,028:INFO:Incoming request: POST http://127.0.0.1:8080/login
+2025-04-13 17:26:38,455:INFO:Successful login for email: anthony.fenner@outlook.com, role: tutor
+2025-04-13 17:26:38,455:INFO:127.0.0.1 - - [2025-04-13 17:26:38] "POST /login HTTP/1.1" 302 526 0.427716
+2025-04-13 17:26:38,465:INFO:Incoming request: GET http://127.0.0.1:8080/dashboard
+2025-04-13 17:26:38,904:INFO:127.0.0.1 - - [2025-04-13 17:26:38] "GET /dashboard HTTP/1.1" 200 8972 0.438563
+2025-04-13 17:26:44,800:INFO:Incoming request: GET http://127.0.0.1:8080/classroom/t
+2025-04-13 17:26:44,800:INFO:Accessing classroom with slug: t for user email: anthony.fenner@outlook.com
+2025-04-13 17:26:44,800:WARNING:Invalid room_slug format: t
+2025-04-13 17:26:44,801:INFO:127.0.0.1 - - [2025-04-13 17:26:44] "GET /classroom/t HTTP/1.1" 302 597 0.000882
+2025-04-13 17:26:44,807:INFO:Incoming request: GET http://127.0.0.1:8080/dashboard
+2025-04-13 17:26:45,207:INFO:127.0.0.1 - - [2025-04-13 17:26:45] "GET /dashboard HTTP/1.1" 200 9208 0.399569
+2025-04-13 17:28:31,148:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-13 17:28:31,312:INFO: * Restarting with stat
+2025-04-13 17:28:31,769:INFO:Stripe version: 10.5.0
+2025-04-13 17:28:31,769:INFO:Requests version: 2.32.3
+2025-04-13 17:28:31,769:INFO:Urllib3 version: 2.3.0
+2025-04-13 17:28:32,781:INFO:Database connection established successfully
+2025-04-13 17:28:32,822:WARNING: * Debugger is active!
+2025-04-13 17:28:32,830:INFO: * Debugger PIN: 535-720-947
+2025-04-13 17:28:35,556:INFO:Incoming request: GET http://127.0.0.1:8080/dashboard
+2025-04-13 17:28:35,557:INFO:127.0.0.1 - - [2025-04-13 17:28:35] "GET /dashboard HTTP/1.1" 302 525 0.000987
+2025-04-13 17:28:35,560:INFO:Incoming request: GET http://127.0.0.1:8080/login
+2025-04-13 17:28:35,645:INFO:127.0.0.1 - - [2025-04-13 17:28:35] "GET /login HTTP/1.1" 200 4875 0.085012
+2025-04-13 17:28:38,431:INFO:Incoming request: POST http://127.0.0.1:8080/login
+2025-04-13 17:28:38,794:INFO:Successful login for email: anthony.fenner@outlook.com, role: tutor
+2025-04-13 17:28:38,795:INFO:127.0.0.1 - - [2025-04-13 17:28:38] "POST /login HTTP/1.1" 302 526 0.363813
+2025-04-13 17:28:38,802:INFO:Incoming request: GET http://127.0.0.1:8080/dashboard
+2025-04-13 17:28:39,102:INFO:127.0.0.1 - - [2025-04-13 17:28:39] "GET /dashboard HTTP/1.1" 200 8972 0.300518
+2025-04-13 17:28:48,868:INFO:Incoming request: GET http://127.0.0.1:8080/classroom/T
+2025-04-13 17:28:48,869:INFO:Accessing classroom with slug: T for user email: anthony.fenner@outlook.com
+2025-04-13 17:28:48,869:WARNING:Invalid room_slug format: T
+2025-04-13 17:28:48,870:INFO:127.0.0.1 - - [2025-04-13 17:28:48] "GET /classroom/T HTTP/1.1" 302 597 0.003665
+2025-04-13 17:28:48,877:INFO:Incoming request: GET http://127.0.0.1:8080/dashboard
+2025-04-13 17:28:49,187:INFO:127.0.0.1 - - [2025-04-13 17:28:49] "GET /dashboard HTTP/1.1" 200 9208 0.310684
+2025-04-13 17:29:18,808:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-13 17:29:18,939:INFO: * Restarting with stat
+2025-04-13 17:29:19,376:INFO:Stripe version: 10.5.0
+2025-04-13 17:29:19,376:INFO:Requests version: 2.32.3
+2025-04-13 17:29:19,376:INFO:Urllib3 version: 2.3.0
+2025-04-13 17:29:20,036:INFO:Database connection established successfully
+2025-04-13 17:29:20,055:WARNING: * Debugger is active!
+2025-04-13 17:29:20,063:INFO: * Debugger PIN: 535-720-947
+2025-04-13 17:29:27,486:INFO:Incoming request: GET http://127.0.0.1:8080/logout
+2025-04-13 17:29:27,487:INFO:User logged out: unknown
+2025-04-13 17:29:27,487:INFO:127.0.0.1 - - [2025-04-13 17:29:27] "GET /logout HTTP/1.1" 302 351 0.003050
+2025-04-13 17:29:27,493:INFO:Incoming request: GET http://127.0.0.1:8080/login
+2025-04-13 17:29:27,573:INFO:127.0.0.1 - - [2025-04-13 17:29:27] "GET /login HTTP/1.1" 200 4641 0.080674
+2025-04-13 17:29:29,736:INFO:Incoming request: GET http://127.0.0.1:8080/login
+2025-04-13 17:29:29,812:INFO:127.0.0.1 - - [2025-04-13 17:29:29] "GET /login HTTP/1.1" 200 4641 0.077613
+2025-04-13 17:29:37,490:INFO:Incoming request: POST http://127.0.0.1:8080/login
+2025-04-13 17:29:37,846:INFO:Successful login for email: anthony.fenner@outlook.com, role: tutor
+2025-04-13 17:29:37,846:INFO:127.0.0.1 - - [2025-04-13 17:29:37] "POST /login HTTP/1.1" 302 526 0.357702
+2025-04-13 17:29:37,857:INFO:Incoming request: GET http://127.0.0.1:8080/dashboard
+2025-04-13 17:29:38,166:INFO:127.0.0.1 - - [2025-04-13 17:29:38] "GET /dashboard HTTP/1.1" 200 8972 0.309400
+2025-04-13 17:29:44,570:INFO:Incoming request: GET http://127.0.0.1:8080/classroom/t
+2025-04-13 17:29:44,570:INFO:Accessing classroom with slug: t for user email: anthony.fenner@outlook.com
+2025-04-13 17:29:44,571:WARNING:Invalid room_slug format: t
+2025-04-13 17:29:44,571:INFO:127.0.0.1 - - [2025-04-13 17:29:44] "GET /classroom/t HTTP/1.1" 302 597 0.001580
+2025-04-13 17:29:44,580:INFO:Incoming request: GET http://127.0.0.1:8080/dashboard
+2025-04-13 17:29:44,881:INFO:127.0.0.1 - - [2025-04-13 17:29:44] "GET /dashboard HTTP/1.1" 200 9208 0.301033
+2025-04-13 17:30:30,246:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-13 17:30:30,425:INFO: * Restarting with stat
+2025-04-13 17:30:30,876:INFO:Stripe version: 10.5.0
+2025-04-13 17:30:30,876:INFO:Requests version: 2.32.3
+2025-04-13 17:30:30,876:INFO:Urllib3 version: 2.3.0
+2025-04-13 17:30:31,623:INFO:Database connection established successfully
+2025-04-13 17:30:31,665:WARNING: * Debugger is active!
+2025-04-13 17:30:31,674:INFO: * Debugger PIN: 535-720-947
+2025-04-13 17:30:37,860:INFO:Incoming request: GET http://127.0.0.1:8080/
+2025-04-13 17:30:37,864:INFO:127.0.0.1 - - [2025-04-13 17:30:37] "GET / HTTP/1.1" 200 4017 0.005032
+2025-04-13 17:30:39,436:INFO:Incoming request: GET http://127.0.0.1:8080/static/background.mp4
+2025-04-13 17:30:39,441:INFO:127.0.0.1 - - [2025-04-13 17:30:39] "GET /static/background.mp4 HTTP/1.1" 206 343 0.005372
+2025-04-13 17:30:39,444:INFO:Incoming request: GET http://127.0.0.1:8080/static/background.mp4
+2025-04-13 17:30:39,459:INFO:127.0.0.1 - - [2025-04-13 17:30:39] "GET /static/background.mp4 HTTP/1.1" 206 8356010 0.015291
+2025-04-13 17:30:40,685:INFO:Incoming request: GET http://127.0.0.1:8080/login
+2025-04-13 17:30:40,780:INFO:127.0.0.1 - - [2025-04-13 17:30:40] "GET /login HTTP/1.1" 200 4641 0.096857
+2025-04-13 17:30:40,785:INFO:127.0.0.1 - - [2025-04-13 17:30:40] "GET /login?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 304 160 0.002085
+2025-04-13 17:30:40,789:INFO:127.0.0.1 - - [2025-04-13 17:30:40] "GET /login?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 304 159 0.001075
+2025-04-13 17:30:48,178:INFO:Incoming request: POST http://127.0.0.1:8080/login
+2025-04-13 17:30:48,569:INFO:Successful login for email: anthony.fenner@outlook.com, role: tutor
+2025-04-13 17:30:48,570:INFO:127.0.0.1 - - [2025-04-13 17:30:48] "POST /login HTTP/1.1" 302 526 0.393334
+2025-04-13 17:30:48,579:INFO:Incoming request: GET http://127.0.0.1:8080/dashboard
+2025-04-13 17:30:48,944:INFO:127.0.0.1 - - [2025-04-13 17:30:48] "GET /dashboard HTTP/1.1" 200 8972 0.365130
+2025-04-13 17:33:58,334:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-13 17:33:58,485:INFO: * Restarting with stat
+2025-04-13 17:33:58,930:INFO:Stripe version: 10.5.0
+2025-04-13 17:33:58,930:INFO:Requests version: 2.32.3
+2025-04-13 17:33:58,930:INFO:Urllib3 version: 2.3.0
+2025-04-13 17:33:59,596:INFO:Database connection established successfully
+2025-04-13 17:33:59,631:WARNING: * Debugger is active!
+2025-04-13 17:33:59,637:INFO: * Debugger PIN: 535-720-947
+2025-04-13 17:34:02,448:INFO:Incoming request: GET http://127.0.0.1:8080/logout
+2025-04-13 17:34:02,449:INFO:User logged out: unknown
+2025-04-13 17:34:02,450:INFO:127.0.0.1 - - [2025-04-13 17:34:02] "GET /logout HTTP/1.1" 302 351 0.003231
+2025-04-13 17:34:02,456:INFO:Incoming request: GET http://127.0.0.1:8080/login
+2025-04-13 17:34:02,546:INFO:127.0.0.1 - - [2025-04-13 17:34:02] "GET /login HTTP/1.1" 200 4641 0.090894
+2025-04-13 17:34:05,262:INFO:Incoming request: POST http://127.0.0.1:8080/login
+2025-04-13 17:34:05,635:INFO:Successful login for email: anthony.fenner@outlook.com, role: tutor
+2025-04-13 17:34:05,636:INFO:127.0.0.1 - - [2025-04-13 17:34:05] "POST /login HTTP/1.1" 302 526 0.374585
+2025-04-13 17:34:05,644:INFO:Incoming request: GET http://127.0.0.1:8080/dashboard
+2025-04-13 17:34:05,932:ERROR:Error in dashboard for email anthony.fenner@outlook.com: column "room_slog" does not exist
+LINE 1: SELECT DISTINCT room_slog, room_name FROM invitations WHERE ...
+                        ^
+HINT:  Perhaps you meant to reference the column "invitations.room_slug".
+Traceback (most recent call last):
+  File "/Users/anthonyfenner/Documents/Video Classroom/app.py", line 600, in dashboard
+    cursor.execute("SELECT DISTINCT room_slog, room_name FROM invitations WHERE tutor_id = %s", (user_id,))
+psycopg2.errors.UndefinedColumn: column "room_slog" does not exist
+LINE 1: SELECT DISTINCT room_slog, room_name FROM invitations WHERE ...
+                        ^
+HINT:  Perhaps you meant to reference the column "invitations.room_slug".
+
+2025-04-13 17:34:05,937:INFO:127.0.0.1 - - [2025-04-13 17:34:05] "GET /dashboard HTTP/1.1" 302 751 0.293717
+2025-04-13 17:34:05,956:INFO:Incoming request: GET http://127.0.0.1:8080/login
+2025-04-13 17:34:06,062:ERROR:Database connection check failed: current transaction is aborted, commands ignored until end of transaction block
+Traceback (most recent call last):
+  File "/Users/anthonyfenner/Documents/Video Classroom/app.py", line 76, in check_db_connection
+    cursor.execute("SELECT 1")
+psycopg2.errors.InFailedSqlTransaction: current transaction is aborted, commands ignored until end of transaction block
+
+2025-04-13 17:34:06,612:INFO:Database connection re-established successfully
+2025-04-13 17:34:06,615:INFO:127.0.0.1 - - [2025-04-13 17:34:06] "GET /login HTTP/1.1" 200 5043 0.658897
+2025-04-13 17:35:09,022:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-13 17:35:09,176:INFO: * Restarting with stat
+2025-04-13 17:35:09,597:INFO:Stripe version: 10.5.0
+2025-04-13 17:35:09,597:INFO:Requests version: 2.32.3
+2025-04-13 17:35:09,597:INFO:Urllib3 version: 2.3.0
+2025-04-13 17:35:10,410:INFO:Database connection established successfully
+2025-04-13 17:35:10,431:WARNING: * Debugger is active!
+2025-04-13 17:35:10,438:INFO: * Debugger PIN: 535-720-947
+2025-04-13 17:35:12,047:INFO:Incoming request: GET http://127.0.0.1:8080/login
+2025-04-13 17:35:12,131:INFO:127.0.0.1 - - [2025-04-13 17:35:12] "GET /login HTTP/1.1" 200 4641 0.085652
+2025-04-13 17:35:12,136:INFO:127.0.0.1 - - [2025-04-13 17:35:12] "GET /login?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 304 159 0.003524
+2025-04-13 17:35:12,138:INFO:127.0.0.1 - - [2025-04-13 17:35:12] "GET /login?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 304 160 0.001106
+2025-04-13 17:35:16,690:INFO:Incoming request: POST http://127.0.0.1:8080/login
+2025-04-13 17:35:17,081:INFO:Successful login for email: anthony.fenner@outlook.com, role: tutor
+2025-04-13 17:35:17,081:INFO:127.0.0.1 - - [2025-04-13 17:35:17] "POST /login HTTP/1.1" 302 526 0.392961
+2025-04-13 17:35:17,087:INFO:Incoming request: GET http://127.0.0.1:8080/dashboard
+2025-04-13 17:35:17,494:ERROR:Error in dashboard for email anthony.fenner@outlook.com: Could not build url for endpoint 'classroom'. Did you forget to specify values ['room_slug']?
+Traceback (most recent call last):
+  File "/Users/anthonyfenner/Documents/Video Classroom/app.py", line 632, in dashboard
+    return render_template('dashboard.html', role=role, first_name=first_name, last_name=last_name, email=email, classrooms=classrooms, students=students)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/flask/templating.py", line 150, in render_template
+    return _render(app, template, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/flask/templating.py", line 131, in _render
+    rv = template.render(context)
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/jinja2/environment.py", line 1295, in render
+    self.environment.handle_exception()
+  File "/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/jinja2/environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "/Users/anthonyfenner/Documents/Video Classroom/templates/dashboard.html", line 1, in top-level template code
+    {% extends "base.html" %}
+  File "/Users/anthonyfenner/Documents/Video Classroom/templates/base.html", line 63, in top-level template code
+    {% block content %}{% endblock %}
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/anthonyfenner/Documents/Video Classroom/templates/dashboard.html", line 266, in block 'content'
+    <li><a href="{{ url_for('classroom', room_slug=room[0]) }}">{{ room[1] }}</a></li>
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/flask/app.py", line 1121, in url_for
+    return self.handle_url_build_error(error, endpoint, values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/flask/app.py", line 1110, in url_for
+    rv = url_adapter.build(  # type: ignore[union-attr]
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/anthonyfenner/Documents/Video Classroom/venv/lib/python3.12/site-packages/werkzeug/routing/map.py", line 924, in build
+    raise BuildError(endpoint, values, method, self)
+werkzeug.routing.exceptions.BuildError: Could not build url for endpoint 'classroom'. Did you forget to specify values ['room_slug']?
+2025-04-13 17:35:17,498:INFO:127.0.0.1 - - [2025-04-13 17:35:17] "GET /dashboard HTTP/1.1" 302 665 0.410498
+2025-04-13 17:35:17,504:INFO:Incoming request: GET http://127.0.0.1:8080/login
+2025-04-13 17:35:17,663:INFO:127.0.0.1 - - [2025-04-13 17:35:17] "GET /login HTTP/1.1" 200 4930 0.158740
+2025-04-13 17:38:13,816:INFO:Incoming request: GET http://127.0.0.1:8080/login
+2025-04-13 17:38:13,894:INFO:127.0.0.1 - - [2025-04-13 17:38:13] "GET /login HTTP/1.1" 200 4527 0.078570
+2025-04-13 17:38:18,873:INFO:Incoming request: POST http://127.0.0.1:8080/login
+2025-04-13 17:38:19,251:INFO:Successful login for email: anthony.fenner@outlook.com, role: tutor
+2025-04-13 17:38:19,251:INFO:127.0.0.1 - - [2025-04-13 17:38:19] "POST /login HTTP/1.1" 302 526 0.379694
+2025-04-13 17:38:19,262:INFO:Incoming request: GET http://127.0.0.1:8080/dashboard
+2025-04-13 17:38:19,653:INFO:127.0.0.1 - - [2025-04-13 17:38:19] "GET /dashboard HTTP/1.1" 200 8862 0.391213
+2025-04-13 17:38:23,445:INFO:Incoming request: GET http://127.0.0.1:8080/classroom/test9-735466e4
+2025-04-13 17:38:23,445:INFO:Accessing classroom with slug: test9-735466e4 for user email: anthony.fenner@outlook.com
+2025-04-13 17:38:24,528:INFO:127.0.0.1 - - [2025-04-13 17:38:24] "GET /classroom/test9-735466e4 HTTP/1.1" 200 19496 1.084833
+2025-04-13 17:38:24,714:INFO:127.0.0.1 - - [2025-04-13 17:38:24] "GET /socket.io/?EIO=4&transport=polling&t=POnJSt6 HTTP/1.1" 200 276 0.001395
+2025-04-13 17:38:24,719:INFO:127.0.0.1 - - [2025-04-13 17:38:24] "POST /socket.io/?EIO=4&transport=polling&t=POnJStC&sid=RauSxp7u-rIcyat-AAAA HTTP/1.1" 200 195 0.000726
+2025-04-13 17:38:24,721:INFO:127.0.0.1 - - [2025-04-13 17:38:24] "GET /socket.io/?EIO=4&transport=polling&t=POnJStC.0&sid=RauSxp7u-rIcyat-AAAA HTTP/1.1" 200 157 0.000105
+2025-04-13 17:38:24,722:INFO:127.0.0.1 - - [2025-04-13 17:38:24] "GET /socket.io/?EIO=4&transport=polling&t=POnJStH&sid=RauSxp7u-rIcyat-AAAA HTTP/1.1" 200 157 0.000080
+2025-04-13 17:38:24,724:INFO:User 7hwMrVKRxx5YNNfqAAAB joined room: test9, total users now: 1
+2025-04-13 17:38:34,444:INFO:Session updated for user_id 23: duration 0
+2025-04-13 17:38:34,447:INFO:Incoming request: GET http://127.0.0.1:8080/dashboard
+2025-04-13 17:38:34,891:INFO:127.0.0.1 - - [2025-04-13 17:38:34] "GET /dashboard HTTP/1.1" 200 8862 0.444774
+2025-04-13 17:38:39,151:INFO:Incoming request: GET http://127.0.0.1:8080/logout
+2025-04-13 17:38:39,152:INFO:User logged out: unknown
+2025-04-13 17:38:39,153:INFO:127.0.0.1 - - [2025-04-13 17:38:39] "GET /logout HTTP/1.1" 302 460 0.002692
+2025-04-13 17:38:39,161:INFO:Incoming request: GET http://127.0.0.1:8080/login
+2025-04-13 17:38:39,321:INFO:127.0.0.1 - - [2025-04-13 17:38:39] "GET /login HTTP/1.1" 200 4641 0.160292
+2025-04-13 17:39:01,285:INFO:Incoming request: POST http://127.0.0.1:8080/login
+2025-04-13 17:39:01,655:INFO:Successful login for email: anthony.fenner@outlook.com, role: tutor
+2025-04-13 17:39:01,656:INFO:127.0.0.1 - - [2025-04-13 17:39:01] "POST /login HTTP/1.1" 302 558 0.371669
+2025-04-13 17:39:01,664:INFO:Incoming request: GET http://127.0.0.1:8080/dashboard
+2025-04-13 17:39:02,047:INFO:127.0.0.1 - - [2025-04-13 17:39:02] "GET /dashboard HTTP/1.1" 200 8862 0.382946
+2025-04-13 17:39:09,811:INFO:Incoming request: POST http://127.0.0.1:8080/dashboard
+2025-04-13 17:39:10,490:INFO:Tutor 23 created classroom: Learning Classroom with slug learning-classroom-74846f9e
+2025-04-13 17:39:10,493:INFO:127.0.0.1 - - [2025-04-13 17:39:10] "POST /dashboard HTTP/1.1" 302 642 0.682399
+2025-04-13 17:39:10,505:INFO:Incoming request: GET http://127.0.0.1:8080/dashboard
+2025-04-13 17:39:10,967:INFO:127.0.0.1 - - [2025-04-13 17:39:10] "GET /dashboard HTTP/1.1" 200 9284 0.462482
+2025-04-13 17:39:29,209:INFO:Incoming request: GET http://127.0.0.1:8080/classroom/learning-classroom-74846f9e
+2025-04-13 17:39:29,209:INFO:Accessing classroom with slug: learning-classroom-74846f9e for user email: anthony.fenner@outlook.com
+2025-04-13 17:39:30,115:INFO:127.0.0.1 - - [2025-04-13 17:39:30] "GET /classroom/learning-classroom-74846f9e HTTP/1.1" 200 19522 0.907502
+2025-04-13 17:39:30,137:INFO:127.0.0.1 - - [2025-04-13 17:39:30] "GET /socket.io/?EIO=4&transport=polling&t=POnJirN HTTP/1.1" 200 276 0.000313
+2025-04-13 17:39:30,143:INFO:127.0.0.1 - - [2025-04-13 17:39:30] "POST /socket.io/?EIO=4&transport=polling&t=POnJirT&sid=8n9QTbY1ATt6ccTQAAAC HTTP/1.1" 200 195 0.000448
+2025-04-13 17:39:30,143:INFO:127.0.0.1 - - [2025-04-13 17:39:30] "GET /socket.io/?EIO=4&transport=polling&t=POnJirT.0&sid=8n9QTbY1ATt6ccTQAAAC HTTP/1.1" 200 189 0.000139
+2025-04-13 17:39:30,149:INFO:127.0.0.1 - - [2025-04-13 17:39:30] "GET /socket.io/?EIO=4&transport=polling&t=POnJirZ&sid=8n9QTbY1ATt6ccTQAAAC HTTP/1.1" 200 157 0.000179
+2025-04-13 17:39:30,150:INFO:127.0.0.1 - - [2025-04-13 17:39:30] "POST /socket.io/?EIO=4&transport=polling&t=POnJira&sid=8n9QTbY1ATt6ccTQAAAC HTTP/1.1" 200 195 0.000282
+2025-04-13 17:39:30,151:INFO:User zspnwwdi1eeRThpKAAAD joined room: Learning Classroom, total users now: 1
+2025-04-13 17:39:30,152:INFO:127.0.0.1 - - [2025-04-13 17:39:30] "GET /socket.io/?EIO=4&transport=polling&t=POnJirb&sid=8n9QTbY1ATt6ccTQAAAC HTTP/1.1" 200 157 0.000104
+2025-04-13 17:39:34,072:INFO:Session updated for user_id 23: duration 0
+2025-04-13 17:39:34,075:INFO:Incoming request: GET http://127.0.0.1:8080/dashboard
+2025-04-13 17:39:34,532:INFO:127.0.0.1 - - [2025-04-13 17:39:34] "GET /dashboard HTTP/1.1" 200 8970 0.458742
+2025-04-13 17:39:36,860:INFO:Incoming request: GET http://127.0.0.1:8080/logout
+2025-04-13 17:39:36,860:INFO:User logged out: unknown
+2025-04-13 17:39:36,861:INFO:127.0.0.1 - - [2025-04-13 17:39:36] "GET /logout HTTP/1.1" 302 460 0.002375
+2025-04-13 17:39:36,870:INFO:Incoming request: GET http://127.0.0.1:8080/login
+2025-04-13 17:39:37,032:INFO:127.0.0.1 - - [2025-04-13 17:39:37] "GET /login HTTP/1.1" 200 4641 0.162528
+2025-04-13 17:39:52,850:INFO: * Detected change in '/Users/anthonyfenner/Documents/Video Classroom/app.py', reloading
+2025-04-13 17:39:53,050:INFO: * Restarting with stat
+2025-04-13 17:39:53,506:INFO:Stripe version: 10.5.0
+2025-04-13 17:39:53,506:INFO:Requests version: 2.32.3
+2025-04-13 17:39:53,506:INFO:Urllib3 version: 2.3.0
+2025-04-13 17:39:54,324:INFO:Database connection established successfully
+2025-04-13 17:39:54,343:WARNING: * Debugger is active!
+2025-04-13 17:39:54,350:INFO: * Debugger PIN: 535-720-947
