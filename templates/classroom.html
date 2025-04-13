@@ -72,7 +72,12 @@
           Flip Remote Video
         {% endif %}
       </button>
-      <button id="dashboardBtn" lass="btn btn-info" onclick="window.location.href='{{ url_for('dashboard') }}'">Dashboard</button>
+
+      <a id="dashboardBtn" href="{{ url_for('dashboard') }}" class="btn btn-info ms-2">
+        <i class="bi bi-house-door"></i> Dashboard
+      </a>
+
+
     </div>
 
     <!-- Status Messages -->
