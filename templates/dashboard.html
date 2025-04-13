@@ -339,7 +339,7 @@
 
 {% block extra_scripts %}
   <!-- FullCalendar JS (Standard Bundle) -->
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.js"></script>
+  <script src="{{ url_for('static', filename='js/index.global.js') }}"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       console.log('Initializing FullCalendar...'); // Debug log
@@ -361,22 +361,8 @@
           minute: '2-digit',
           hour12: true
         },
-        events: '/api/events',
-        eventClick: function(info) {
-          if (info.event.url) {
-            window.open(info.event.url, '_blank');
-            info.jsEvent.preventDefault();
-          } else {
-            alert('Event: ' + info.event.title + '\nDate: ' + info.event.start.toLocaleString());
-          }
-        },
-        eventDidMount: function(info) {
-          info.el.title = info.event.title + ' at ' + info.event.start.toLocaleString();
-        },
-        loading: function(isLoading) {
-          calendarEl.style.opacity = isLoading ? '0.5' : '1';
-        },
-        eventsFetch: function(fetchInfo, successCallback, failureCallback) {
+        // Remove events: '/api/events'
+        events: function(fetchInfo, successCallback, failureCallback) {
           fetch('/api/events', { credentials: 'same-origin' })
             .then(response => {
               if (!response.ok) {
@@ -393,8 +379,23 @@
               alert('Failed to load calendar events. Please try refreshing the page.');
               failureCallback(error);
             });
+        },
+        eventClick: function(info) {
+          if (info.event.url) {
+            window.open(info.event.url, '_blank');
+            info.jsEvent.preventDefault();
+          } else {
+            alert('Event: ' + info.event.title + '\nDate: ' + info.event.start.toLocaleString());
+          }
+        },
+        eventDidMount: function(info) {
+          info.el.title = info.event.title + ' at ' + info.event.start.toLocaleString();
+        },
+        loading: function(isLoading) {
+          calendarEl.style.opacity = isLoading ? '0.5' : '1';
         }
       });
+
       calendar.render();
 
       // AJAX for scheduling form
