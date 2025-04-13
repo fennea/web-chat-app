@@ -3,6 +3,7 @@
 {% block title %}TwoToro - {{ roomName }}{% endblock %}
 
 {% block extra_styles %}
+  {{ super() }}
   <style>
     /* Custom styles to complement Bootstrap */
     .video-container {
@@ -28,6 +29,31 @@
       max-height: 200px;
       overflow-y: auto;
     }
+
+
+    .whiteboard-container {
+      margin: 20px auto;
+      max-width: 800px;
+      border: 2px solid #ccc;
+      background: #fff;
+      position: relative;
+      padding: 10px;
+      border-radius: 0.5rem;
+      box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+    }
+    .whiteboard-container canvas {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .toolbar {
+      margin-top: 10px;
+      text-align: center;
+    }
+    .toolbar button {
+      margin: 0 5px;
+    }
+
   </style>
 {% endblock %}
 
@@ -51,6 +77,16 @@
       <video id="remoteVideo" autoplay playsinline></video>
     </div>
   </div>
+
+  <!-- Whiteboard Section -->
+  <div id="whiteboard-container" class="whiteboard-container">
+    <canvas id="whiteboard" width="800" height="600"></canvas>
+    <div class="toolbar">
+      <button id="toggleEraser">Toggle Eraser</button>
+      <button id="clearBoard">Clear Board</button>
+    </div>
+  </div>
+
 
   <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
   <script>
@@ -322,4 +358,96 @@
       }
     });
   </script>
+
+  <script>
+    // Initialize the canvas context and variables
+    const whiteboard = document.getElementById('whiteboard');
+    const context = whiteboard.getContext('2d');
+    let drawing = false;
+    let eraserMode = false;
+
+    // Utility function to resize the canvas gracefully (if needed)
+    function resizeCanvas() {
+      whiteboard.width = whiteboard.offsetWidth;
+      whiteboard.height = whiteboard.offsetHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Mouse event handlers for drawing on the canvas
+    whiteboard.addEventListener('mousedown', (e) => {
+      drawing = true;
+      context.beginPath();
+      context.moveTo(e.offsetX, e.offsetY);
+      // Updated to include the room property in the emit call
+      socket.emit('whiteboard', { 
+        type: 'start', 
+        x: e.offsetX, 
+        y: e.offsetY, 
+        eraser: eraserMode, 
+        room: room 
+      });
+    });
+    
+    whiteboard.addEventListener('mousemove', (e) => {
+      if (!drawing) return;
+      context.lineWidth = 2;
+      context.lineCap = 'round';
+      context.strokeStyle = eraserMode ? '#fff' : '#000';
+      
+      context.lineTo(e.offsetX, e.offsetY);
+      context.stroke();
+      // Updated to include the room property
+      socket.emit('whiteboard', { 
+        type: 'draw', 
+        x: e.offsetX, 
+        y: e.offsetY, 
+        eraser: eraserMode, 
+        room: room 
+      });
+    });
+
+    ['mouseup', 'mouseout'].forEach(event => {
+      whiteboard.addEventListener(event, (e) => {
+        if (!drawing) return;
+        drawing = false;
+        context.closePath();
+        // Updated to include the room property
+        socket.emit('whiteboard', { type: 'end', room: room });
+      });
+    });
+
+    // Toolbar button functionality for clearing the whiteboard
+    document.getElementById('clearBoard').addEventListener('click', () => {
+      context.clearRect(0, 0, whiteboard.width, whiteboard.height);
+      // Updated to include the room property
+      socket.emit('whiteboard', { type: 'clear', room: room });
+    });
+
+    // Toolbar button functionality to toggle the eraser
+    document.getElementById('toggleEraser').addEventListener('click', function() {
+      eraserMode = !eraserMode;
+      this.textContent = eraserMode ? 'Switch to Draw' : 'Toggle Eraser';
+    });
+
+    // Handle incoming whiteboard events from the socket
+    socket.on('whiteboard', (data) => {
+      if (data.type === 'start') {
+        context.beginPath();
+        context.moveTo(data.x, data.y);
+      } else if (data.type === 'draw') {
+        context.lineWidth = 2;
+        context.lineCap = 'round';
+        context.strokeStyle = data.eraser ? '#fff' : '#000';
+        context.lineTo(data.x, data.y);
+        context.stroke();
+      } else if (data.type === 'end') {
+        context.closePath();
+      } else if (data.type === 'clear') {
+        context.clearRect(0, 0, whiteboard.width, whiteboard.height);
+      }
+    });
+  </script>
+
+
 {% endblock %}
