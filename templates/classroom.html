@@ -365,6 +365,10 @@
     const context = whiteboard.getContext('2d');
     let drawing = false;
     let eraserMode = false;
+    
+    // Set line widths for drawing and erasing
+    const drawingWidth = 2;
+    const eraserWidth = 10;
 
     // Utility function to resize the canvas gracefully (if needed)
     function resizeCanvas() {
@@ -379,7 +383,6 @@
       drawing = true;
       context.beginPath();
       context.moveTo(e.offsetX, e.offsetY);
-      // Updated to include the room property in the emit call
       socket.emit('whiteboard', { 
         type: 'start', 
         x: e.offsetX, 
@@ -391,13 +394,19 @@
     
     whiteboard.addEventListener('mousemove', (e) => {
       if (!drawing) return;
-      context.lineWidth = 2;
+
+      // Set line width and stroke style based on the current mode
+      if (eraserMode) {
+        context.lineWidth = eraserWidth;
+        context.strokeStyle = '#fff';  // White color to mimic erasing
+      } else {
+        context.lineWidth = drawingWidth;
+        context.strokeStyle = '#000';  // Black for drawing
+      }
       context.lineCap = 'round';
-      context.strokeStyle = eraserMode ? '#fff' : '#000';
-      
+
       context.lineTo(e.offsetX, e.offsetY);
       context.stroke();
-      // Updated to include the room property
       socket.emit('whiteboard', { 
         type: 'draw', 
         x: e.offsetX, 
@@ -412,19 +421,17 @@
         if (!drawing) return;
         drawing = false;
         context.closePath();
-        // Updated to include the room property
         socket.emit('whiteboard', { type: 'end', room: room });
       });
     });
 
-    // Toolbar button functionality for clearing the whiteboard
+    // Toolbar button for clearing the whiteboard
     document.getElementById('clearBoard').addEventListener('click', () => {
       context.clearRect(0, 0, whiteboard.width, whiteboard.height);
-      // Updated to include the room property
       socket.emit('whiteboard', { type: 'clear', room: room });
     });
 
-    // Toolbar button functionality to toggle the eraser
+    // Toolbar button for toggling the eraser on and off
     document.getElementById('toggleEraser').addEventListener('click', function() {
       eraserMode = !eraserMode;
       this.textContent = eraserMode ? 'Switch to Draw' : 'Toggle Eraser';
@@ -436,9 +443,14 @@
         context.beginPath();
         context.moveTo(data.x, data.y);
       } else if (data.type === 'draw') {
-        context.lineWidth = 2;
+        if (data.eraser) {
+          context.lineWidth = eraserWidth;
+          context.strokeStyle = '#fff';
+        } else {
+          context.lineWidth = drawingWidth;
+          context.strokeStyle = '#000';
+        }
         context.lineCap = 'round';
-        context.strokeStyle = data.eraser ? '#fff' : '#000';
         context.lineTo(data.x, data.y);
         context.stroke();
       } else if (data.type === 'end') {
@@ -448,6 +460,7 @@
       }
     });
   </script>
+
 
 
 {% endblock %}
