@@ -621,8 +621,8 @@ def dashboard():
                     return redirect(url_for('dashboard'))
 
         else:
-            cursor.execute("SELECT DISTINCT room_slug, room_name FROM invitations WHERE tutor_id = %s", (user_id,))
-            classrooms = cursor.fetchall()   # Each row is now (room_slug, room_name)
+            cursor.execute("SELECT DISTINCT room_slug, room_name FROM invitations WHERE student_id = %s", (user_id,))
+            classrooms = cursor.fetchall()  # Check student_id, not tutor_id
             students = None
 
         return render_template('dashboard.html', role=role, first_name=first_name, last_name=last_name, email=email, classrooms=classrooms, students=students)
@@ -634,10 +634,16 @@ def dashboard():
 
 @app.route('/classroom/<room_slug>')
 def classroom(room_slug):
+    logging.info(f"Accessing classroom with slug: {room_slug} for user email: {session.get('email')}")
     # Check if user is logged in
     if 'email' not in session:
         flash("Please log in to access the classroom.")
         return redirect(url_for('login'))
+    
+    if '-' not in room_slug or len(room_slug) < 9:  # Minimum length for name-UUID
+        flash("Invalid classroom URL.")
+        logging.warning(f"Invalid room_slug format: {room_slug}")
+        return redirect(url_for('dashboard'))
 
     # Verify database connection
     db_status, db_error = check_db_connection()
@@ -670,9 +676,9 @@ def classroom(room_slug):
 
         # Verify room access using room_slug instead of room_name
         if role == 'tutor':
-            query = "SELECT 1 FROM invitations WHERE room_slug = %s AND tutor_id = %s"
+            query = "SELECT 1 FROM invitations WHERE LOWER(room_slug) = LOWER(%s) AND tutor_id = %s"
         else:
-            query = "SELECT 1 FROM invitations WHERE room_slug = %s AND student_id = %s"
+            query = "SELECT 1 FROM invitations WHERE LOWER(room_slug) = LOWER(%s) AND student_id = %s"
         cursor.execute(query, (room_slug, user_id))
         if not cursor.fetchone():
             flash("You don’t have access to this room.")
