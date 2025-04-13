@@ -691,7 +691,7 @@ def classroom(room_slug):
         cursor.execute("SELECT room_name FROM invitations WHERE room_slug = %s LIMIT 1", (room_slug,))
         room_row = cursor.fetchone()
         room_name = room_row[0] if room_row else "Unknown Classroom"
-
+        conn.commit()
         # Render classroom
         return render_template('classroom.html', roomName=room_name, userPlan=plan)
 
