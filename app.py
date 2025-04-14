@@ -365,7 +365,7 @@ def tutor_signup():
 
             # Retrieve the product from the database using a parameterized query
             cursor.execute(
-                "SELECT product_id, name, price, description, stripe_price_id, active FROM products WHERE product_id = %s",
+                "SELECT product_id, name, price, description, stripe_price_id, active FROM products WHERE product_id = %s ORDER BY price",
                 (selected_plan,)
             )
             product = cursor.fetchone()
@@ -730,7 +730,7 @@ def tutors():
 
     try:
         # Fetch only active products
-        cursor.execute("SELECT name, price, description, stripe_price_id, active FROM products WHERE active = TRUE")
+        cursor.execute("SELECT name, price, description, stripe_price_id, active FROM products WHERE active = TRUE ORDER BY price")
         products = cursor.fetchall()
         logging.info(f"Products fetched for tutors page: {products}")
         return render_template('tutors.html', products=products)
