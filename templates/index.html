@@ -2,65 +2,139 @@
 
 {% block title %}Welcome to TwoToro{% endblock %}
 
+{% block extra_styles %}
+{{ super() }}
+<style>
+  /* Hero Section Styles */
+  .hero-video {
+    position: relative;
+    height: 100vh;
+    overflow: hidden;
+    background-color: black;
+  }
+
+  .hero-video video {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
+    z-index: 1;
+    transform: translate(-50%, -50%);
+    object-fit: cover;
+    opacity: 0.7;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    flex-direction: column;
+    color: white;
+    background-color: rgba(0, 0, 0, 0.3);
+  }
+
+  .hero-content h1 {
+    font-size: 4rem;
+    font-weight: 700;
+    text-shadow: 2px 2px 10px rgba(0,0,0,0.6);
+  }
+
+  .hero-content p {
+    font-size: 1.5rem;
+    margin-top: 1rem;
+    text-shadow: 1px 1px 8px rgba(0,0,0,0.5);
+  }
+
+  .hero-content .btn {
+    margin-top: 2rem;
+    font-size: 1.2rem;
+  }
+
+  @media (max-width: 768px) {
+    .hero-content h1 {
+      font-size: 2.5rem;
+    }
+
+    .hero-content p {
+      font-size: 1.2rem;
+    }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<!-- Hero Section -->
-<section class="py-5 text-center bg-light">
-  <div class="container">
-    <h1 class="display-4">Powered Learning Together</h1>
-    <p class="lead">Affordable, connected, and innovative tutoring — built for families, students, and educators.</p>
-    <a href="{{ url_for('register') }}" class="btn btn-upgrade btn-lg text-white mt-3">Get Started</a>
+
+<!-- Hero with Background Video -->
+<section class="hero-video">
+  <video autoplay muted loop playsinline>
+    <source src="{{ url_for('static', filename='videos/background.mp4') }}" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+  <div class="hero-content">
+    <h1>Powered Learning Together</h1>
+    <p>Welcome to TwoToro, your affordable, connected tutoring platform.</p>
+    <a href="{{ url_for('register') }}" class="btn btn-upgrade text-white btn-lg">Get Started</a>
   </div>
 </section>
 
-<!-- Quick Benefits Section -->
+<!-- Informative Sections (Reuse from earlier) -->
+
+<!-- Quick Benefits -->
 <section class="py-5">
   <div class="container">
     <div class="row text-center">
       <div class="col-md-4">
         <i class="bi bi-wallet2 display-4 text-success mb-3"></i>
         <h4>Affordable</h4>
-        <p>No more Zoom bills and hidden fees. TwoToro cuts out the fluff so you can focus on learning.</p>
+        <p>We cut out platform fees and Zoom costs to keep learning accessible for all families.</p>
       </div>
       <div class="col-md-4">
         <i class="bi bi-people-fill display-4 text-success mb-3"></i>
         <h4>Collaborative</h4>
-        <p>Designed to strengthen the bond between student and tutor. We bring people together to grow together.</p>
+        <p>We foster real-time connections that empower students and tutors to grow together.</p>
       </div>
       <div class="col-md-4">
         <i class="bi bi-lightning-fill display-4 text-success mb-3"></i>
         <h4>Innovative</h4>
-        <p>Our platform uses interactive tools and modern tech to make every tutoring session feel like magic.</p>
+        <p>Interactive tools, whiteboards, screen sharing, and more — built right into your sessions.</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Platform Features -->
+<!-- Features Section -->
 <section class="py-5 bg-light">
   <div class="container">
-    <h2 class="text-center mb-4">How TwoToro Works</h2>
+    <h2 class="text-center mb-4">What We Offer</h2>
     <div class="row">
       <div class="col-md-4">
         <div class="card shadow-sm h-100">
           <div class="card-body">
-            <h5 class="card-title text-success">Video Chat</h5>
-            <p class="card-text">Built-in video calling keeps tutors and students connected without any external apps.</p>
+            <h5 class="card-title text-success">Live Video Chat</h5>
+            <p class="card-text">Conduct tutoring sessions with zero third-party software required.</p>
           </div>
         </div>
       </div>
       <div class="col-md-4">
         <div class="card shadow-sm h-100">
           <div class="card-body">
-            <h5 class="card-title text-success">Digital Tools</h5>
-            <p class="card-text">Use whiteboards, file sharing, and other tools that make learning dynamic and hands-on.</p>
+            <h5 class="card-title text-success">Interactive Tools</h5>
+            <p class="card-text">Use whiteboards, shared files, and screen share to make learning dynamic.</p>
           </div>
         </div>
       </div>
       <div class="col-md-4">
         <div class="card shadow-sm h-100">
           <div class="card-body">
-            <h5 class="card-title text-success">Privacy-First</h5>
-            <p class="card-text">Built with security in mind — your sessions and messages are encrypted and safe.</p>
+            <h5 class="card-title text-success">Community Focus</h5>
+            <p class="card-text">We're building more than a tool — we're building a supportive learning network.</p>
           </div>
         </div>
       </div>
@@ -68,21 +142,22 @@
   </div>
 </section>
 
-<!-- Pricing Preview -->
+<!-- Pricing Teaser -->
 <section class="py-5 text-center">
   <div class="container">
     <h2 class="mb-4">Tutor Plans</h2>
-    <p class="mb-4">Simple plans. Transparent pricing. No surprises.</p>
-    <a href="{{ url_for('tutors') }}" class="btn btn-outline-success">View Plans</a>
+    <p class="mb-4">Simple, affordable pricing to fit every need.</p>
+    <a href="{{ url_for('tutors') }}" class="btn btn-outline-success">Explore Plans</a>
   </div>
 </section>
 
-<!-- Call to Action -->
+<!-- CTA Footer -->
 <section class="py-5 bg-success text-white text-center">
   <div class="container">
     <h2 class="mb-3">Join the Movement</h2>
-    <p>Sign up and start connecting with tutors who care. Let’s build a better learning experience — together.</p>
+    <p>Sign up today and be part of the tutoring revolution. Education for everyone, made simple.</p>
     <a href="{{ url_for('register') }}" class="btn btn-light btn-lg">Register Now</a>
   </div>
 </section>
+
 {% endblock %}
