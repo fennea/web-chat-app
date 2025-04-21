@@ -592,6 +592,18 @@ def dashboard():
 
         user_id, first_name, last_name, email, role = user
 
+        cursor.execute("""
+            SELECT sc.id, sc.scheduled_date, sc.approved, sc.cancelled, sc.room_slug,
+                u1.first_name AS tutor_first, u1.last_name AS tutor_last,
+                u2.first_name AS student_first, u2.last_name AS student_last
+            FROM scheduled_classes sc
+            JOIN users u1 ON sc.tutor_id = u1.user_id
+            JOIN users u2 ON sc.student_id = u2.user_id
+            WHERE sc.tutor_id = %s OR sc.student_id = %s
+            ORDER BY sc.scheduled_date ASC
+        """, (user_id, user_id))
+        scheduled_classes = cursor.fetchall()
+
         if role == 'tutor':
             cursor.execute("SELECT u.user_id, u.first_name, u.last_name, u.email "
                           "FROM users u JOIN tutor_student ts ON u.user_id = ts.student_id "
@@ -629,11 +641,41 @@ def dashboard():
         
         print("Classrooms:", classrooms)
 
-        return render_template('dashboard.html', role=role, first_name=first_name, last_name=last_name, email=email, classrooms=classrooms, students=students)
+        return render_template('dashboard.html', role=role, first_name=first_name, last_name=last_name, email=email, classrooms=classrooms, students=students, scheduled_classes=scheduled_classes)
     except Exception as e:
         logging.error(f"Error in dashboard for email {session['email']}: {str(e)}", exc_info=True)
         flash(f"Error loading dashboard: {str(e)}")
         return redirect(url_for('login'))
+
+
+@app.route('/schedule_class', methods=['POST'])
+def schedule_class():
+    if 'email' not in session:
+        flash("Login required.")
+        return redirect(url_for('login'))
+
+    tutor_id = request.form['tutor_id']
+    student_id = request.form['student_id']
+    room_name = request.form['room_name']
+    room_slug = request.form['room_slug']
+    scheduled_date = request.form['scheduled_date']
+    created_by = request.form['created_by']  # 'tutor' or 'student'
+    join_link = f"https://twotoro.com/classroom/{room_slug}"
+
+    try:
+        cursor.execute("""
+            INSERT INTO scheduled_classes (tutor_id, student_id, room_name, room_slug, scheduled_date, join_link, created_by_role)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """, (tutor_id, student_id, room_name, room_slug, scheduled_date, join_link, created_by))
+        conn.commit()
+        flash("Class scheduled. Awaiting approval.")
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error scheduling class: {e}")
+    return redirect(url_for('dashboard'))
+
+
+
 
 
 @app.route('/classroom/<room_slug>')

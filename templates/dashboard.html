@@ -304,6 +304,64 @@
       {% endif %}
     </div>
 
+    <div class="section">
+      <h3>Scheduled Classes</h3>
+      {% if scheduled_classes %}
+        <div class="section-grid">
+          {% for class in scheduled_classes %}
+            <div class="section" style="border-left: 5px solid {{ 'green' if class[2] else 'red' }};">
+              <p><strong>Date:</strong> {{ class[1].strftime('%Y-%m-%d %H:%M') }}</p>
+              <p><strong>Tutor:</strong> {{ class[5] }} {{ class[6] }}</p>
+              <p><strong>Student:</strong> {{ class[7] }} {{ class[8] }}</p>
+              <p><a href="{{ url_for('classroom', room_slug=class[4]) }}">Join Classroom</a></p>
+              {% if not class[2] and not class[3] %}
+                <form method="POST" action="{{ url_for('approve_class') }}">
+                  <input type="hidden" name="class_id" value="{{ class[0] }}">
+                  <button type="submit">Approve</button>
+                </form>
+              {% endif %}
+              {% if not class[3] %}
+                <form method="POST" action="{{ url_for('cancel_class') }}">
+                  <input type="hidden" name="class_id" value="{{ class[0] }}">
+                  <button type="submit">Cancel</button>
+                </form>
+              {% else %}
+                <p style="color:red;">This class was cancelled.</p>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p>No scheduled classes yet.</p>
+      {% endif %}
+    </div>
+
+    <div class="section">
+      <h3>Schedule a Class</h3>
+      <form method="POST" action="{{ url_for('schedule_class') }}">
+        <input type="hidden" name="created_by" value="{{ role }}">
+        <input type="text" name="room_name" placeholder="Classroom Name" required>
+        <input type="text" name="room_slug" placeholder="Room Slug" required>
+        <input type="datetime-local" name="scheduled_date" required>
+        {% if role == 'tutor' %}
+          <select name="student_id" required>
+            {% for student in students %}
+              <option value="{{ student[0] }}">{{ student[1] }} {{ student[2] }}</option>
+            {% endfor %}
+          </select>
+          <input type="hidden" name="tutor_id" value="{{ user_id }}">
+        {% else %}
+          <!-- Use hidden field for logged-in student -->
+          <input type="hidden" name="student_id" value="{{ user_id }}">
+          <select name="tutor_id" required>
+            <!-- Populate with user's tutors -->
+          </select>
+        {% endif %}
+        <button type="submit">Schedule</button>
+      </form>
+    </div>
+    
+
 
     <div class="links">
       <a href="{{ url_for('update_info') }}">Update Personal Info</a>
