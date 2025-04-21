@@ -141,7 +141,12 @@
     let timerInterval;
 
     const userPlan = "{{ userPlan }}";
-    const maxSessionDuration = userPlan === 'free' ? 30 * 60 : null;
+    const userRole = "{{ userRole }}"
+    
+    // Only enforce the 30‑min limit if they’re on the free plan AND not a student
+    const maxSessionDuration = (userPlan === 'free' && userRole !== 'student')
+      ? 30 * 60   // 30 minutes in seconds
+      : null;     // no limit
 
     function updateTimer() {
       const elapsed = Math.floor((Date.now() - startTime) / 1000);

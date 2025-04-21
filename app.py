@@ -703,7 +703,7 @@ def classroom(room_slug):
         room_name = room_row[0] if room_row else "Unknown Classroom"
         conn.commit()
         # Render classroom
-        return render_template('classroom.html', roomName=room_name, userPlan=plan)
+        return render_template('classroom.html', roomName=room_name, userPlan=plan, userRole=role)
 
     except Exception as e:
         logging.error(f"Error in classroom for email {session['email']}: {str(e)}", exc_info=True)
