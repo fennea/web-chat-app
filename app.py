@@ -675,6 +675,30 @@ def schedule_class():
     return redirect(url_for('dashboard'))
 
 
+@app.route('/approve_class', methods=['POST'])
+def approve_class():
+    class_id = request.form['class_id']
+    try:
+        cursor.execute("UPDATE scheduled_classes SET approved = TRUE WHERE id = %s", (class_id,))
+        conn.commit()
+        flash("Class approved.")
+    except Exception as e:
+        conn.rollback()
+        flash(f"Approval failed: {e}")
+    return redirect(url_for('dashboard'))
+
+
+@app.route('/cancel_class', methods=['POST'])
+def cancel_class():
+    class_id = request.form['class_id']
+    try:
+        cursor.execute("UPDATE scheduled_classes SET cancelled = TRUE WHERE id = %s", (class_id,))
+        conn.commit()
+        flash("Class cancelled.")
+    except Exception as e:
+        conn.rollback()
+        flash(f"Cancellation failed: {e}")
+    return redirect(url_for('dashboard'))
 
 
 
