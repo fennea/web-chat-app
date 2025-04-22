@@ -364,7 +364,7 @@
         <label for="room_name">Select Classroom:</label>
         <select name="room_name" id="room_name" required>
           {% for classroom in classrooms %}
-            <option value="{{ classroom }}">{{ classroom }}</option>
+            <option value="{{ classroom[1] }}">{{ classroom[1] }}</option>
           {% endfor %}
         </select>
     
