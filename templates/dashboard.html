@@ -333,8 +333,8 @@
           {% for class in scheduled_classes %}
             <div class="class-card" style="border-left: 5px solid {{ 'green' if class[2] else 'red' }};">
               <p><strong>Date:</strong> {{ class[1].strftime('%Y-%m-%d %H:%M') }}</p>
-              <p><strong>Tutor:</strong> {{ class[5] }} {{ class[6] }}</p>
-              <p><strong>Student:</strong> {{ class[7] }} {{ class[8] }}</p>
+              <p><strong>Tutor:</strong> {{ class[7] }} {{ class[8] }}</p>
+              <p><strong>Student:</strong> {{ class[10] }} {{ class[11] }}</p>
               <p><a href="{{ url_for('classroom', room_slug=class[4]) }}">Join Classroom</a></p>
     
               {% if not class[2] and not class[3] %}
