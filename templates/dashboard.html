@@ -341,23 +341,39 @@
       <form method="POST" action="{{ url_for('schedule_class') }}">
         <input type="hidden" name="created_by" value="{{ role }}">
     
-        {% if role == 'tutor' %}
-          <!-- Tutors pick a student -->
-          <label for="student_id">Select Student:</label>
-          <select name="student_id" id="student_id" required>
-            {% for student in students %}
-              <option value="{{ student[0] }}">{{ student[1] }} {{ student[2] }}</option>
-            {% endfor %}
-          </select>
-        {% else %}
-          <!-- Students pick a tutor -->
-          <label for="tutor_id">Select Tutor:</label>
-          <select name="tutor_id" id="tutor_id" required>
-            {% for tutor in tutors %}
-              <option value="{{ tutor[0] }}">{{ tutor[1] }} {{ tutor[2] }}</option>
-            {% endfor %}
-          </select>
-        {% endif %}
+        <form method="POST" action="{{ url_for('schedule_class') }}">
+          <input type="hidden" name="created_by" value="{{ role }}">
+        
+          {% if role == 'tutor' %}
+            <label for="student_id">Select Student:</label>
+            <select name="student_id" id="student_id" required>
+              <option value="" disabled selected>Select a student</option>
+              {% for student in students %}
+                <option value="{{ student[0] }}">{{ student[1] }} {{ student[2] }}</option>
+              {% endfor %}
+            </select>
+            <input type="hidden" name="tutor_id" value="{{ user_id }}">
+          
+          {% else %}
+            <label for="tutor_id">Select Tutor:</label>
+            <select name="tutor_id" id="tutor_id" required>
+              <option value="" disabled selected>Select a tutor</option>
+              {% for tutor in tutors %}
+                <option value="{{ tutor[0] }}">{{ tutor[1] }} {{ tutor[2] }}</option>
+              {% endfor %}
+            </select>
+            <input type="hidden" name="student_id" value="{{ user_id }}">
+          {% endif %}
+        
+          <label for="room_name">Select Classroom:</label>
+          <select name="room_name" id="room_name" required disabled></select>
+        
+          <label for="scheduled_date">Select Date and Time:</label>
+          <input type="datetime-local" name="scheduled_date" required>
+        
+          <button type="submit">Schedule</button>
+        </form>
+        
     
         <label for="room_name">Select Classroom:</label>
         <select name="room_name" id="room_name" required>

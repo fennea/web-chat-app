@@ -656,7 +656,7 @@ def dashboard():
 
         return render_template('dashboard.html', role=role, first_name=first_name, last_name=last_name, email=email, 
                                classrooms=classrooms, students=students, scheduled_classes=scheduled_classes, 
-                               tutors=tutors, all_invitations=all_invitations)
+                               tutors=tutors, all_invitations=all_invitations, user_id=user_id)
     except Exception as e:
         logging.error(f"Error in dashboard for email {session['email']}: {str(e)}", exc_info=True)
         flash(f"Error loading dashboard: {str(e)}")
@@ -673,12 +673,19 @@ def schedule_class():
     room_name = request.form['room_name']
     scheduled_date = request.form['scheduled_date']
 
-    if created_by == 'tutor':
-        tutor_id = int(request.form['tutor_id'])
-        student_id = int(request.form['student_id'])
-    else:
-        tutor_id = int(request.form['tutor_id'])
-        student_id = int(request.form['student_id'])
+    student_id_raw = request.form.get('student_id')
+    tutor_id_raw = request.form.get('tutor_id')
+
+    try:
+        student_id = int(student_id_raw) if student_id_raw else None
+        tutor_id = int(tutor_id_raw) if tutor_id_raw else None
+    except ValueError:
+        flash("Invalid tutor or student selection.")
+        return redirect(url_for('dashboard'))
+
+    if not student_id or not tutor_id:
+        flash("Please select both a tutor and a student.")
+        return redirect(url_for('dashboard'))
 
     # Fetch the room_slug using room_name, tutor_id, and student_id
     cursor.execute("""
