@@ -641,7 +641,27 @@ def dashboard():
         
         print("Classrooms:", classrooms)
 
-        return render_template('dashboard.html', role=role, first_name=first_name, last_name=last_name, email=email, classrooms=classrooms, students=students, scheduled_classes=scheduled_classes)
+        cursor.execute("SELECT DISTINCT u.user_id, u.first_name, u.last_name FROM users u JOIN tutor_student ts ON ts.tutor_id = u.user_id WHERE ts.student_id = %s", (user_id,))
+        tutors = cursor.fetchall()
+
+        cursor.execute("SELECT u.user_id, u.first_name, u.last_name FROM users u JOIN tutor_student ts ON u.user_id = ts.student_id WHERE ts.tutor_id = %s", (user_id,))
+        students = cursor.fetchall()
+
+        cursor.execute("""
+            SELECT tutor_id, student_id, room_name 
+            FROM invitations
+            WHERE tutor_id = %s OR student_id = %s
+        """, (user_id, user_id))
+        all_invitations = cursor.fetchall()
+
+
+
+
+
+
+        return render_template('dashboard.html', role=role, first_name=first_name, last_name=last_name, email=email, 
+                               classrooms=classrooms, students=students, scheduled_classes=scheduled_classes, 
+                               students=students, tutors=tutors, all_invitations=all_invitations)
     except Exception as e:
         logging.error(f"Error in dashboard for email {session['email']}: {str(e)}", exc_info=True)
         flash(f"Error loading dashboard: {str(e)}")
@@ -654,25 +674,45 @@ def schedule_class():
         flash("Login required.")
         return redirect(url_for('login'))
 
-    tutor_id = request.form['tutor_id']
-    student_id = request.form['student_id']
+    created_by = request.form['created_by']
     room_name = request.form['room_name']
-    room_slug = request.form['room_slug']
     scheduled_date = request.form['scheduled_date']
-    created_by = request.form['created_by']  # 'tutor' or 'student'
+
+    if created_by == 'tutor':
+        tutor_id = int(request.form['tutor_id'])
+        student_id = int(request.form['student_id'])
+    else:
+        tutor_id = int(request.form['tutor_id'])
+        student_id = int(request.form['student_id'])
+
+    # Fetch the room_slug using room_name, tutor_id, and student_id
+    cursor.execute("""
+        SELECT room_slug FROM invitations
+        WHERE room_name = %s AND tutor_id = %s AND student_id = %s
+    """, (room_name, tutor_id, student_id))
+    result = cursor.fetchone()
+
+    if not result:
+        flash("Unable to find matching classroom invitation.")
+        return redirect(url_for('dashboard'))
+
+    room_slug = result[0]
     join_link = f"https://twotoro.com/classroom/{room_slug}"
 
     try:
         cursor.execute("""
-            INSERT INTO scheduled_classes (tutor_id, student_id, room_name, room_slug, scheduled_date, join_link, created_by_role)
+            INSERT INTO scheduled_classes 
+                (tutor_id, student_id, room_name, room_slug, scheduled_date, join_link, created_by_role)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
         """, (tutor_id, student_id, room_name, room_slug, scheduled_date, join_link, created_by))
         conn.commit()
         flash("Class scheduled. Awaiting approval.")
     except Exception as e:
         conn.rollback()
-        flash(f"Error scheduling class: {e}")
+        flash(f"Error scheduling class: {str(e)}")
+
     return redirect(url_for('dashboard'))
+
 
 
 @app.route('/approve_class', methods=['POST'])

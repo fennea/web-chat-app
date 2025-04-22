@@ -340,26 +340,45 @@
       <h3>Schedule a Class</h3>
       <form method="POST" action="{{ url_for('schedule_class') }}">
         <input type="hidden" name="created_by" value="{{ role }}">
-        <input type="text" name="room_name" placeholder="Classroom Name" required>
-        <input type="text" name="room_slug" placeholder="Room Slug" required>
-        <input type="datetime-local" name="scheduled_date" required>
+    
         {% if role == 'tutor' %}
-          <select name="student_id" required>
+          <!-- Tutors pick a student -->
+          <label for="student_id">Select Student:</label>
+          <select name="student_id" id="student_id" required>
             {% for student in students %}
               <option value="{{ student[0] }}">{{ student[1] }} {{ student[2] }}</option>
             {% endfor %}
           </select>
-          <input type="hidden" name="tutor_id" value="{{ user_id }}">
         {% else %}
-          <!-- Use hidden field for logged-in student -->
-          <input type="hidden" name="student_id" value="{{ user_id }}">
-          <select name="tutor_id" required>
-            <!-- Populate with user's tutors -->
+          <!-- Students pick a tutor -->
+          <label for="tutor_id">Select Tutor:</label>
+          <select name="tutor_id" id="tutor_id" required>
+            {% for tutor in tutors %}
+              <option value="{{ tutor[0] }}">{{ tutor[1] }} {{ tutor[2] }}</option>
+            {% endfor %}
           </select>
         {% endif %}
+    
+        <label for="room_name">Select Classroom:</label>
+        <select name="room_name" id="room_name" disabled required></select>
+          {% for room in classrooms %}
+            <option value="{{ room[1] }}">{{ room[1] }}</option>
+          {% endfor %}
+        </select>
+    
+        <label for="scheduled_date">Select Date and Time:</label>
+        <input type="datetime-local" name="scheduled_date" required>
+    
+        {% if role == 'tutor' %}
+          <input type="hidden" name="tutor_id" value="{{ user_id }}">
+        {% else %}
+          <input type="hidden" name="student_id" value="{{ user_id }}">
+        {% endif %}
+    
         <button type="submit">Schedule</button>
       </form>
     </div>
+    
     
 
 
@@ -368,4 +387,49 @@
       <a href="{{ url_for('update_password') }}">Update Password</a>
     </div>
   </div>
+
+  
 {% endblock %}
+
+<script>
+  const invitations = {{ all_invitations | tojson }};
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const role = "{{ role }}";
+    const userId = {{ user_id }};
+    const partnerSelect = document.getElementById(role === 'tutor' ? 'student_id' : 'tutor_id');
+    const roomSelect = document.getElementById('room_name');
+
+    function filterRooms() {
+      const selectedPartnerId = partnerSelect.value;
+
+      // Clear previous options
+      roomSelect.innerHTML = '';
+
+      // Filter and repopulate
+      invitations.forEach(invite => {
+        const [tutorId, studentId, roomName] = invite;
+
+        const isMatch = (role === 'tutor' && studentId == selectedPartnerId && tutorId == userId)
+                     || (role === 'student' && tutorId == selectedPartnerId && studentId == userId);
+
+        if (isMatch) {
+          const option = document.createElement('option');
+          option.value = roomName;
+          option.textContent = roomName;
+          roomSelect.appendChild(option);
+        }
+      });
+
+      // Disable if no matches
+      roomSelect.disabled = roomSelect.options.length === 0;
+    }
+
+    partnerSelect.addEventListener('change', filterRooms);
+
+    // Trigger once on page load if value is pre-selected
+    filterRooms();
+  });
+</script>
