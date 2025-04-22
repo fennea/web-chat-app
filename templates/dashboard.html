@@ -360,7 +360,7 @@
         {% endif %}
     
         <label for="room_name">Select Classroom:</label>
-        <select name="room_name" id="room_name" disabled required></select>
+        <select name="room_name" id="room_name" disabled required>
           {% for room in classrooms %}
             <option value="{{ room[1] }}">{{ room[1] }}</option>
           {% endfor %}
