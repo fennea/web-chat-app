@@ -307,7 +307,7 @@
     <div class="section">
       <h3>Scheduled Classes</h3>
       {% if scheduled_classes %}
-        <div class="section-grid">
+        <div class="scrollable-cards">
           {% for class in scheduled_classes %}
             <div class="section" style="border-left: 5px solid {{ 'green' if class[2] else 'red' }};">
               <p><strong>Date:</strong> {{ class[1].strftime('%Y-%m-%d %H:%M') }}</p>
