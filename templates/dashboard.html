@@ -273,9 +273,13 @@
             <input type="hidden" name="create_room" value="1">
             <input type="text" name="room_name" placeholder="Classroom Name" required />
             <select name="students" multiple required>
-              {% for student in students %}
-                <option value="{{ student[0] }}">{{ student[1] }} {{ student[2] }} ({{ student[3] }})</option>
-              {% endfor %}
+              {% if students %}
+                {% for student in students %}
+                  <option value="{{ student[0] }}">{{ student[1] }} {{ student[2] }} ({{ student[3] }})</option>
+                {% endfor %}
+              {% else %}
+                <option disabled>No students available</option>
+              {% endif %}
             </select>
             <button type="submit">Create and Invite</button>
           </form>
