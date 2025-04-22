@@ -102,10 +102,20 @@
     }
 
     select[multiple] {
-      height: 120px;
       width: 100%;
-      max-width: 300px;
+      max-width: 100%;
+      min-height: 120px;
+      max-height: 240px;
+      padding: 0.75rem;
+      font-size: 0.95rem;
+      white-space: normal;
       overflow-y: auto;
+      overflow-x: hidden;
+      line-height: 1.4;
+    }
+
+    option {
+      white-space: normal;
     }
 
     button {
