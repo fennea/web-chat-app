@@ -661,7 +661,7 @@ def dashboard():
 
         return render_template('dashboard.html', role=role, first_name=first_name, last_name=last_name, email=email, 
                                classrooms=classrooms, students=students, scheduled_classes=scheduled_classes, 
-                               students=students, tutors=tutors, all_invitations=all_invitations)
+                               tutors=tutors, all_invitations=all_invitations)
     except Exception as e:
         logging.error(f"Error in dashboard for email {session['email']}: {str(e)}", exc_info=True)
         flash(f"Error loading dashboard: {str(e)}")
