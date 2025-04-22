@@ -613,6 +613,9 @@ def dashboard():
             classrooms = cursor.fetchall()
             conn.commit()
 
+            cursor.execute("SELECT u.user_id, u.first_name, u.last_name FROM users u JOIN tutor_student ts ON u.user_id = ts.student_id WHERE ts.tutor_id = %s", (user_id,))
+            students = cursor.fetchall()
+
             if request.method == 'POST':
                 if 'create_room' in request.form:
                     room_name = request.form.get('room_name')
@@ -644,20 +647,12 @@ def dashboard():
         cursor.execute("SELECT DISTINCT u.user_id, u.first_name, u.last_name FROM users u JOIN tutor_student ts ON ts.tutor_id = u.user_id WHERE ts.student_id = %s", (user_id,))
         tutors = cursor.fetchall()
 
-        cursor.execute("SELECT u.user_id, u.first_name, u.last_name FROM users u JOIN tutor_student ts ON u.user_id = ts.student_id WHERE ts.tutor_id = %s", (user_id,))
-        students = cursor.fetchall()
-
         cursor.execute("""
             SELECT tutor_id, student_id, room_name 
             FROM invitations
             WHERE tutor_id = %s OR student_id = %s
         """, (user_id, user_id))
         all_invitations = cursor.fetchall()
-
-
-
-
-
 
         return render_template('dashboard.html', role=role, first_name=first_name, last_name=last_name, email=email, 
                                classrooms=classrooms, students=students, scheduled_classes=scheduled_classes, 
