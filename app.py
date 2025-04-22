@@ -615,10 +615,6 @@ def dashboard():
 
             cursor.execute("SELECT DISTINCT room_slug, room_name FROM invitations WHERE tutor_id = %s", (user_id,))
             classrooms = cursor.fetchall()
-            conn.commit()
-
-            cursor.execute("SELECT u.user_id, u.first_name, u.last_name FROM users u JOIN tutor_student ts ON u.user_id = ts.student_id WHERE ts.tutor_id = %s", (user_id,))
-            students = cursor.fetchall()
 
             if request.method == 'POST':
                 if 'create_room' in request.form:
