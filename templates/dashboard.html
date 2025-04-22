@@ -315,9 +315,15 @@
               <p><strong>Student:</strong> {{ class[7] }} {{ class[8] }}</p>
               <p><a href="{{ url_for('classroom', room_slug=class[4]) }}">Join Classroom</a></p>
               {% if not class[2] and not class[3] %}
+                {% set created_by_user = (
+                    (class[6] == user_id and class[12] == 'tutor') or
+                    (class[9] == user_id and class[12] == 'student')
+                ) %}
                 <form method="POST" action="{{ url_for('approve_class') }}">
                   <input type="hidden" name="class_id" value="{{ class[0] }}">
-                  <button type="submit">Approve</button>
+                  <button type="submit" {% if created_by_user %}disabled style="background-color: #ccc; cursor: not-allowed;"{% endif %}>
+                    Approve
+                  </button>
                 </form>
               {% endif %}
               {% if not class[3] %}

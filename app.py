@@ -593,9 +593,11 @@ def dashboard():
         user_id, first_name, last_name, email, role = user
 
         cursor.execute("""
-            SELECT sc.id, sc.scheduled_date, sc.approved, sc.cancelled, sc.room_slug,
-                u1.first_name AS tutor_first, u1.last_name AS tutor_last,
-                u2.first_name AS student_first, u2.last_name AS student_last
+            SELECT 
+                sc.id, sc.scheduled_date, sc.approved, sc.cancelled, sc.room_slug, sc.room_name,
+                sc.tutor_id, u1.first_name AS tutor_first, u1.last_name AS tutor_last,
+                sc.student_id, u2.first_name AS student_first, u2.last_name AS student_last,
+                sc.created_by_role
             FROM scheduled_classes sc
             JOIN users u1 ON sc.tutor_id = u1.user_id
             JOIN users u2 ON sc.student_id = u2.user_id
@@ -603,6 +605,7 @@ def dashboard():
             ORDER BY sc.scheduled_date ASC
         """, (user_id, user_id))
         scheduled_classes = cursor.fetchall()
+
 
         if role == 'tutor':
             cursor.execute("SELECT u.user_id, u.first_name, u.last_name, u.email "
