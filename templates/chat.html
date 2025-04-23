@@ -124,22 +124,26 @@
 
   socket.emit('join_chat', { room });
 
-  form.addEventListener('submit', function (e) {
-    e.preventDefault();
-    const message = textarea.value.trim();
-    if (!message) return;
+  // Send on Enter, newline on Shift+Enter
+  textarea.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();  // Stop newline
+      const message = textarea.value.trim();
+      if (!message) return;
 
-    socket.emit('send_message', {
-      sender_id: currentUserId,
-      receiver_id: partnerId,
-      message: message,
-      room: room
-    });
+      socket.emit('send_message', {
+        sender_id: currentUserId,
+        receiver_id: partnerId,
+        message: message,
+        room: room
+      });
 
-    textarea.value = '';
-    typingIndicator.textContent = '';
+      textarea.value = '';
+      typingIndicator.textContent = '';
+    }
   });
 
+  // Debounced typing notification
   let typingTimeout;
   textarea.addEventListener('input', () => {
     clearTimeout(typingTimeout);
@@ -151,12 +155,11 @@
     typingTimeout = setTimeout(() => {
       socket.emit('typing', {
         room: room,
-        sender_id: null,  // or some "stopped typing" indicator
+        sender_id: null,
         receiver_id: partnerId
       });
     }, 1500);
   });
-
 
   socket.on('receive_message', function (data) {
     const wrapper = document.createElement('div');
@@ -178,9 +181,8 @@
     }
   });
 
-  // Scroll to bottom on initial load
   window.onload = () => {
     chatLog.scrollTop = chatLog.scrollHeight;
-  }
+  };
 </script>
 {% endblock %}
