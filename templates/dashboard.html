@@ -169,6 +169,21 @@
       text-decoration: none;
     }
 
+
+    .student-list li {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #e0e3e5;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .student-list form button:hover {
+      color: red;
+      transform: scale(1.1);
+    }
+
+
     /* Calendar Styles */
     #calendar, #test-calendar {
       max-width: 900px;
@@ -293,12 +308,19 @@
           <h3>Your Students</h3>
           <ul class="student-list">
             {% for student in students %}
-              <li>{{ student[1] }} {{ student[2] }} ({{ student[3] }})</li>
+              <li style="display: flex; justify-content: space-between; align-items: center;">
+                <span>{{ student[1] }} {{ student[2] }} ({{ student[3] }})</span>
+                <form method="POST" action="{{ url_for('remove_student') }}" style="margin: 0;" onsubmit="return confirm('Are you sure you want to remove this student and delete all associated classrooms and scheduled sessions?');">
+                  <input type="hidden" name="student_id" value="{{ student[0] }}">
+                  <button type="submit" title="Remove Student" style="background: none; border: none; cursor: pointer; font-size: 1.2rem;">🗑️</button>
+                </form>
+              </li>
             {% else %}
               <li>No students assigned yet.</li>
             {% endfor %}
           </ul>
         </div>
+        
 
         <div class="section">
           <h3>Assign a Student</h3>

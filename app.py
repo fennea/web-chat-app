@@ -913,6 +913,50 @@ def update_info():
         flash(f"Error updating information: {str(e)}")
         return redirect(url_for('dashboard'))
 
+@app.route('/remove_student', methods=['POST'])
+def remove_student():
+    if 'email' not in session or session['role'] != 'tutor':
+        flash("You must be a tutor to remove students.")
+        return redirect(url_for('login'))
+
+    db_status, db_error = check_db_connection()
+    if not db_status:
+        flash(db_error)
+        return redirect(url_for('dashboard'))
+
+    try:
+        cursor.execute("SELECT user_id FROM users WHERE email = %s", (session['email'],))
+        tutor_id = cursor.fetchone()[0]
+        student_id = int(request.form.get('student_id'))
+
+        # Remove scheduled classes
+        cursor.execute("""
+            DELETE FROM scheduled_classes
+            WHERE tutor_id = %s AND student_id = %s
+        """, (tutor_id, student_id))
+
+        # Remove invitations
+        cursor.execute("""
+            DELETE FROM invitations
+            WHERE tutor_id = %s AND student_id = %s
+        """, (tutor_id, student_id))
+
+        # Remove from tutor_student
+        cursor.execute("""
+            DELETE FROM tutor_student
+            WHERE tutor_id = %s AND student_id = %s
+        """, (tutor_id, student_id))
+
+        conn.commit()
+        flash("Student and all related data removed.")
+
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error removing student: {str(e)}")
+        logging.error(f"Error removing student: {str(e)}", exc_info=True)
+
+    return redirect(url_for('dashboard'))
+
 @app.route('/assign_student', methods=['POST'])
 def assign_student():
     if 'email' not in session or session['role'] != 'tutor':
