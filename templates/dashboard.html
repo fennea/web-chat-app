@@ -310,6 +310,7 @@
             {% for student in students %}
               <li style="display: flex; justify-content: space-between; align-items: center;">
                 <span>{{ student[1] }} {{ student[2] }} ({{ student[3] }})</span>
+                <a href="{{ url_for('chat', partner_id=student[0]) }}" title="Chat" style="font-size: 1.2rem;">💬</a>
                 <form method="POST" action="{{ url_for('remove_student') }}" style="margin: 0;" onsubmit="return confirm('Are you sure you want to remove this student and delete all associated classrooms and scheduled sessions?');">
                   <input type="hidden" name="student_id" value="{{ student[0] }}">
                   <button type="submit" title="Remove Student" style="background: none; border: none; cursor: pointer; font-size: 1.2rem;">🗑️</button>
@@ -351,6 +352,7 @@
         {% for tutor in tutors %}
           <li>
             <span>{{ tutor[1] }} {{ tutor[2] }}</span>
+            <a href="{{ url_for('chat', partner_id=tutor[0]) }}" title="Chat" style="font-size: 1.2rem;">💬</a>
             <form method="POST" action="{{ url_for('remove_tutor') }}" style="margin: 0;"
                   onsubmit="return confirm('Are you sure you want to remove this tutor and delete all associated classes and classrooms?');">
               <input type="hidden" name="tutor_id" value="{{ tutor[0] }}">

@@ -698,6 +698,54 @@ def remove_tutor():
         flash(f"Error removing tutor: {str(e)}")
         return redirect(url_for('dashboard'))
 
+@app.route('/chat/<int:partner_id>', methods=['GET', 'POST'])
+def chat(partner_id):
+    if 'email' not in session:
+        flash("Please log in to chat.")
+        return redirect(url_for('login'))
+    
+    # Determine if there's a tutor-student relationship
+    cursor.execute("""
+        SELECT 1 FROM tutor_student 
+        WHERE (tutor_id = %s AND student_id = %s) OR (tutor_id = %s AND student_id = %s)
+    """, (partner_id, current_user_id, current_user_id, partner_id))
+
+    relationship_exists = cursor.fetchone()
+
+    if not relationship_exists:
+        flash("Unauthorized access to chat.")
+        return redirect(url_for('dashboard'))
+
+    cursor.execute("SELECT user_id, first_name, last_name FROM users WHERE user_id = %s", (partner_id,))
+    partner = cursor.fetchone()
+    if not partner:
+        flash("User not found.")
+        return redirect(url_for('dashboard'))
+
+    cursor.execute("SELECT user_id FROM users WHERE email = %s", (session['email'],))
+    current_user_id = cursor.fetchone()[0]
+
+    if request.method == 'POST':
+        message = request.form.get('message')
+        timestamp = datetime.now()
+        cursor.execute("""
+            INSERT INTO messages (sender_id, receiver_id, content, timestamp)
+            VALUES (%s, %s, %s, %s)
+        """, (current_user_id, partner_id, message, timestamp))
+        conn.commit()
+
+    # Show messages between both users
+    cursor.execute("""
+        SELECT sender_id, content, timestamp 
+        FROM messages 
+        WHERE (sender_id = %s AND receiver_id = %s) OR (sender_id = %s AND receiver_id = %s)
+        ORDER BY timestamp ASC
+    """, (current_user_id, partner_id, partner_id, current_user_id))
+    messages = cursor.fetchall()
+
+    return render_template("chat.html", partner=partner, messages=messages, current_user_id=current_user_id)
+
+
 @app.route('/schedule_class', methods=['POST'])
 def schedule_class():
     if 'email' not in session:
