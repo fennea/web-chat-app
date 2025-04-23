@@ -703,7 +703,16 @@ def chat(partner_id):
     if 'email' not in session:
         flash("Please log in to chat.")
         return redirect(url_for('login'))
-    
+
+    cursor.execute("SELECT user_id, first_name, last_name FROM users WHERE user_id = %s", (partner_id,))
+    partner = cursor.fetchone()
+    if not partner:
+        flash("User not found.")
+        return redirect(url_for('dashboard'))
+
+    cursor.execute("SELECT user_id FROM users WHERE email = %s", (session['email'],))
+    current_user_id = cursor.fetchone()[0]
+
     # Determine if there's a tutor-student relationship
     cursor.execute("""
         SELECT 1 FROM tutor_student 
@@ -715,15 +724,6 @@ def chat(partner_id):
     if not relationship_exists:
         flash("Unauthorized access to chat.")
         return redirect(url_for('dashboard'))
-
-    cursor.execute("SELECT user_id, first_name, last_name FROM users WHERE user_id = %s", (partner_id,))
-    partner = cursor.fetchone()
-    if not partner:
-        flash("User not found.")
-        return redirect(url_for('dashboard'))
-
-    cursor.execute("SELECT user_id FROM users WHERE email = %s", (session['email'],))
-    current_user_id = cursor.fetchone()[0]
 
     if request.method == 'POST':
         message = request.form.get('message')
