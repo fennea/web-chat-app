@@ -662,6 +662,41 @@ def dashboard():
         flash(f"Error loading dashboard: {str(e)}")
         return redirect(url_for('login'))
 
+@app.route('/remove_tutor', methods=['POST'])
+def remove_tutor():
+    if 'email' not in session:
+        flash("Please log in.")
+        return redirect(url_for('login'))
+
+    try:
+        tutor_id = request.form.get('tutor_id')
+        student_id = session.get('user_id')
+
+        # 1. Delete from scheduled_classes
+        cursor.execute("""
+            DELETE FROM scheduled_classes 
+            WHERE tutor_id = %s AND student_id = %s
+        """, (tutor_id, student_id))
+
+        # 2. Delete from invitations
+        cursor.execute("""
+            DELETE FROM invitations 
+            WHERE tutor_id = %s AND student_id = %s
+        """, (tutor_id, student_id))
+
+        # 3. Delete from tutor_student mapping
+        cursor.execute("""
+            DELETE FROM tutor_student 
+            WHERE tutor_id = %s AND student_id = %s
+        """, (tutor_id, student_id))
+
+        conn.commit()
+        flash("Tutor removed and all related data deleted.")
+        return redirect(url_for('dashboard'))
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error removing tutor: {str(e)}")
+        return redirect(url_for('dashboard'))
 
 @app.route('/schedule_class', methods=['POST'])
 def schedule_class():
