@@ -140,13 +140,23 @@
     typingIndicator.textContent = '';
   });
 
+  let typingTimeout;
   textarea.addEventListener('input', () => {
+    clearTimeout(typingTimeout);
     socket.emit('typing', {
       room: room,
       sender_id: currentUserId,
       receiver_id: partnerId
     });
+    typingTimeout = setTimeout(() => {
+      socket.emit('typing', {
+        room: room,
+        sender_id: null,  // or some "stopped typing" indicator
+        receiver_id: partnerId
+      });
+    }, 1500);
   });
+
 
   socket.on('receive_message', function (data) {
     const wrapper = document.createElement('div');
