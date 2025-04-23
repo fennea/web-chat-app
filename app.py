@@ -698,11 +698,14 @@ def remove_tutor():
         flash(f"Error removing tutor: {str(e)}")
         return redirect(url_for('dashboard'))
 
-@app.route('/chat/<int:partner_id>', methods=['GET', 'POST'])
+@app.route('/chat/<int:partner_id>')
 def chat(partner_id):
     if 'email' not in session:
         flash("Please log in to chat.")
         return redirect(url_for('login'))
+
+    cursor.execute("SELECT user_id FROM users WHERE email = %s", (session['email'],))
+    current_user_id = cursor.fetchone()[0]
 
     cursor.execute("SELECT user_id, first_name, last_name FROM users WHERE user_id = %s", (partner_id,))
     partner = cursor.fetchone()
@@ -710,31 +713,18 @@ def chat(partner_id):
         flash("User not found.")
         return redirect(url_for('dashboard'))
 
-    cursor.execute("SELECT user_id FROM users WHERE email = %s", (session['email'],))
-    current_user_id = cursor.fetchone()[0]
-
-    # Determine if there's a tutor-student relationship
+    # Verify tutor-student relationship
     cursor.execute("""
         SELECT 1 FROM tutor_student 
         WHERE (tutor_id = %s AND student_id = %s) OR (tutor_id = %s AND student_id = %s)
     """, (partner_id, current_user_id, current_user_id, partner_id))
-
     relationship_exists = cursor.fetchone()
 
     if not relationship_exists:
         flash("Unauthorized access to chat.")
         return redirect(url_for('dashboard'))
 
-    if request.method == 'POST':
-        message = request.form.get('message')
-        timestamp = datetime.now()
-        cursor.execute("""
-            INSERT INTO messages (sender_id, receiver_id, content, timestamp)
-            VALUES (%s, %s, %s, %s)
-        """, (current_user_id, partner_id, message, timestamp))
-        conn.commit()
-
-    # Show messages between both users
+    # Fetch chat history
     cursor.execute("""
         SELECT sender_id, content, timestamp 
         FROM messages 
@@ -743,8 +733,10 @@ def chat(partner_id):
     """, (current_user_id, partner_id, partner_id, current_user_id))
     messages = cursor.fetchall()
 
-    return render_template("chat.html", partner=partner, messages=messages, current_user_id=current_user_id)
+    # Room naming convention: lowerID_higherID
+    room = f"{min(current_user_id, partner_id)}_{max(current_user_id, partner_id)}"
 
+    return render_template("chat.html", partner=partner, messages=messages, current_user_id=current_user_id, room=room)
 
 @app.route('/schedule_class', methods=['POST'])
 def schedule_class():
@@ -1187,6 +1179,34 @@ def upgrade():
         logging.error(f"Error in upgrade for email {session['email']}: {str(e)}", exc_info=True)
         flash(f"Error loading upgrade page: {str(e)}")
         return redirect(url_for('login'))
+
+# socket stuff
+
+@socketio.on('join_chat')
+def handle_join_chat(data):
+    room = data['room']
+    join_room(room)
+
+@socketio.on('send_message')
+def handle_send_message(data):
+    sender_id = data['sender_id']
+    receiver_id = data['receiver_id']
+    message = data['message']
+    room = data['room']
+
+    # Save to DB
+    cursor.execute("""
+        INSERT INTO messages (sender_id, receiver_id, content, timestamp)
+        VALUES (%s, %s, %s, %s)
+    """, (sender_id, receiver_id, message, datetime.now()))
+    conn.commit()
+
+    # Broadcast message
+    emit('receive_message', data, room=room)
+
+@socketio.on('typing')
+def handle_typing(data):
+    emit('show_typing', data, room=data['room'])
 
 @socketio.on('join')
 def on_join(data):

@@ -3,25 +3,174 @@
 {% block title %}Chat with {{ partner[1] }}{% endblock %}
 
 {% block content %}
-<div class="dashboard-container">
-  <h2>Chat with {{ partner[1] }} {{ partner[2] }}</h2>
+<style>
+  .chat-wrapper {
+    max-width: 600px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 8px;
+    padding: 2rem;
+    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.08);
+  }
 
-  <div style="max-height: 500px; overflow-y: auto; padding: 1rem; border: 1px solid #ddd; border-radius: 8px; background: #fdfdfd;">
+  .chat-log {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fdfdfd;
+  }
+
+  .chat-bubble {
+    display: inline-block;
+    max-width: 70%;
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .chat-bubble.user {
+    background-color: #e6f4f1;
+    text-align: right;
+  }
+
+  .chat-bubble.partner {
+    background-color: #f1f1f1;
+    text-align: left;
+  }
+
+  .chat-form {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .chat-form textarea {
+    height: 60px;
+    border-radius: 6px;
+    padding: 0.75rem;
+    font-size: 1rem;
+  }
+
+  .chat-form button {
+    padding: 0.6rem 1.2rem;
+    background: #2a9d8f;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.3s;
+    width: fit-content;
+  }
+
+  .chat-form button:hover {
+    background: #21867a;
+  }
+
+  .typing {
+    font-size: 0.85rem;
+    font-style: italic;
+    color: #777;
+    margin-top: 0.5rem;
+    height: 1.2rem;
+  }
+
+  @media (max-width: 768px) {
+    .chat-wrapper {
+      padding: 1rem;
+      border-radius: 0;
+      box-shadow: none;
+    }
+  }
+</style>
+
+<div class="chat-wrapper">
+  <h2 style="text-align: center;">Chat with {{ partner[1] }} {{ partner[2] }}</h2>
+
+  <div class="chat-log" id="chatLog">
     {% for msg in messages %}
-      <div style="margin-bottom: 1rem; text-align: {{ 'right' if msg[0] == current_user_id else 'left' }};">
-        <div style="display: inline-block; max-width: 70%; padding: 0.75rem 1rem; border-radius: 10px;
-                    background-color: {{ '#e6f4f1' if msg[0] == current_user_id else '#f1f1f1' }};
-                    box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-          <p style="margin: 0;">{{ msg[1] }}</p>
+      <div style="text-align: {{ 'right' if msg[0] == current_user_id else 'left' }};">
+        <div class="chat-bubble {{ 'user' if msg[0] == current_user_id else 'partner' }}">
+          <p>{{ msg[1] }}</p>
           <small style="font-size: 0.7rem; color: #888;">{{ msg[2].strftime('%Y-%m-%d %H:%M') }}</small>
         </div>
       </div>
     {% endfor %}
   </div>
 
-  <form method="POST" style="margin-top: 1rem;">
-    <textarea name="message" required style="width: 100%; height: 60px; border-radius: 6px; padding: 0.75rem;"></textarea>
+  <div class="typing" id="typingIndicator"></div>
+
+  <form class="chat-form">
+    <textarea id="messageInput" placeholder="Type a message..." required></textarea>
     <button type="submit">Send</button>
   </form>
 </div>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+  const socket = io();
+  const room = "{{ room }}";
+  const currentUserId = {{ current_user_id }};
+  const partnerId = {{ partner[0] }};
+
+  const chatLog = document.getElementById('chatLog');
+  const form = document.querySelector('.chat-form');
+  const textarea = document.getElementById('messageInput');
+  const typingIndicator = document.getElementById('typingIndicator');
+
+  socket.emit('join_chat', { room });
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    const message = textarea.value.trim();
+    if (!message) return;
+
+    socket.emit('send_message', {
+      sender_id: currentUserId,
+      receiver_id: partnerId,
+      message: message,
+      room: room
+    });
+
+    textarea.value = '';
+    typingIndicator.textContent = '';
+  });
+
+  textarea.addEventListener('input', () => {
+    socket.emit('typing', {
+      room: room,
+      sender_id: currentUserId,
+      receiver_id: partnerId
+    });
+  });
+
+  socket.on('receive_message', function (data) {
+    const wrapper = document.createElement('div');
+    wrapper.style.textAlign = data.sender_id === currentUserId ? 'right' : 'left';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'chat-bubble ' + (data.sender_id === currentUserId ? 'user' : 'partner');
+    bubble.innerHTML = `<p>${data.message}</p><small>Just now</small>`;
+
+    wrapper.appendChild(bubble);
+    chatLog.appendChild(wrapper);
+    chatLog.scrollTop = chatLog.scrollHeight;
+  });
+
+  socket.on('show_typing', function (data) {
+    if (data.sender_id === partnerId) {
+      typingIndicator.textContent = `${"{{ partner[1] }}" } is typing...`;
+      setTimeout(() => typingIndicator.textContent = '', 3000);
+    }
+  });
+
+  // Scroll to bottom on initial load
+  window.onload = () => {
+    chatLog.scrollTop = chatLog.scrollHeight;
+  }
+</script>
 {% endblock %}
