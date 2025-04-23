@@ -742,8 +742,6 @@ def cancel_class():
         flash(f"Cancellation failed: {e}")
     return redirect(url_for('dashboard'))
 
-
-
 @app.route('/classroom/<room_slug>')
 def classroom(room_slug):
     logging.info(f"Accessing classroom with slug: {room_slug} for user email: {session.get('email')}")
@@ -921,39 +919,68 @@ def assign_student():
         flash("You must be a tutor to assign students.")
         return redirect(url_for('login'))
 
-    # Check database connection
     db_status, db_error = check_db_connection()
     if not db_status:
-        logging.error(f"Database connection failed for assign_student: {db_error}")
+        logging.error(f"DB error in assign_student: {db_error}")
         flash(db_error)
         return redirect(url_for('login'))
 
     try:
+        # Get tutor ID
         cursor.execute("SELECT user_id FROM users WHERE email = %s", (session['email'],))
         tutor_id = cursor.fetchone()[0]
 
         student_email = request.form.get('student_email')
-        cursor.execute("SELECT user_id FROM users WHERE email = %s AND role = 'student'", (student_email,))
+        cursor.execute("SELECT user_id, first_name FROM users WHERE email = %s AND role = 'student'", (student_email,))
         student = cursor.fetchone()
 
         if student:
+            student_id, student_first = student
+
             try:
-                cursor.execute("INSERT INTO tutor_student (tutor_id, student_id) VALUES (%s, %s)", (tutor_id, student[0]))
+                # Insert into tutor_student
+                cursor.execute("INSERT INTO tutor_student (tutor_id, student_id) VALUES (%s, %s)", (tutor_id, student_id))
                 conn.commit()
                 flash(f"Student {student_email} assigned successfully.")
-                logging.info(f"Tutor {tutor_id} assigned student {student[0]}")
+                logging.info(f"Tutor {tutor_id} assigned student {student_id}")
             except psycopg2.IntegrityError:
                 conn.rollback()
                 flash("Student is already assigned to you.")
-                logging.warning(f"Tutor {tutor_id} failed to assign student {student_email} - Already assigned")
+                logging.warning(f"Duplicate assignment: Tutor {tutor_id} -> Student {student_email}")
+                return redirect(url_for('dashboard'))
+
+            # Auto-create classroom if not exists
+            cursor.execute("SELECT first_name FROM users WHERE user_id = %s", (tutor_id,))
+            tutor_first = cursor.fetchone()[0]
+
+            room_name = f"{tutor_first}-{student_first} Class"
+            room_slug = generate_room_slug(room_name)
+
+            cursor.execute("""
+                SELECT 1 FROM invitations WHERE tutor_id = %s AND student_id = %s
+            """, (tutor_id, student_id))
+
+            if not cursor.fetchone():
+                cursor.execute("""
+                    INSERT INTO invitations (tutor_id, student_id, room_name, room_slug)
+                    VALUES (%s, %s, %s, %s)
+                """, (tutor_id, student_id, room_name, room_slug))
+                conn.commit()
+                flash(f"Classroom '{room_name}' created for {student_first}.")
+            else:
+                logging.info(f"Classroom already exists for Tutor {tutor_id} and Student {student_id}")
+
         else:
             flash("Student not found.")
-            logging.warning(f"Tutor {tutor_id} failed to assign student {student_email} - Student not found")
+            logging.warning(f"Student not found: {student_email}")
+
         return redirect(url_for('dashboard'))
+
     except Exception as e:
-        logging.error(f"Error in assign_student for email {session['email']}: {str(e)}", exc_info=True)
+        logging.error(f"Error assigning student: {str(e)}", exc_info=True)
         flash(f"Error assigning student: {str(e)}")
         return redirect(url_for('dashboard'))
+
 
 @app.route('/upgrade', methods=['GET', 'POST'])
 def upgrade():

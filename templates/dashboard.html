@@ -277,23 +277,6 @@
     <div class="section-grid">
       {% if role == 'tutor' %}
         <!-- Tutor Dashboard -->
-        <div class="section">
-          <h3>Create a Classroom</h3>
-          <form method="POST" action="{{ url_for('dashboard') }}">
-            <input type="hidden" name="create_room" value="1">
-            <input type="text" name="room_name" placeholder="Classroom Name" required />
-            <select name="students" multiple required>
-              {% if students %}
-                {% for student in students %}
-                  <option value="{{ student[0] }}">{{ student[1] }} {{ student[2] }} ({{ student[3] }})</option>
-                {% endfor %}
-              {% else %}
-                <option disabled>No students available</option>
-              {% endif %}
-            </select>
-            <button type="submit">Create and Invite</button>
-          </form>
-        </div>
 
         <div class="section">
           <h3>Your Classrooms</h3>
