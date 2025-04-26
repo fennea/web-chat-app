@@ -494,7 +494,7 @@ def register():
             logging.info(f"Register attempt for email {email}, role: {role}, lifetime_free: False")
 
             # Validate role
-            if role not in ['tutor', 'student']:
+            if role not in ['tutor', 'student', 'parent']:
                 flash("Invalid role selected.")
                 logging.error(f"Invalid role selected during registration: {role}")
                 return redirect(url_for('register'))
