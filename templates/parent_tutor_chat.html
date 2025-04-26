@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Chat with Tutor{% endblock %}
+
+{% block content %}
+<style>
+    .chat-bubble {
+        display: inline-block;
+        max-width: 70%;
+        padding: 0.75rem 1rem;
+        margin: 0.5rem;
+        border-radius: 10px;
+        background-color: #f1f1f1;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .chat-bubble.user {
+        background-color: #e6f4f1;
+        text-align: right;
+    }
+
+    .chat-bubble.partner {
+        background-color: #f1f1f1;
+        text-align: left;
+    }
+
+</style>
+
+<div class="dashboard-container">
+  <h2>Chat with Tutor</h2>
+
+  <div class="chat-log" id="chatLog" style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 1rem; background: #fafafa; border-radius: 8px;">
+    {% for msg in messages %}
+      <div style="text-align: {{ 'right' if msg[0] == parent_id else 'left' }};">
+        <div class="chat-bubble {{ 'user' if msg[0] == parent_id else 'partner' }}">
+          <p>{{ msg[1] }}</p>
+          <small style="font-size: 0.7rem; color: #888;">{{ msg[2].strftime('%Y-%m-%d %H:%M') }}</small>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <form id="chatForm" style="margin-top: 1rem;">
+    <textarea id="messageInput" placeholder="Type a message..." required style="width: 100%; height: 60px; border-radius: 6px; padding: 0.75rem;"></textarea>
+    <button type="submit" class="btn btn-primary mt-2">Send</button>
+  </form>
+</div>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+  const socket = io();
+  const chatLog = document.getElementById('chatLog');
+  const chatForm = document.getElementById('chatForm');
+  const textarea = document.getElementById('messageInput');
+
+  const parentId = {{ parent_id }};
+  const tutorId = {{ tutor_id }};
+  const room = `parent_${parentId}_tutor_${tutorId}`;
+
+  socket.emit('join_parent_chat', { parent_id: parentId, tutor_id: tutorId });
+
+  chatForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    const message = textarea.value.trim();
+    if (!message) return;
+
+    socket.emit('parent_send_message', {
+      parent_id: parentId,
+      tutor_id: tutorId,
+      message: message
+    });
+
+    textarea.value = '';
+  });
+
+  socket.on('parent_receive_message', function (data) {
+    if (data.parent_id !== parentId && data.tutor_id !== tutorId) return;
+
+    const wrapper = document.createElement('div');
+    wrapper.style.textAlign = data.sender_id === parentId ? 'right' : 'left';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'chat-bubble ' + (data.sender_id === parentId ? 'user' : 'partner');
+    bubble.innerHTML = `<p>${data.message}</p><small>Just now</small>`;
+
+    wrapper.appendChild(bubble);
+    chatLog.appendChild(wrapper);
+    chatLog.scrollTop = chatLog.scrollHeight;
+  });
+
+  window.onload = () => {
+    chatLog.scrollTop = chatLog.scrollHeight;
+  };
+</script>
+{% endblock %}

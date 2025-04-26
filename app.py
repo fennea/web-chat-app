@@ -636,6 +636,9 @@ def dashboard():
                         logging.error(f"Error creating classroom for tutor {user_id}: {str(e)}")
                     return redirect(url_for('dashboard'))
 
+        elif role == 'parent':
+            return redirect(url_for('parent_dashboard'))  # 🚨 This line routes parents correctly
+    
         else:
             cursor.execute("SELECT DISTINCT room_slug, room_name FROM invitations WHERE student_id = %s", (user_id,))
             classrooms = cursor.fetchall()  # Check student_id, not tutor_id
@@ -661,6 +664,83 @@ def dashboard():
         logging.error(f"Error in dashboard for email {session['email']}: {str(e)}", exc_info=True)
         flash(f"Error loading dashboard: {str(e)}")
         return redirect(url_for('login'))
+
+@app.route('/parent_dashboard')
+def parent_dashboard():
+    if 'email' not in session:
+        flash("Please log in.")
+        return redirect(url_for('login'))
+
+    # Get current parent ID
+    cursor.execute("SELECT user_id, first_name FROM users WHERE email = %s", (session['email'],))
+    user = cursor.fetchone()
+    if not user:
+        flash("User not found.")
+        return redirect(url_for('login'))
+    parent_id, first_name = user
+
+    # Find their linked students
+    cursor.execute("""
+        SELECT ps.student_id, u.first_name, u.last_name 
+        FROM parent_student ps
+        JOIN users u ON ps.student_id = u.user_id
+        WHERE ps.parent_id = %s
+    """, (parent_id,))
+    students = cursor.fetchall()
+
+    # Find each student's tutors
+    student_tutors = {}
+    for student in students:
+        student_id = student[0]
+        cursor.execute("""
+            SELECT ts.tutor_id, u.first_name, u.last_name
+            FROM tutor_student ts
+            JOIN users u ON ts.tutor_id = u.user_id
+            WHERE ts.student_id = %s
+        """, (student_id,))
+        tutors = cursor.fetchall()
+        student_tutors[student_id] = tutors
+
+    return render_template('parent_dashboard.html', first_name=first_name, students=students, student_tutors=student_tutors)
+
+@app.route('/view_class_chat/<int:student_id>/<int:tutor_id>')
+def view_class_chat(student_id, tutor_id):
+    if 'email' not in session:
+        flash("Please log in.")
+        return redirect(url_for('login'))
+
+    # Fetch student-tutor messages
+    cursor.execute("""
+        SELECT sender_id, content, timestamp
+        FROM messages
+        WHERE (sender_id = %s AND receiver_id = %s)
+           OR (sender_id = %s AND receiver_id = %s)
+        ORDER BY timestamp ASC
+    """, (student_id, tutor_id, tutor_id, student_id))
+    messages = cursor.fetchall()
+
+    return render_template('view_class_chat.html', messages=messages)
+
+@app.route('/parent_message_tutor/<int:tutor_id>')
+def parent_message_tutor(tutor_id):
+    if 'email' not in session:
+        flash("Please log in.")
+        return redirect(url_for('login'))
+
+    # Find parent
+    cursor.execute("SELECT user_id FROM users WHERE email = %s", (session['email'],))
+    parent_id = cursor.fetchone()[0]
+
+    # Fetch existing chat messages
+    cursor.execute("""
+        SELECT sender_id, message, timestamp
+        FROM parent_tutor_chat
+        WHERE (parent_id = %s AND tutor_id = %s)
+        ORDER BY timestamp ASC
+    """, (parent_id, tutor_id))
+    messages = cursor.fetchall()
+
+    return render_template('parent_tutor_chat.html', messages=messages, tutor_id=tutor_id, parent_id=parent_id)
 
 @app.route('/remove_tutor', methods=['POST'])
 def remove_tutor():
@@ -1181,6 +1261,28 @@ def upgrade():
         return redirect(url_for('login'))
 
 # socket stuff
+
+@socketio.on('parent_send_message')
+def handle_parent_send_message(data):
+    parent_id = data['parent_id']
+    tutor_id = data['tutor_id']
+    message = data['message']
+
+    # Save to database
+    cursor.execute("""
+        INSERT INTO parent_tutor_chat (parent_id, tutor_id, sender_id, message)
+        VALUES (%s, %s, %s, %s)
+    """, (parent_id, tutor_id, parent_id, message))
+    conn.commit()
+
+    # Broadcast to the room
+    room = f"parent_{parent_id}_tutor_{tutor_id}"
+    emit('parent_receive_message', data, room=room)
+
+@socketio.on('join_parent_chat')
+def handle_join_parent_chat(data):
+    room = f"parent_{data['parent_id']}_tutor_{data['tutor_id']}"
+    join_room(room)
 
 @socketio.on('join_chat')
 def handle_join_chat(data):

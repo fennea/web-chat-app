@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Parent Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+  <h2>Welcome, {{ first_name }}!</h2>
+
+  {% if students %}
+    <div class="section">
+      <h3>Your Children and Their Tutors</h3>
+
+      {% for student in students %}
+        <div class="card" style="margin-bottom: 1rem; padding: 1rem; border: 1px solid #ddd; border-radius: 8px; background: #fafafa;">
+          <h4>{{ student[1] }} {{ student[2] }}</h4> <!-- student first/last name -->
+
+          {% if student_tutors.get(student[0]) %}
+            <ul>
+              {% for tutor in student_tutors[student[0]] %}
+                <li style="margin-top: 0.5rem;">
+                  <strong>{{ tutor[1] }} {{ tutor[2] }}</strong>
+                  <div style="margin-top: 0.5rem;">
+                    <a href="{{ url_for('view_class_chat', student_id=student[0], tutor_id=tutor[0]) }}" class="btn btn-outline-primary btn-sm">View Class Chat</a>
+                    <a href="{{ url_for('parent_message_tutor', tutor_id=tutor[0]) }}" class="btn btn-outline-success btn-sm">Message Tutor</a>
+                  </div>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p>No tutors assigned yet.</p>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p>You have no linked students yet.</p>
+  {% endif %}
+</div>
+{% endblock %}
