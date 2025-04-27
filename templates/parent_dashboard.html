@@ -35,5 +35,60 @@
   {% else %}
     <p>You have no linked students yet.</p>
   {% endif %}
+
+  <div class="section">
+    <h3>Link to Your Student</h3>
+    <form id="linkRequestForm">
+      <input type="email" id="studentEmailInput" placeholder="Enter Student Email" required 
+             style="width: 100%; max-width: 300px; padding: 0.75rem; margin-bottom: 1rem;">
+      <button type="submit">Send Request</button>
+    </form>
+    <small style="color: #777;">If this student is a member of Twotoro, they will receive an in-app notification to accept your request.</small>
+  </div>
+  
+  <!-- Toast Container -->
+  <div id="toast" style="visibility:hidden; min-width:250px; background-color:#2a9d8f; color:white; text-align:center; border-radius:6px; padding:16px; position:fixed; z-index:1000; bottom:30px; left:50%; transform:translateX(-50%); font-size:16px;">
+    Request sent!
+  </div>
+  
+  
+
 </div>
 {% endblock %}
+
+<script>
+  const form = document.getElementById('linkRequestForm');
+  const emailInput = document.getElementById('studentEmailInput');
+  const toast = document.getElementById('toast');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const studentEmail = emailInput.value.trim();
+    if (!studentEmail) return;
+
+    // Send POST request using fetch
+    const response = await fetch("{{ url_for('request_link') }}", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ student_email: studentEmail })
+    });
+
+    if (response.ok) {
+      showToast("If this student is a member of Twotoro, they will receive your request.");
+      emailInput.value = '';
+    } else {
+      showToast("Something went wrong. Please try again.");
+    }
+  });
+
+  function showToast(message) {
+    toast.textContent = message;
+    toast.style.visibility = "visible";
+    setTimeout(() => {
+      toast.style.visibility = "hidden";
+    }, 3000);
+  }
+</script>

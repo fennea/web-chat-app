@@ -146,6 +146,34 @@ def send_verification_email(email, token):
         logging.error(f"Failed to send email to {email}: {str(e)}")
         raise e
 
+@app.route('/request_link', methods=['POST'])
+def request_link():
+    if 'email' not in session:
+        return "Unauthorized", 401
+
+    parent_email = session['email']
+    data = request.get_json()
+    student_email = data.get('student_email')
+
+    cursor.execute("SELECT user_id FROM users WHERE email = %s", (student_email,))
+    student = cursor.fetchone()
+
+    if student:
+        student_id = student[0]
+        cursor.execute("SELECT user_id FROM users WHERE email = %s", (parent_email,))
+        parent_id = cursor.fetchone()[0]
+
+        # Insert pending link
+        cursor.execute("""
+            INSERT INTO parent_student_requests (parent_id, student_id, status, requested_at)
+            VALUES (%s, %s, 'pending', NOW())
+        """, (parent_id, student_id))
+        conn.commit()
+
+    # Always return success (privacy protection)
+    return '', 204
+
+
 def get_user_session_count(user_id, month_start, month_end):
     # Check database connection
     db_status, db_error = check_db_connection()
@@ -657,9 +685,19 @@ def dashboard():
         """, (user_id, user_id))
         all_invitations = cursor.fetchall()
 
+        if role == 'student':
+            cursor.execute("""
+                SELECT psr.id, u.first_name, u.last_name
+                FROM parent_student_requests psr
+                JOIN users u ON psr.parent_id = u.user_id
+                WHERE psr.student_id = %s AND psr.status = 'pending'
+            """, (user_id,))
+            pending_parent_requests = cursor.fetchall()
+
         return render_template('dashboard.html', role=role, first_name=first_name, last_name=last_name, email=email, 
                                classrooms=classrooms, students=students, scheduled_classes=scheduled_classes, 
-                               tutors=tutors, all_invitations=all_invitations, user_id=user_id)
+                               tutors=tutors, all_invitations=all_invitations, user_id=user_id, 
+                               pending_parent_requests=pending_parent_requests)
     except Exception as e:
         logging.error(f"Error in dashboard for email {session['email']}: {str(e)}", exc_info=True)
         flash(f"Error loading dashboard: {str(e)}")
@@ -702,6 +740,34 @@ def parent_dashboard():
         student_tutors[student_id] = tutors
 
     return render_template('parent_dashboard.html', first_name=first_name, students=students, student_tutors=student_tutors)
+
+@app.route('/respond_parent_link', methods=['POST'])
+def respond_parent_link():
+    if 'email' not in session:
+        flash("Please log in.")
+        return redirect(url_for('login'))
+
+    request_id = request.form.get('request_id')
+    action = request.form.get('action')
+
+    if action == 'approve':
+        cursor.execute("""
+            UPDATE parent_student_requests
+            SET status = 'approved', approved_at = NOW()
+            WHERE id = %s
+        """, (request_id,))
+        conn.commit()
+        flash("Parent link approved successfully.")
+    elif action == 'reject':
+        cursor.execute("""
+            UPDATE parent_student_requests
+            SET status = 'rejected'
+            WHERE id = %s
+        """, (request_id,))
+        conn.commit()
+        flash("Parent link request rejected.")
+
+    return redirect(url_for('dashboard'))
 
 @app.route('/view_class_chat/<int:student_id>/<int:tutor_id>')
 def view_class_chat(student_id, tutor_id):

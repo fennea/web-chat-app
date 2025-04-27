@@ -343,6 +343,26 @@
             {% endfor %}
           </ul>
         </div>
+
+        {% if pending_parent_requests %}
+          <div class="section" style="background-color: #fff3cd; border: 1px solid #ffeeba;">
+            <h3 style="color: #856404;">Parent Link Requests</h3>
+            <ul style="list-style: none; padding: 0;">
+              {% for request in pending_parent_requests %}
+                <li style="margin-bottom: 1rem;">
+                  <span>{{ request[1] }} {{ request[2] }} wants to link to your account.</span><br>
+                  <form method="POST" action="{{ url_for('respond_parent_link') }}" style="margin-top: 0.5rem;">
+                    <input type="hidden" name="request_id" value="{{ request[0] }}">
+                    <button type="submit" name="action" value="approve">Approve</button>
+                    <button type="submit" name="action" value="reject" style="background-color: #dc3545;">Reject</button>
+                  </form>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+
+
       {% endif %}
     </div>
 
