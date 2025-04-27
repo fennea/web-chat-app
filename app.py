@@ -623,6 +623,8 @@ def dashboard():
 
         user_id, first_name, last_name, email, role = user
 
+        pending_parent_requests = []
+
         cursor.execute("""
             SELECT 
                 sc.id, sc.scheduled_date, sc.approved, sc.cancelled, sc.room_slug, sc.room_name,
@@ -639,9 +641,11 @@ def dashboard():
 
 
         if role == 'tutor':
-            cursor.execute("SELECT u.user_id, u.first_name, u.last_name, u.email "
-                          "FROM users u JOIN tutor_student ts ON u.user_id = ts.student_id "
-                          "WHERE ts.tutor_id = %s", (user_id,))
+            cursor.execute("""SELECT u.user_id, u.first_name, u.last_name, u.email, ps.parent_id
+                            FROM users u
+                            JOIN tutor_student ts ON u.user_id = ts.student_id
+                            LEFT JOIN parent_student ps ON u.user_id = ps.student_id
+                            WHERE ts.tutor_id = %s AND ps.status = 'approved'""", (user_id,))
             students = cursor.fetchall()
 
             cursor.execute("SELECT DISTINCT room_slug, room_name FROM invitations WHERE tutor_id = %s", (user_id,))
@@ -870,11 +874,13 @@ def remove_tutor():
         flash(f"Error removing tutor: {str(e)}")
         return redirect(url_for('dashboard'))
 
-@app.route('/chat/<int:partner_id>')
+@app.route('/chat/<int:partner_id>', methods=['GET', 'POST'])
 def chat(partner_id):
     if 'email' not in session:
         flash("Please log in to chat.")
         return redirect(url_for('login'))
+
+    chat_type = request.args.get('chat_type', 'student')  # Default to student chat
 
     cursor.execute("SELECT user_id FROM users WHERE email = %s", (session['email'],))
     current_user_id = cursor.fetchone()[0]
@@ -885,30 +891,54 @@ def chat(partner_id):
         flash("User not found.")
         return redirect(url_for('dashboard'))
 
-    # Verify tutor-student relationship
-    cursor.execute("""
-        SELECT 1 FROM tutor_student 
-        WHERE (tutor_id = %s AND student_id = %s) OR (tutor_id = %s AND student_id = %s)
-    """, (partner_id, current_user_id, current_user_id, partner_id))
-    relationship_exists = cursor.fetchone()
+    if chat_type == 'student':
+        cursor.execute("""
+            SELECT 1 FROM tutor_student 
+            WHERE (tutor_id = %s AND student_id = %s) OR (tutor_id = %s AND student_id = %s)
+        """, (partner_id, current_user_id, current_user_id, partner_id))
+    elif chat_type == 'parent_tutor':
+        cursor.execute("""
+            SELECT 1
+            FROM parent_student ps
+            JOIN tutor_student ts ON ps.student_id = ts.student_id
+            WHERE (ps.parent_id = %s AND ts.tutor_id = %s) OR (ps.parent_id = %s AND ts.tutor_id = %s)
+        """, (current_user_id, partner_id, partner_id, current_user_id))
 
+    relationship_exists = cursor.fetchone()
     if not relationship_exists:
         flash("Unauthorized access to chat.")
         return redirect(url_for('dashboard'))
 
-    # Fetch chat history
+    # Build the correct room
+    if chat_type == 'student':
+        room = f"studenttutor_{min(current_user_id, partner_id)}_{max(current_user_id, partner_id)}"
+    elif chat_type == 'parent_tutor':
+        room = f"parenttutor_{min(current_user_id, partner_id)}_{max(current_user_id, partner_id)}"
+
+    # Handle POST (new message)
+    if request.method == 'POST':
+        message = request.form.get('message')
+        timestamp = datetime.now()
+
+        cursor.execute("""
+            INSERT INTO messages (sender_id, receiver_id, content, timestamp, room)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (current_user_id, partner_id, message, timestamp, room))
+        conn.commit()
+
+        return redirect(url_for('chat', partner_id=partner_id, chat_type=chat_type))
+
+    # Handle GET (load previous messages)
     cursor.execute("""
         SELECT sender_id, content, timestamp 
-        FROM messages 
-        WHERE (sender_id = %s AND receiver_id = %s) OR (sender_id = %s AND receiver_id = %s)
+        FROM messages
+        WHERE room = %s
         ORDER BY timestamp ASC
-    """, (current_user_id, partner_id, partner_id, current_user_id))
+    """, (room,))
     messages = cursor.fetchall()
 
-    # Room naming convention: lowerID_higherID
-    room = f"{min(current_user_id, partner_id)}_{max(current_user_id, partner_id)}"
-
     return render_template("chat.html", partner=partner, messages=messages, current_user_id=current_user_id, room=room)
+
 
 @app.route('/schedule_class', methods=['POST'])
 def schedule_class():
@@ -1359,17 +1389,22 @@ def handle_parent_send_message(data):
     parent_id = data['parent_id']
     tutor_id = data['tutor_id']
     message = data['message']
+    room = data['room']  # Frontend must send the correct room too
 
-    # Save to database
+    timestamp = datetime.now()
+
+    # Insert into the main messages table
     cursor.execute("""
-        INSERT INTO parent_tutor_chat (parent_id, tutor_id, sender_id, message)
-        VALUES (%s, %s, %s, %s)
-    """, (parent_id, tutor_id, parent_id, message))
+        INSERT INTO messages (sender_id, receiver_id, content, timestamp, room)
+        VALUES (%s, %s, %s, %s, %s)
+    """, (parent_id, tutor_id, message, timestamp, room))
     conn.commit()
 
-    # Broadcast to the room
-    room = f"parent_{parent_id}_tutor_{tutor_id}"
-    emit('parent_receive_message', data, room=room)
+    emit('receive_message', {
+        'sender_id': parent_id,
+        'message': message,
+        'timestamp': timestamp.strftime('%Y-%m-%d %H:%M')
+    }, room=room)
 
 @socketio.on('join_parent_chat')
 def handle_join_parent_chat(data):
@@ -1387,16 +1422,22 @@ def handle_send_message(data):
     receiver_id = data['receiver_id']
     message = data['message']
     room = data['room']
+    timestamp = datetime.now()
 
-    # Save to DB
+    # Insert message with room
     cursor.execute("""
-        INSERT INTO messages (sender_id, receiver_id, content, timestamp)
-        VALUES (%s, %s, %s, %s)
-    """, (sender_id, receiver_id, message, datetime.now()))
+        INSERT INTO messages (sender_id, receiver_id, content, timestamp, room)
+        VALUES (%s, %s, %s, %s, %s)
+    """, (sender_id, receiver_id, message, timestamp, room))
     conn.commit()
 
-    # Broadcast message
-    emit('receive_message', data, room=room)
+    # Broadcast the message to everyone in the room
+    emit('receive_message', {
+        'sender_id': sender_id,
+        'message': message,
+        'timestamp': timestamp.strftime('%Y-%m-%d %H:%M')
+    }, room=room)
+
 
 @socketio.on('typing')
 def handle_typing(data):

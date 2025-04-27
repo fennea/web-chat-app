@@ -309,8 +309,19 @@
           <ul class="student-list">
             {% for student in students %}
               <li style="display: flex; justify-content: space-between; align-items: center;">
-                <span>{{ student[1] }} {{ student[2] }} ({{ student[3] }})</span>
-                <a href="{{ url_for('chat', partner_id=student[0]) }}" title="Chat" style="font-size: 1.2rem;">💬</a>
+                <div>
+                  <strong>{{ student[1] }} {{ student[2] }}</strong> ({{ student[3] }})
+                  <div style="margin-top: 0.5rem;">
+                    <!-- Chat with Student -->
+                    <a href="{{ url_for('chat', partner_id=student[0]) }}" title="Chat with Student" style="font-size: 1.2rem; margin-right: 1rem;">💬 Student</a>
+        
+                    <!-- Chat with Parent (only if parent linked) -->
+                    {% if student[4] %}
+                      <a href="{{ url_for('chat', partner_id=student[4], chat_type='parent_tutor') }}" title="Chat with Parent" style="font-size: 1.2rem;">💬 Parent</a>
+                    {% endif %}
+                  </div>
+                </div>
+        
                 <form method="POST" action="{{ url_for('remove_student') }}" style="margin: 0;" onsubmit="return confirm('Are you sure you want to remove this student and delete all associated classrooms and scheduled sessions?');">
                   <input type="hidden" name="student_id" value="{{ student[0] }}">
                   <button type="submit" title="Remove Student" style="background: none; border: none; cursor: pointer; font-size: 1.2rem;">🗑️</button>
@@ -321,6 +332,7 @@
             {% endfor %}
           </ul>
         </div>
+        
         
 
         <div class="section">
