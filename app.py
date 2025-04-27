@@ -152,11 +152,11 @@ def send_verification_email(email, token):
 @app.route('/request_link', methods=['POST'])
 def request_link():
     if 'email' not in session:
-        return "Unauthorized", 401
+        flash("Please log in.")
+        return redirect(url_for('login'))
 
     parent_email = session['email']
-    data = request.get_json()
-    student_email = data.get('student_email')
+    student_email = request.form.get('student_email')  # 👈 now get from form, not JSON
 
     cursor.execute("SELECT user_id FROM users WHERE email = %s", (student_email,))
     student = cursor.fetchone()
@@ -173,8 +173,8 @@ def request_link():
         """, (parent_id, student_id))
         conn.commit()
 
-    # Always return success (privacy protection)
-    return '', 204
+    flash("If this student is a member of Twotoro, they will receive your request.")
+    return redirect(url_for('dashboard'))
 
 
 def get_user_session_count(user_id, month_start, month_end):

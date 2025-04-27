@@ -38,13 +38,13 @@
 
   <div class="section">
     <h3>Link to Your Student</h3>
-    <form id="linkRequestForm">
-      <input type="email" id="studentEmailInput" placeholder="Enter Student Email" required 
+    <form method="POST" action="{{ url_for('request_link') }}">
+      <input type="email" name="student_email" placeholder="Enter Student Email" required 
              style="width: 100%; max-width: 300px; padding: 0.75rem; margin-bottom: 1rem;">
       <button type="submit">Send Request</button>
     </form>
     <small style="color: #777;">If this student is a member of Twotoro, they will receive an in-app notification to accept your request.</small>
-  </div>
+  </div>  
   
   <!-- Toast Container -->
   <div id="toast" style="visibility:hidden; min-width:250px; background-color:#2a9d8f; color:white; text-align:center; border-radius:6px; padding:16px; position:fixed; z-index:1000; bottom:30px; left:50%; transform:translateX(-50%); font-size:16px;">
