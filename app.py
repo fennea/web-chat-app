@@ -623,8 +623,9 @@ def dashboard():
 
         user_id, first_name, last_name, email, role = user
         
-        pending_parent_requests = []  # ✅ Always define it up front to avoid errors later
+        pending_parent_requests = []  # Always define early
 
+        # ✅ Pull scheduled classes
         cursor.execute("""
             SELECT 
                 sc.id, sc.scheduled_date, sc.approved, sc.cancelled, sc.room_slug, sc.room_name,
@@ -639,14 +640,14 @@ def dashboard():
         """, (user_id, user_id))
         scheduled_classes = cursor.fetchall()
 
+        # ✅ Tutor-specific
         if role == 'tutor':
-            # 🛠️ Only get students with an approved parent connection
             cursor.execute("""
                 SELECT u.user_id, u.first_name, u.last_name, u.email, ps.parent_id
                 FROM users u
                 JOIN tutor_student ts ON u.user_id = ts.student_id
                 LEFT JOIN parent_student ps ON u.user_id = ps.student_id
-                WHERE ts.tutor_id = %s AND (ps.status = 'approved' OR ps.status IS NULL)
+                WHERE ts.tutor_id = %s
             """, (user_id,))
             students = cursor.fetchall()
 
@@ -673,15 +674,18 @@ def dashboard():
                         logging.error(f"Error creating classroom for tutor {user_id}: {str(e)}")
                     return redirect(url_for('dashboard'))
 
+        # ✅ Parent-specific
         elif role == 'parent':
-            return redirect(url_for('parent_dashboard'))  # 🚨 Early route parents away
-
-        else:  # student
+            return redirect(url_for('parent_dashboard'))  # Early exit for parents
+        
+        # ✅ Student-specific
+        else:
             cursor.execute("SELECT DISTINCT room_slug, room_name FROM invitations WHERE student_id = %s", (user_id,))
             classrooms = cursor.fetchall()
             conn.commit()
             students = None
-        
+
+        # ✅ Tutors (for students)
         cursor.execute("""
             SELECT DISTINCT u.user_id, u.first_name, u.last_name 
             FROM users u 
@@ -690,6 +694,7 @@ def dashboard():
         """, (user_id,))
         tutors = cursor.fetchall()
 
+        # ✅ Invitations
         cursor.execute("""
             SELECT tutor_id, student_id, room_name 
             FROM invitations
@@ -697,6 +702,7 @@ def dashboard():
         """, (user_id, user_id))
         all_invitations = cursor.fetchall()
 
+        # ✅ Pending parent requests (only for students)
         if role == 'student':
             cursor.execute("""
                 SELECT psr.id, u.first_name, u.last_name
@@ -711,6 +717,7 @@ def dashboard():
                                classrooms=classrooms, students=students, scheduled_classes=scheduled_classes, 
                                tutors=tutors, all_invitations=all_invitations, user_id=user_id, 
                                pending_parent_requests=pending_parent_requests)
+
     except Exception as e:
         logging.error(f"Error in dashboard for email {session['email']}: {str(e)}", exc_info=True)
         flash(f"Error loading dashboard: {str(e)}")
