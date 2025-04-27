@@ -754,13 +754,35 @@ def respond_parent_link():
     action = request.form.get('action')
 
     if action == 'approve':
+        # First get the parent_id and student_id
         cursor.execute("""
-            UPDATE parent_student_requests
-            SET status = 'approved', approved_at = NOW()
+            SELECT parent_id, student_id 
+            FROM parent_student_requests 
             WHERE id = %s
         """, (request_id,))
-        conn.commit()
-        flash("Parent link approved successfully.")
+        link = cursor.fetchone()
+
+        if link:
+            parent_id, student_id = link
+
+            # Insert into parent_student table (new permanent link)
+            cursor.execute("""
+                INSERT INTO parent_student (parent_id, student_id)
+                VALUES (%s, %s)
+            """, (parent_id, student_id))
+
+            # Then mark the request as approved
+            cursor.execute("""
+                UPDATE parent_student_requests
+                SET status = 'approved', approved_at = NOW()
+                WHERE id = %s
+            """, (request_id,))
+            conn.commit()
+
+            flash("Parent link approved successfully.")
+        else:
+            flash("Request not found.")
+        
     elif action == 'reject':
         cursor.execute("""
             UPDATE parent_student_requests
@@ -771,6 +793,7 @@ def respond_parent_link():
         flash("Parent link request rejected.")
 
     return redirect(url_for('dashboard'))
+
 
 @app.route('/view_class_chat/<int:student_id>/<int:tutor_id>')
 def view_class_chat(student_id, tutor_id):
