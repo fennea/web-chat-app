@@ -830,26 +830,26 @@ def view_class_chat(student_id, tutor_id):
 
     return render_template('view_class_chat.html', messages=messages)
 
-@app.route('/parent_message_tutor/<int:tutor_id>')
-def parent_message_tutor(tutor_id):
-    if 'email' not in session:
-        flash("Please log in.")
-        return redirect(url_for('login'))
+# @app.route('/parent_message_tutor/<int:tutor_id>')
+# def parent_message_tutor(tutor_id):
+#     if 'email' not in session:
+#         flash("Please log in.")
+#         return redirect(url_for('login'))
 
-    # Find parent
-    cursor.execute("SELECT user_id FROM users WHERE email = %s", (session['email'],))
-    parent_id = cursor.fetchone()[0]
+#     # Find parent
+#     cursor.execute("SELECT user_id FROM users WHERE email = %s", (session['email'],))
+#     parent_id = cursor.fetchone()[0]
 
-    # Fetch existing chat messages
-    cursor.execute("""
-        SELECT sender_id, message, timestamp
-        FROM parent_tutor_chat
-        WHERE (parent_id = %s AND tutor_id = %s)
-        ORDER BY timestamp ASC
-    """, (parent_id, tutor_id))
-    messages = cursor.fetchall()
+#     # Fetch existing chat messages
+#     cursor.execute("""
+#         SELECT sender_id, message, timestamp
+#         FROM parent_tutor_chat
+#         WHERE (parent_id = %s AND tutor_id = %s)
+#         ORDER BY timestamp ASC
+#     """, (parent_id, tutor_id))
+#     messages = cursor.fetchall()
 
-    return render_template('chat.html', messages=messages, tutor_id=tutor_id, parent_id=parent_id)
+#     return render_template('chat.html', messages=messages, tutor_id=tutor_id, parent_id=parent_id)
 
 @app.route('/remove_tutor', methods=['POST'])
 def remove_tutor():
@@ -1421,7 +1421,9 @@ def handle_parent_send_message(data):
 
 @socketio.on('join_parent_chat')
 def handle_join_parent_chat(data):
-    room = f"parent_{data['parent_id']}_tutor_{data['tutor_id']}"
+    parent_id = data['parent_id']
+    tutor_id = data['tutor_id']
+    room = f"parenttutor_{min(parent_id, tutor_id)}_{max(parent_id, tutor_id)}"
     join_room(room)
 
 @socketio.on('join_chat')

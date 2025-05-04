@@ -21,7 +21,7 @@
                   <strong>{{ tutor[1] }} {{ tutor[2] }}</strong>
                   <div style="margin-top: 0.5rem;">
                     <a href="{{ url_for('view_class_chat', student_id=student[0], tutor_id=tutor[0]) }}" class="btn btn-outline-primary btn-sm">View Class Chat</a>
-                    <a href="{{ url_for('parent_message_tutor', tutor_id=tutor[0]) }}" class="btn btn-outline-success btn-sm">Message Tutor</a>
+                    <a href="{{ url_for('chat', partner_id=tutor[0], chat_type='parent_tutor') }}" class="btn btn-outline-success btn-sm">Message Tutor</a>
                   </div>
                 </li>
               {% endfor %}
