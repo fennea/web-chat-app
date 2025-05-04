@@ -73,18 +73,6 @@
     textarea.value = '';
     typingIndicator.textContent = '';
 
-    // 🔥 Render immediately
-    const wrapper = document.createElement('div');
-    wrapper.style.textAlign = 'right';
-
-    const bubble = document.createElement('div');
-    bubble.className = 'chat-bubble user';
-    bubble.innerHTML = `<p>${message}</p><small>Just now</small>`;
-
-    wrapper.appendChild(bubble);
-    chatLog.appendChild(wrapper);
-    chatLog.scrollTop = chatLog.scrollHeight;
-
   });
 
   socket.on('parent_receive_message', function (data) {
