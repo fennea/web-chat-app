@@ -1402,11 +1402,11 @@ def handle_parent_send_message(data):
     parent_id = data['parent_id']
     tutor_id = data['tutor_id']
     message = data['message']
-    room = data['room']  # Frontend must send the correct room too
+    room = data['room']  # e.g., "parenttutor_4_9"
 
     timestamp = datetime.now()
 
-    # Insert into the main messages table
+    # Insert into the shared messages table
     cursor.execute("""
         INSERT INTO messages (sender_id, receiver_id, content, timestamp, room)
         VALUES (%s, %s, %s, %s, %s)
@@ -1417,7 +1417,7 @@ def handle_parent_send_message(data):
         'sender_id': parent_id,
         'message': message,
         'timestamp': timestamp.strftime('%Y-%m-%d %H:%M')
-    }, room=room)
+    }, room=room, include_self=True)  # ✅ This makes it show up immediately for sender too
 
 @socketio.on('join_parent_chat')
 def handle_join_parent_chat(data):
@@ -1429,6 +1429,7 @@ def handle_join_chat(data):
     room = data['room']
     join_room(room)
 
+# For student-tutor chat
 @socketio.on('send_message')
 def handle_send_message(data):
     sender_id = data['sender_id']
@@ -1437,20 +1438,17 @@ def handle_send_message(data):
     room = data['room']
     timestamp = datetime.now()
 
-    # Insert message with room
     cursor.execute("""
         INSERT INTO messages (sender_id, receiver_id, content, timestamp, room)
         VALUES (%s, %s, %s, %s, %s)
     """, (sender_id, receiver_id, message, timestamp, room))
     conn.commit()
 
-    # Broadcast the message to everyone in the room
     emit('receive_message', {
         'sender_id': sender_id,
         'message': message,
         'timestamp': timestamp.strftime('%Y-%m-%d %H:%M')
-    }, room=room)
-
+    }, room=room, include_self=True)  # 👈 INCLUDE YOURSELF!
 
 @socketio.on('typing')
 def handle_typing(data):
