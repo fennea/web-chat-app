@@ -849,7 +849,7 @@ def parent_message_tutor(tutor_id):
     """, (parent_id, tutor_id))
     messages = cursor.fetchall()
 
-    return render_template('parent_tutor_chat.html', messages=messages, tutor_id=tutor_id, parent_id=parent_id)
+    return render_template('chat.html', messages=messages, tutor_id=tutor_id, parent_id=parent_id)
 
 @app.route('/remove_tutor', methods=['POST'])
 def remove_tutor():
