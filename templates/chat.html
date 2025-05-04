@@ -140,6 +140,17 @@
 
       textarea.value = '';
       typingIndicator.textContent = '';
+
+      const wrapper = document.createElement('div');
+      wrapper.style.textAlign = 'right';
+
+      const bubble = document.createElement('div');
+      bubble.className = 'chat-bubble user';
+      bubble.innerHTML = `<p>${message}</p><small>Just now</small>`;
+
+      wrapper.appendChild(bubble);
+      chatLog.appendChild(wrapper);
+      chatLog.scrollTop = chatLog.scrollHeight;
     }
   });
 
