@@ -5,137 +5,156 @@
 {% block extra_styles %}
   {{ super() }}
   <style>
-    body {
-      background-color: #f8f9fa;
-    }
-
     .video-container {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 1.5rem;
-      padding: 1.5rem;
-      max-width: 1200px;
-      margin: 0 auto;
+      gap: 1rem;
+      padding: 1rem;
+      max-width: 1000px;
+      margin: auto;
     }
 
     video {
       width: 100%;
-      background-color: #000;
+      background: #000;
       border-radius: 8px;
-      border: 2px solid #ccc;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-    }
-
-    .status-messages {
-      max-height: 150px;
-      overflow-y: auto;
+      border: 1px solid #ccc;
     }
 
     .whiteboard-container {
+      width: 100%;
       max-width: 900px;
-      margin: 30px auto;
+      margin: auto;
       border: 2px solid #ddd;
-      background: #fff;
-      padding: 15px;
       border-radius: 8px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      padding: 10px;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
 
-    .toolbar button {
-      margin: 0 10px;
-    }
-
-    .hidden { display: none; }
-
-    #startSessionBtn {
-      margin: 1rem auto;
-      display: block;
-    }
-
-    @media (max-width: 480px) {
-      .video-container, .whiteboard-container {
-        padding: 10px;
-      }
+    .status-messages {
+      height: 120px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      padding: 10px;
+      border-radius: 6px;
+      background: #f8f8f8;
     }
   </style>
 {% endblock %}
 
 {% block content %}
-<div class="container py-4">
+<div class="container py-3">
+  <button id="startSessionBtn" class="btn btn-success mb-3">Start Session</button>
 
-  <!-- Start Session Button -->
-  <button id="startSessionBtn" class="btn btn-success">Start Session</button>
+  <div class="status-messages mb-3" id="statusMessages"></div>
 
-  <!-- Control Panel -->
-  <div class="d-flex justify-content-center align-items-center gap-3 my-4 bg-white shadow p-3 rounded">
-    <div id="reconnectBanner" class="hidden bg-success-subtle rounded px-3 py-2">🔁 Reconnected successfully</div>
-
-    <span class="badge bg-secondary" id="sessionTimer">Session Time: 00:00</span>
-
-    <button id="shareScreenBtn" class="btn btn-primary">Share Screen</button>
-
-    <button id="flipRemoteBtn" class="btn btn-secondary">
-      {% if role=='tutor' %} Flip Student Video
-      {% elif role=='student' %} Flip Teacher Video
-      {% else %} Flip Remote Video
-      {% endif %}
-    </button>
-
-    <button id="exitBtn" class="btn btn-danger" onclick="window.location.href='{{ url_for('dashboard') }}'">
-      <i class="fas fa-sign-out-alt"></i> Exit Classroom
-    </button>
-  </div>
-
-  <!-- Status Messages -->
-  <div class="card mx-auto mb-4" style="max-width:800px;">
-    <div class="card-body status-messages" id="statusMessages"></div>
-  </div>
-
-  <!-- Video Container -->
   <div class="video-container">
     <video id="localVideo" autoplay muted playsinline></video>
     <video id="remoteVideo" autoplay playsinline></video>
   </div>
 
-  <!-- Whiteboard Section -->
-  <div class="whiteboard-container">
+  <div class="whiteboard-container mt-4">
     <canvas id="whiteboard" width="800" height="600"></canvas>
-    <div class="toolbar text-center my-2">
-      <button id="toggleEraser" class="btn btn-outline-secondary">Toggle Eraser</button>
-      <button id="clearBoard" class="btn btn-outline-danger">Clear Board</button>
+    <div class="text-center mt-2">
+      <button id="toggleEraser" class="btn btn-secondary">Toggle Eraser</button>
+      <button id="clearBoard" class="btn btn-danger">Clear Board</button>
     </div>
   </div>
-
 </div>
 
 <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
 <script>
-  const socket = io({ reconnection: true });
+  const socket = io();
+  const room = "{{ roomName }}";
+  const userId = {{ current_user_id }};
+
+  const localVideo = document.getElementById('localVideo');
+  const remoteVideo = document.getElementById('remoteVideo');
   const startBtn = document.getElementById('startSessionBtn');
+  const statusMessages = document.getElementById('statusMessages');
+  let pc, localStream;
 
-  function startSession() {
+  startBtn.onclick = async () => {
     startBtn.disabled = true;
+    localStream = await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+    localVideo.srcObject = localStream;
+    socket.emit('join', { room, user_id: userId });
+    logMsg('Local camera started.');
+  };
 
-    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-      .then(stream => {
-        document.getElementById('localVideo').srcObject = stream;
-        socket.emit('join', { room: "{{ roomName }}", user_id: {{ current_user_id }} });
-      })
-      .catch(err => alert('Camera/Microphone Error: ' + err));
+  socket.on('role', async ({role}) => {
+    pc = new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});
+    localStream.getTracks().forEach(track=>pc.addTrack(track, localStream));
+
+    pc.onicecandidate = e => e.candidate && socket.emit('signal',{room,type:'candidate',payload:e.candidate});
+    pc.ontrack = e => remoteVideo.srcObject = e.streams[0];
+
+    if (role === 'offerer') {
+      let offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      socket.emit('signal',{room,type:'offer',payload:pc.localDescription});
+    }
+
+    logMsg('Assigned role: ' + role);
+  });
+
+  socket.on('signal', async data => {
+    if (data.type === 'offer') {
+      await pc.setRemoteDescription(data.payload);
+      let answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      socket.emit('signal',{room,type:'answer',payload:pc.localDescription});
+    } else if (data.type === 'answer') {
+      await pc.setRemoteDescription(data.payload);
+    } else if (data.type === 'candidate') {
+      await pc.addIceCandidate(data.payload);
+    }
+  });
+
+  function logMsg(msg) {
+    const p = document.createElement('p');
+    p.textContent = msg;
+    statusMessages.appendChild(p);
+    statusMessages.scrollTop = statusMessages.scrollHeight;
   }
 
-  startBtn.addEventListener('click', startSession);
+  // Whiteboard logic
+  const canvas = document.getElementById('whiteboard');
+  const ctx = canvas.getContext('2d');
+  let drawing = false, eraser = false;
 
-  socket.on('connect', () => {
-    document.getElementById('statusMessages').innerHTML += '<p>✅ Connected to server</p>';
+  canvas.onmousedown = e => {
+    drawing = true; ctx.beginPath(); ctx.moveTo(e.offsetX,e.offsetY);
+    socket.emit('whiteboard',{type:'start',x:e.offsetX,y:e.offsetY,eraser,room});
+  };
+
+  canvas.onmousemove = e => {
+    if (!drawing) return;
+    ctx.lineWidth = eraser ? 10 : 2;
+    ctx.strokeStyle = eraser ? '#fff' : '#000';
+    ctx.lineTo(e.offsetX,e.offsetY); ctx.stroke();
+    socket.emit('whiteboard',{type:'draw',x:e.offsetX,y:e.offsetY,eraser,room});
+  };
+
+  canvas.onmouseup = () => { drawing=false; ctx.closePath(); socket.emit('whiteboard',{type:'end',room}); };
+  canvas.onmouseout = () => canvas.onmouseup();
+
+  document.getElementById('toggleEraser').onclick = () => eraser = !eraser;
+  document.getElementById('clearBoard').onclick = () => {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    socket.emit('whiteboard',{type:'clear',room});
+  };
+
+  socket.on('whiteboard', data => {
+    if(data.type==='start'){ctx.beginPath();ctx.moveTo(data.x,data.y);}
+    else if(data.type==='draw'){
+      ctx.lineWidth=data.eraser?10:2;
+      ctx.strokeStyle=data.eraser?'#fff':'#000';
+      ctx.lineTo(data.x,data.y);ctx.stroke();
+    }
+    else if(data.type==='end'){ctx.closePath();}
+    else if(data.type==='clear'){ctx.clearRect(0,0,canvas.width,canvas.height);}
   });
-
-  socket.on('signal', async (data) => {
-    document.getElementById('statusMessages').innerHTML += '<p>Signal received: ' + data.type + '</p>';
-  });
-
-  // Auto-start on desktop
-  if (window.innerWidth >= 768) startSession();
 </script>
-
 {% endblock %}
