@@ -11,6 +11,7 @@
         button:hover:not(:disabled) { background-color: #0056b3; }
         #whiteboard { width: 100%; max-width: 800px; height: 400px; border: 1px solid #ccc; display: none; }
         .whiteboard-controls { display: none; margin: 10px; }
+        .reconnect-message { color: red; display: none; }
     </style>
 </head>
 <body>
@@ -20,7 +21,7 @@
         <video id="remoteVideo" autoplay playsinline></video>
     </div>
     <div class="controls">
-        <button id="startVideo" {% if userRole == 'student' %}disabled{% endif %}>Start Video Session</button>
+        <button id="startVideo">Start Video Session</button>
         <button id="toggleWhiteboard">Show Whiteboard</button>
         <button id="endSession">End Session</button>
     </div>
@@ -31,6 +32,7 @@
             <button id="clearBoard">Clear Whiteboard</button>
         </div>
     </div>
+    <div class="reconnect-message" id="reconnectMessage">Attempting to reconnect...</div>
 
     <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.min.js"></script>
 
@@ -44,14 +46,12 @@
 
         // Video Session
         const startButton = document.getElementById('startVideo');
-        if (userRole === 'tutor') {
-            startButton.disabled = false;
-            startButton.addEventListener('click', startVideoSession);
-        }
+        startButton.addEventListener('click', startVideoSession); // Allow all roles to start
 
         async function startVideoSession() {
             try {
                 startButton.disabled = true;
+                if (peerConnection) peerConnection.close(); // Clean up existing connection
                 peerConnection = new RTCPeerConnection(configuration);
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                 document.getElementById('localVideo').srcObject = stream;
@@ -82,7 +82,7 @@
                     console.log(`Received signal: ${JSON.stringify(data)}`);
                     if (data.sdp) {
                         await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
-                        if (data.sdp.type === 'offer') {
+                        if (data.sdp.type === 'offer' && peerConnection.signalingState === 'stable') {
                             const answer = await peerConnection.createAnswer();
                             await peerConnection.setLocalDescription(answer);
                             socket.emit('signal', { sdp: peerConnection.localDescription, room });
@@ -92,8 +92,8 @@
                     }
                 });
             } catch (error) {
-                console.error('Error starting video:', error);
-                alert('Failed to start video session. Please check permissions and try again.');
+                console.error('Video error:', error);
+                alert('Couldn’t start video. Check permissions or network.');
                 startButton.disabled = false;
             }
         }
@@ -205,6 +205,44 @@
                 document.querySelector('.whiteboard-controls').style.display = data.visible ? 'block' : 'none';
             }
         });
+
+        // Reconnection Handling
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
+        const reconnectInterval = 2000; // 2 seconds
+
+        socket.on('connect', () => {
+            console.log('Connected to server');
+            document.getElementById('reconnectMessage').style.display = 'none';
+            reconnectAttempts = 0;
+            if (peerConnection) {
+                socket.emit('join', { room, user_id: userId }); // Rejoin room on reconnect
+            }
+        });
+
+        socket.on('disconnect', () => {
+            console.log('Disconnected from server');
+            document.getElementById('reconnectMessage').style.display = 'block';
+            if (peerConnection) {
+                peerConnection.close();
+                document.getElementById('localVideo').srcObject = null;
+                document.getElementById('remoteVideo').srcObject = null;
+            }
+            attemptReconnect();
+        });
+
+        function attemptReconnect() {
+            if (reconnectAttempts < maxReconnectAttempts) {
+                reconnectAttempts++;
+                console.log(`Attempting reconnect (${reconnectAttempts}/${maxReconnectAttempts})`);
+                setTimeout(() => {
+                    socket.connect();
+                }, reconnectInterval);
+            } else {
+                console.log('Max reconnect attempts reached. Reloading page...');
+                window.location.reload(); // Reload if all attempts fail
+            }
+        }
     </script>
 </body>
 </html>

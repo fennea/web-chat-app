@@ -1118,11 +1118,8 @@ def classroom(room_slug):
 
 @socketio.on('whiteboard')
 def handle_whiteboard_event(data):
-    # Assuming you have a way to identify the room,
-    # you could attach the room name to the data payload or determine it from the session.
     room = data.get('room', 'defaultRoom')
-    # Broadcast the drawing event to all users except the one who emitted it
-    emit('whiteboard', data, room=room, include_self=False)
+    emit('whiteboard', data, room=room, include_self=True)
 
 @app.route('/tutors')
 def tutors():
@@ -1468,39 +1465,38 @@ def handle_typing(data):
 @socketio.on('join')
 def on_join(data):
     room = data.get('room')
-    sid = request.sid
     user_id = data.get('user_id')
+    sid = request.sid
 
-    if room:
-        join_room(room)
-        add_user_to_room(user_id, room)  # ✅ Register room immediately
+    if not room or not user_id:
+        logging.warning(f"Invalid join request: room={room}, user_id={user_id}")
+        return
 
-        # Get current users in this room
-        room_members = socketio.server.manager.rooms.get('/', {}).get(room, set())
-        user_count = len(room_members)
+    join_room(room)
+    add_user_to_room(user_id, room)
 
-        logging.info(f"User {sid} (user_id={user_id}) joined room: {room}, total users now: {user_count}")
+    # Count users in the room
+    room_members = socketio.server.manager.rooms.get('/', {}).get(room, set())
+    user_count = len(room_members)
 
-        # Assign WebRTC roles
-        if user_count == 1:
-            emit('role', {'role': 'offerer'}, room=sid)
-        else:
-            emit('role', {'role': 'answerer'}, room=sid)
+    logging.info(f"User {sid} (user_id={user_id}) joined room: {room}, total users: {user_count}")
 
-        # Announce to room
-        emit('user-joined', {'msg': 'A new user has joined the room!'}, room=room)
+    # Assign WebRTC role based on join order, not role
+    role = 'offerer' if user_count == 1 else 'answerer'
+    emit('role', {'role': role}, to=sid)
+
+    # Notify others in the room
+    emit('user-joined', {'msg': 'A new user has joined!'}, room=room, skip_sid=sid)
 
 @socketio.on('connect')
 def on_connect():
     sid = request.sid
-    logging.info(f"User {sid} connected")
-
+    logging.info(f"User {sid} connected to Socket.IO")
 
 @socketio.on('disconnect')
 def on_disconnect():
     sid = request.sid
-    logging.info(f"User {sid} disconnected")
-    # optionally: flag user as 'disconnected' but not fully gone
+    logging.info(f"User {sid} disconnected from Socket.IO")
 
 @socketio.on('rejoin_all')
 def handle_rejoin_all(data):
