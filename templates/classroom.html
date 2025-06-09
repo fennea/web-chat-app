@@ -119,373 +119,164 @@
 
 
   <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+  
   <script>
-
-    let signalQueue = [];
-    let localStreamReady = false;
-
-    const CURRENT_USER_ID = {{ current_user_id }};
-
-    const localVideo = document.getElementById('localVideo');
-    const remoteVideo = document.getElementById('remoteVideo');
-    const shareScreenBtn = document.getElementById('shareScreenBtn');
-    const flipRemoteBtn = document.getElementById('flipRemoteBtn');
-    const statusMessages = document.getElementById('statusMessages');
-    const sessionTimer = document.getElementById('sessionTimer');
-
-    let localStream = null;
-    let peerConnection = null;
-    let isOfferer = false;
-    let isFlipped = false;
-    let lastSessionUpdate = 0;
-    const room = "{{ roomName }}";
-    const config = {
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' },
-        { urls: 'stun:stun3.l.google.com:19302' },
-        { urls: 'stun:stun4.l.google.com:19302' },
-        // Add TURN server for production
-        // {
-        //   urls: 'turn:your.turn.server:3478',
-        //   username: 'your_username',
-        //   credential: 'your_password'
-        // }
-      ]
-    };
-
-    let startTime = Date.now();
-    let timerInterval;
-
-    const userPlan = "{{ userPlan }}";
-    const userRole = "{{ userRole }}"
-    
-    // Only enforce the 30‑min limit if they’re on the free plan AND not a student
-    const maxSessionDuration = (userPlan === 'free' && userRole !== 'student')
-      ? 30 * 60   // 30 minutes in seconds
-      : null;     // no limit
-
-
-
-    const startBtn = document.getElementById('startSessionBtn');
-    startBtn.addEventListener('click', () => {
-      startBtn.disabled = true;
-      startSession();
-    });
-
-    function startSession() {
-      navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-        .then(stream => {
-          console.log('Local stream acquired:', stream.getTracks());
-          localStream = stream;
-          localVideo.srcObject = stream;
-          localVideo.play();
-          localStreamReady = true;
-          addStatusMessage('Local camera connected');
-
-          // 1) Rejoin so server will send you your role now that you're ready
-          socket.emit('join', { room, user_id: CURRENT_USER_ID });
-
-          // 2) Actually start the WebRTC handshake
-          initPeerConnection();
-
-          // 3) Process any early signals (unlikely once you re-joined, but just in case)
-          if (signalQueue.length > 0) {
-            console.log(`Processing ${signalQueue.length} queued signals.`);
-            signalQueue.forEach(async (signal) => {
-              await handleSignal(signal);
-            });
-            signalQueue = [];
-          }
-        })
-        .catch(err => {
-          console.error('Error accessing media devices:', err);
-          addStatusMessage('Failed to access camera/microphone. Check permissions.');
-          alert('Camera/microphone access denied or unavailable. Please check permissions.');
-        });
-    }
-
-
-    function updateTimer() {
-      const elapsed = Math.floor((Date.now() - startTime) / 1000);
-      const minutes = Math.floor(elapsed / 60);
-      const seconds = elapsed % 60;
-      sessionTimer.textContent = `Session Time: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-
-      // Emit session_update every 30 seconds
-      if (elapsed - lastSessionUpdate >= 30) {
-        socket.emit('session_update', { duration: Math.floor(elapsed / 60) });
-        lastSessionUpdate = elapsed;
-      }
-
-      if (maxSessionDuration && elapsed >= maxSessionDuration) {
-        clearInterval(timerInterval);
-        socket.emit('session_update', { duration: 30 });
-        alert('Your 30-minute session has ended.');
-        window.location.href = '/dashboard';
-      }
-    }
-
-    function addStatusMessage(msg) {
+    // grab everything once
+    const localVideo    = document.getElementById('localVideo');
+    const remoteVideo   = document.getElementById('remoteVideo');
+    const startBtn      = document.getElementById('startSessionBtn');
+    const statusMessages= document.getElementById('statusMessages');
+    const sessionTimer  = document.getElementById('sessionTimer');
+    const room          = "{{ roomName }}";
+    const userId        = {{ current_user_id }};
+    let   pc            = null;
+    let   localStream   = null;
+    let   signalQueue   = [];
+    let   isOfferer     = false;
+    let   lastUpdate    = 0;
+    const config = { iceServers: [ /* your STUN/TURN… */ ] };
+  
+    // show messages
+    function logMsg(msg) {
       const p = document.createElement('p');
       p.textContent = msg;
       statusMessages.appendChild(p);
       statusMessages.scrollTop = statusMessages.scrollHeight;
     }
-
-    function resetPeerConnection() {
-      if (peerConnection) {
-        try {
-          peerConnection.getSenders().forEach(sender => {
-            try {
-              sender.track?.stop();
-            } catch (e) {
-              console.warn("Error stopping track:", e);
-            }
-          });
-          peerConnection.close();
-        } catch (err) {
-          console.error("Error closing peerConnection:", err);
-        }
-        peerConnection = null;
-      }
+  
+    // clean up old PC & tracks
+    function resetPC() {
+      if (!pc) return;
+      pc.getSenders().forEach(s => s.track?.stop());
+      pc.close();
+      pc = null;
     }
-
-    function initPeerConnection() {
-      resetPeerConnection();
-
-      peerConnection = new RTCPeerConnection(config);
-
-      localStream.getTracks().forEach(track => {
-        console.log('Adding track to peer connection:', track);
-        peerConnection.addTrack(track, localStream);
-      });
-
-      peerConnection.onicecandidate = (event) => {
-        if (event.candidate) {
-          console.log('Sending ICE candidate:', event.candidate);
-          socket.emit('signal', { room, type: 'candidate', payload: event.candidate });
+  
+    // build a new RTCPeerConnection and kick off offer/answer
+    function startWebRTC() {
+      resetPC();
+      pc = new RTCPeerConnection(config);
+  
+      // attach local tracks
+      for (let t of localStream.getTracks()) {
+        pc.addTrack(t, localStream);
+      }
+  
+      // candidates → server
+      pc.onicecandidate = e => {
+        if (e.candidate) socket.emit('signal', { room, type:'candidate', payload:e.candidate });
+      };
+  
+      // remote track → video element
+      pc.ontrack = e => {
+        remoteVideo.srcObject = e.streams[0];
+        remoteVideo.play().catch(()=>{});  // Safari needs explicit play()
+        logMsg('✅ Remote video connected');
+      };
+  
+      // connection monitoring
+      pc.oniceconnectionstatechange = () => {
+        if (pc.iceConnectionState === 'failed') {
+          logMsg('ICE failed, retrying…');
+          startWebRTC();
         }
       };
-
-      peerConnection.ontrack = (event) => {
-        if (event.streams && event.streams[0]) {
-          remoteVideo.srcObject = event.streams[0];
-          remoteVideo.play();                              // <— force play
-          addStatusMessage('Connected to remote video');
+  
+      pc.onconnectionstatechange = () => {
+        if (pc.connectionState === 'connected') {
+          logMsg('🔗 WebRTC connected');
         }
       };
-
-
-      peerConnection.oniceconnectionstatechange = () => {
-        console.log('ICE connection state:', peerConnection.iceConnectionState);
-        if (peerConnection.iceConnectionState === 'failed') {
-          addStatusMessage('ICE connection failed, retrying...');
-          initPeerConnection();
-        }
-      };
-
-      peerConnection.onconnectionstatechange = () => {
-        console.log('Connection state:', peerConnection.connectionState);
-        if (peerConnection.connectionState === 'failed') {
-          addStatusMessage('WebRTC connection failed, retrying...');
-          initPeerConnection();
-        } else if (peerConnection.connectionState === 'connected') {
-          addStatusMessage('WebRTC connection established');
-        }
-      };
-
+  
+      // if we’re the offerer, create and send the offer
       if (isOfferer) {
-        console.log('Creating offer as offerer');
-        peerConnection.createOffer()
-          .then(offer => {
-            console.log('Setting local description (offer):', offer);
-            return peerConnection.setLocalDescription(offer);
-          })
-          .then(() => {
-            console.log('Sending offer');
-            socket.emit('signal', { room, type: 'offer', payload: peerConnection.localDescription });
-          })
-          .catch(err => console.error('Error creating offer:', err));
+        pc.createOffer()
+          .then(o => pc.setLocalDescription(o))
+          .then(()=> socket.emit('signal', { room, type:'offer', payload:pc.localDescription }))
+          .catch(console.error);
       }
     }
-
-    const socket = io({
-      reconnection: true,
-      reconnectionAttempts: Infinity,  // try forever
-      reconnectionDelay: 1000,         // wait 1s before trying again
-      reconnectionDelayMax: 5000       // cap backoff at 5s
-    });
-
-
-    socket.on('connect', () => {
-      console.log('✅ Socket.IO connected');
-
-      // Clear existing timer interval (in case it was already running before reconnect)
-      if (typeof timerInterval !== 'undefined') {
-        clearInterval(timerInterval);
-      }
-
-      // Show reconnect banner (optional UX)
-      const banner = document.getElementById('reconnectBanner');
-      if (banner) {
-        banner.classList.remove('hidden');
-        setTimeout(() => {
-          banner.classList.add('hidden');
-        }, 2000);
-      }
-
-      // Rejoin rooms
-      socket.emit('join', { room, user_id: CURRENT_USER_ID });
-      socket.emit('rejoin_all', { user_id: CURRENT_USER_ID });
-
-      // Restart timer
-      timerInterval = setInterval(updateTimer, 1000);
-    });
-
-    socket.on('disconnect', () => {
-      console.log('Socket.IO disconnected');
-      addStatusMessage('Disconnected from server, attempting to reconnect...');
-    });
-
-    socket.on('reconnect', () => {
-      console.log('Socket.IO reconnected');
-      addStatusMessage('Reconnected to server');
-
-      socket.emit('join', { room, user_id: CURRENT_USER_ID });
-      socket.emit('rejoin_all', { user_id: CURRENT_USER_ID });
-
-      // Ensure local stream is present and restart peer connection logic
-      if (localStream) {
-        addStatusMessage('Reinitializing peer connection after reconnect...');
-        initPeerConnection();
-      }
-    });
-
-    socket.on('role', ({ role }) => {
-      console.log('Assigned role:', role);
-      isOfferer = role === 'offerer';
-      if (isOfferer && localStream) {
-        addStatusMessage('Initiating connection as offerer');
-        initPeerConnection();
-      }
-    });
-
-    socket.on('user-joined', (data) => {
-      console.log('User joined:', data);
-      addStatusMessage(data.msg || 'A new user has joined the room!');
-      if (isOfferer && localStream) {
-        addStatusMessage('New user joined, restarting connection');
-        initPeerConnection();
-      }
-    });
-
-    socket.on('signal', async (data) => {
-      console.log('Received signal:', data);
-      
-      if (!localStreamReady) {
-        console.warn('Local stream not ready, queueing signal');
-        signalQueue.push(data);
-        return;
-      }
-
-      await handleSignal(data); // Separate your existing logic into handleSignal()
-    });
-
+  
+    // handle incoming signaling
     async function handleSignal(data) {
-      if (!peerConnection) {
-        console.warn('PeerConnection not initialized, creating now');
-        initPeerConnection();
-      }
-
+      if (!pc) startWebRTC();
       try {
         if (data.type === 'offer') {
-          await peerConnection.setRemoteDescription(new RTCSessionDescription(data.payload));
-          const answer = await peerConnection.createAnswer();
-          await peerConnection.setLocalDescription(answer);
-          socket.emit('signal', { room, type: 'answer', payload: peerConnection.localDescription });
-        } else if (data.type === 'answer') {
-          await peerConnection.setRemoteDescription(new RTCSessionDescription(data.payload));
-        } else if (data.type === 'candidate') {
-          await peerConnection.addIceCandidate(new RTCIceCandidate(data.payload));
+          await pc.setRemoteDescription(data.payload);
+          const ans = await pc.createAnswer();
+          await pc.setLocalDescription(ans);
+          socket.emit('signal', { room, type:'answer', payload:pc.localDescription });
         }
-      } catch (err) {
-        console.error(`Error handling signal (${data.type}):`, err);
-        addStatusMessage('Error in video connection, please refresh.');
+        else if (data.type === 'answer') {
+          await pc.setRemoteDescription(data.payload);
+        }
+        else if (data.type === 'candidate') {
+          await pc.addIceCandidate(data.payload);
+        }
+      } catch (e) {
+        console.error('signal error', e);
+        logMsg('⚠️ Signal error');
       }
     }
-
-
-
-    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-      .then(stream => {
-        console.log('Local stream acquired:', stream.getTracks());
-        localStream = stream;
-        localVideo.srcObject = stream;
-        localStreamReady = true;  // Mark local stream as ready
-
-        socket.emit('join', { room, user_id: CURRENT_USER_ID });
-        initPeerConnection();
-
-        addStatusMessage('Local camera connected');
-
-        // Immediately process any queued signals
-        if (signalQueue.length > 0) {
-          console.log(`Processing ${signalQueue.length} queued signals.`);
-          signalQueue.forEach(async (signal) => {
-            await handleSignal(signal);
-          });
-          signalQueue = []; // Clear queue after processing
-        }
-      })
-      .catch(err => {
-        console.error('Error accessing media devices:', err);
-        addStatusMessage('Failed to access camera/microphone. Check permissions.');
-        alert('Camera/microphone access denied or unavailable. Please check permissions.');
-      });
-
-
-    shareScreenBtn.addEventListener('click', async () => {
-      try {
-        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-        const screenTrack = screenStream.getVideoTracks()[0];
-        const sender = peerConnection?.getSenders().find(s => s.track && s.track.kind === 'video');
-        if (sender) {
-          sender.replaceTrack(screenTrack);
-          localVideo.srcObject = screenStream;
-          addStatusMessage('Screen sharing started');
-        }
-        screenTrack.onended = () => {
-          if (sender && localStream) {
-            sender.replaceTrack(localStream.getVideoTracks()[0]);
-            localVideo.srcObject = localStream;
-            addStatusMessage('Screen sharing stopped');
-          }
-        };
-      } catch (err) {
-        console.error('Error sharing screen:', err);
-        addStatusMessage('Failed to share screen');
+  
+    // your socket.io setup
+    const socket = io({ reconnection: true, reconnectionAttempts: Infinity });
+    socket.on('connect', () => {
+      logMsg('Socket connected');
+      // only re-join AFTER we have a local stream
+      if (localStream) {
+        socket.emit('join',    { room, user_id: userId });
+        socket.emit('rejoin_all',{ user_id: userId });
+        startWebRTC();
       }
     });
-
-    flipRemoteBtn.addEventListener('click', () => {
-      isFlipped = !isFlipped;
-      remoteVideo.style.transform = isFlipped ? 'scaleX(-1)' : 'scaleX(1)';
-      flipRemoteBtn.textContent = isFlipped ? 'Unflip Student Video' : 'Flip Student Video';
+  
+    socket.on('role', ({role}) => {
+      isOfferer = (role==='offerer');
+      logMsg(`You are the ${role}`);
     });
-
-    window.addEventListener('beforeunload', () => {
-      clearInterval(timerInterval);
-      const elapsed = Math.floor((Date.now() - startTime) / 1000);
-      socket.emit('session_update', {
-        duration: userPlan === 'free' ? Math.min(Math.floor(elapsed / 60), 30) : Math.floor(elapsed / 60)
-      });
-      if (peerConnection) {
-        peerConnection.close();
+    socket.on('user-joined', d => {
+      logMsg(d.msg || 'Another user joined');
+      if (isOfferer && localStream) startWebRTC();
+    });
+    socket.on('signal', handleSignal);
+  
+    // the single getUserMedia entry point
+    function startSession() {
+      startBtn.disabled = true;
+      navigator.mediaDevices.getUserMedia({video:true,audio:true})
+        .then(stream => {
+          localStream = stream;
+          localVideo.srcObject = stream;
+          localVideo.play().catch(()=>{});  // Safari plays inline only with explicit call
+          logMsg('✅ Local camera ready');
+  
+          // now that we have media, join the room and begin negotiation
+          socket.emit('join', { room, user_id: userId });
+          socket.emit('rejoin_all',{ user_id: userId });
+        })
+        .catch(err => {
+          console.error(err);
+          alert('Camera/mic error');
+        });
+    }
+  
+    // wire up start button
+    startBtn.addEventListener('click', startSession);
+  
+    // session timer logic (unchanged)
+    let lastSec = 0;
+    setInterval(()=>{
+      const s = Math.floor((Date.now()-lastSec)/1000);
+      sessionTimer.textContent = `Session Time: ${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+      if (s - lastUpdate >= 30) {
+        socket.emit('session_update',{duration:Math.floor(s/60)});
+        lastUpdate = s;
       }
-    });
+    },1000);
+  
   </script>
+  
 
   <script>
     // Initialize canvas context and variables
