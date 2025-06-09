@@ -5,7 +5,10 @@
 {% block extra_styles %}
   {{ super() }}
   <style>
-    /* Custom styles to complement Bootstrap */
+    body {
+      background-color: #f8f9fa;
+    }
+
     .video-container {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -13,318 +16,126 @@
       padding: 1.5rem;
       max-width: 1200px;
       margin: 0 auto;
-      flex-grow: 1;
     }
 
     video {
       width: 100%;
-      height: auto;
       background-color: #000;
-      border-radius: 0.5rem;
-      border: 2px solid #dee2e6;
-      box-shadow: 0 0.25rem 0.5rem rgba(0,0,0,0.1);
+      border-radius: 8px;
+      border: 2px solid #ccc;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
     }
 
     .status-messages {
-      max-height: 200px;
+      max-height: 150px;
       overflow-y: auto;
     }
 
     .whiteboard-container {
-      margin: 20px auto;
-      max-width: 800px;
-      border: 2px solid #ccc;
+      max-width: 900px;
+      margin: 30px auto;
+      border: 2px solid #ddd;
       background: #fff;
-      position: relative;
-      padding: 10px;
-      border-radius: 0.5rem;
-      box-shadow: 0 0.25rem 0.5rem rgba(0,0,0,0.1);
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     }
-    .whiteboard-container canvas {
-      width: 100%;
-      height: auto;
-      display: block;
-    }
-    .toolbar {
-      margin-top: 10px;
-      text-align: center;
-    }
+
     .toolbar button {
-      margin: 0 5px;
+      margin: 0 10px;
     }
+
     .hidden { display: none; }
+
     #startSessionBtn {
       margin: 1rem auto;
       display: block;
     }
 
+    @media (max-width: 480px) {
+      .video-container, .whiteboard-container {
+        padding: 10px;
+      }
+    }
   </style>
 {% endblock %}
 
 {% block content %}
-  <div class="container-fluid py-3">
-    <!-- Mobile-only start button -->
-    <button id="startSessionBtn" class="btn btn-success">Start Session</button>
+<div class="container py-4">
 
-    <div class="d-flex justify-content-center align-items-center gap-3 mb-3 bg-white shadow-sm p-3 rounded">
-      <div id="reconnectBanner" class="hidden" style="background:#e0ffe0; padding:0.5rem; text-align:center;">
-        🔁 Reconnected successfully
-      </div>
-      <span class="badge bg-secondary" id="sessionTimer">Session Time: 00:00</span>
-      <button id="shareScreenBtn" class="btn btn-primary">Share Screen</button>
-      <button id="flipRemoteBtn" class="btn btn-secondary">
-        {% if role=='tutor' %} Flip Student Video
-        {% elif role=='student' %} Flip Teacher Video
-        {% else %} Flip Remote Video
-        {% endif %}
-      </button>
-      <button id="exitBtn" class="btn btn-danger ms-2" onclick="window.location.href='{{ url_for('dashboard') }}'">
-        <i class="fas fa-sign-out-alt"></i> Exit Classroom
-      </button>
-    </div>
+  <!-- Start Session Button -->
+  <button id="startSessionBtn" class="btn btn-success">Start Session</button>
 
-    <!-- Status Messages -->
-    <div class="card mx-auto mb-3" style="max-width:800px;">
-      <div class="card-body status-messages" id="statusMessages"></div>
-    </div>
+  <!-- Control Panel -->
+  <div class="d-flex justify-content-center align-items-center gap-3 my-4 bg-white shadow p-3 rounded">
+    <div id="reconnectBanner" class="hidden bg-success-subtle rounded px-3 py-2">🔁 Reconnected successfully</div>
 
-    <!-- Video Container -->
-    <div class="video-container">
-      <video id="localVideo" autoplay muted playsinline></video>
-      <video id="remoteVideo" autoplay playsinline></video>
-    </div>
+    <span class="badge bg-secondary" id="sessionTimer">Session Time: 00:00</span>
+
+    <button id="shareScreenBtn" class="btn btn-primary">Share Screen</button>
+
+    <button id="flipRemoteBtn" class="btn btn-secondary">
+      {% if role=='tutor' %} Flip Student Video
+      {% elif role=='student' %} Flip Teacher Video
+      {% else %} Flip Remote Video
+      {% endif %}
+    </button>
+
+    <button id="exitBtn" class="btn btn-danger" onclick="window.location.href='{{ url_for('dashboard') }}'">
+      <i class="fas fa-sign-out-alt"></i> Exit Classroom
+    </button>
   </div>
 
-  <!-- Whiteboard -->
+  <!-- Status Messages -->
+  <div class="card mx-auto mb-4" style="max-width:800px;">
+    <div class="card-body status-messages" id="statusMessages"></div>
+  </div>
+
+  <!-- Video Container -->
+  <div class="video-container">
+    <video id="localVideo" autoplay muted playsinline></video>
+    <video id="remoteVideo" autoplay playsinline></video>
+  </div>
+
+  <!-- Whiteboard Section -->
   <div class="whiteboard-container">
     <canvas id="whiteboard" width="800" height="600"></canvas>
-    <div class="toolbar">
-      <button id="toggleEraser">Toggle Eraser</button>
-      <button id="clearBoard">Clear Board</button>
+    <div class="toolbar text-center my-2">
+      <button id="toggleEraser" class="btn btn-outline-secondary">Toggle Eraser</button>
+      <button id="clearBoard" class="btn btn-outline-danger">Clear Board</button>
     </div>
   </div>
 
-  <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
-  <script>
-    // Elements & state
-    const localVideo     = document.getElementById('localVideo');
-    const remoteVideo    = document.getElementById('remoteVideo');
-    const startBtn       = document.getElementById('startSessionBtn');
-    const statusMessages = document.getElementById('statusMessages');
-    const sessionTimer   = document.getElementById('sessionTimer');
-    const room           = "{{ roomName }}";
-    const userId         = {{ current_user_id }};
-    let pc               = null;
-    let localStream      = null;
-    let signalQueue      = [];
-    let isOfferer        = false;
-    let lastUpdate       = 0;
-    const config         = { iceServers: [
-      { urls:'stun:stun.l.google.com:19302' },
-      /* + your TURN if needed */
-    ]};
+</div>
 
-    function logMsg(msg) {
-      const p = document.createElement('p');
-      p.textContent = msg;
-      statusMessages.appendChild(p);
-      statusMessages.scrollTop = statusMessages.scrollHeight;
-    }
+<script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+<script>
+  const socket = io({ reconnection: true });
+  const startBtn = document.getElementById('startSessionBtn');
 
-    function resetPC() {
-      if (!pc) return;
-      pc.getSenders().forEach(s => s.track?.stop());
-      pc.close();
-      pc = null;
-    }
+  function startSession() {
+    startBtn.disabled = true;
 
-    function startWebRTC() {
-      resetPC();
-      pc = new RTCPeerConnection(config);
-      localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      .then(stream => {
+        document.getElementById('localVideo').srcObject = stream;
+        socket.emit('join', { room: "{{ roomName }}", user_id: {{ current_user_id }} });
+      })
+      .catch(err => alert('Camera/Microphone Error: ' + err));
+  }
 
-      pc.onicecandidate = e => {
-        if (e.candidate) socket.emit('signal', { room, type:'candidate', payload:e.candidate });
-      };
+  startBtn.addEventListener('click', startSession);
 
-      pc.ontrack = e => {
-        remoteVideo.srcObject = e.streams[0];
-        remoteVideo.play().catch(()=>{}); // Safari
-        logMsg('✅ Remote video connected');
-      };
+  socket.on('connect', () => {
+    document.getElementById('statusMessages').innerHTML += '<p>✅ Connected to server</p>';
+  });
 
-      pc.oniceconnectionstatechange = () => {
-        if (pc.iceConnectionState === 'failed') {
-          logMsg('ICE failed, retrying…');
-          startWebRTC();
-        }
-      };
+  socket.on('signal', async (data) => {
+    document.getElementById('statusMessages').innerHTML += '<p>Signal received: ' + data.type + '</p>';
+  });
 
-      pc.onconnectionstatechange = () => {
-        if (pc.connectionState === 'connected') logMsg('🔗 WebRTC connected');
-      };
+  // Auto-start on desktop
+  if (window.innerWidth >= 768) startSession();
+</script>
 
-      if (isOfferer) {
-        pc.createOffer()
-          .then(o => pc.setLocalDescription(o))
-          .then(() => socket.emit('signal', { room, type:'offer', payload:pc.localDescription }))
-          .catch(console.error);
-      }
-    }
-
-    async function handleSignal(data) {
-      if (!pc) startWebRTC();
-      try {
-        if (data.type === 'offer') {
-          await pc.setRemoteDescription(data.payload);
-          const ans = await pc.createAnswer();
-          await pc.setLocalDescription(ans);
-          socket.emit('signal', { room, type:'answer', payload:pc.localDescription });
-        }
-        else if (data.type === 'answer') {
-          await pc.setRemoteDescription(data.payload);
-        }
-        else if (data.type === 'candidate') {
-          await pc.addIceCandidate(data.payload);
-        }
-      } catch (e) {
-        console.error('Signal error', e);
-        logMsg('⚠️ Signal error');
-      }
-    }
-
-    // Socket.IO
-    const socket = io({ reconnection:true, reconnectionAttempts:Infinity });
-    socket.on('connect', () => {
-      logMsg('✅ Socket connected');
-      if (localStream) {
-        socket.emit('join',      { room, user_id:userId });
-        socket.emit('rejoin_all',{ user_id:userId });
-        startWebRTC();
-      }
-    });
-    socket.on('role', ({role}) => {
-      isOfferer = (role==='offerer');
-      logMsg(`You are the ${role}`);
-    });
-    socket.on('user-joined', d => {
-      logMsg(d.msg || 'Another user joined');
-      if (isOfferer && localStream) startWebRTC();
-    });
-    socket.on('signal', handleSignal);
-
-    // Kick off media & join
-    function startSession() {
-      startBtn.disabled = true;
-      navigator.mediaDevices.getUserMedia({ video:true, audio:true })
-        .then(stream => {
-          localStream = stream;
-          localVideo.srcObject = stream;
-          localVideo.play().catch(()=>{});
-          logMsg('✅ Local camera ready');
-
-          socket.emit('join',      { room, user_id:userId });
-          socket.emit('rejoin_all',{ user_id:userId });
-        })
-        .catch(err => {
-          console.error(err);
-          alert('Camera/microphone error');
-        });
-    }
-    startBtn.addEventListener('click', startSession);
-
-    // Session timer & periodic updates
-    const startTime = Date.now();
-    setInterval(() => {
-      const sec = Math.floor((Date.now() - startTime)/1000);
-      const m = String(Math.floor(sec/60)).padStart(2,'0');
-      const s = String(sec%60).padStart(2,'0');
-      sessionTimer.textContent = `Session Time: ${m}:${s}`;
-      if (sec - lastUpdate >= 30) {
-        socket.emit('session_update',{duration:Math.floor(sec/60)});
-        lastUpdate = sec;
-      }
-    }, 1000);
-
-  </script>
-
-  <script>
-    // Whiteboard
-    const whiteboard = document.getElementById('whiteboard');
-    const ctx        = whiteboard.getContext('2d');
-    let drawing      = false;
-    let eraser       = false;
-    const drawW      = 2, eraseW = 10;
-
-    function resizeCanvas() {
-      whiteboard.width  = whiteboard.offsetWidth;
-      whiteboard.height = whiteboard.offsetHeight;
-    }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-
-    function coords(e) {
-      const r = whiteboard.getBoundingClientRect();
-      const x = e.touches ? e.touches[0].clientX - r.left : e.offsetX;
-      const y = e.touches ? e.touches[0].clientY - r.top  : e.offsetY;
-      return {x,y};
-    }
-
-    function startDraw(e) {
-      e.preventDefault();
-      const {x,y} = coords(e);
-      drawing = true; ctx.beginPath(); ctx.moveTo(x,y);
-      socket.emit('whiteboard',{type:'start',x,y,eraser:eraser,room});
-    }
-
-    function draw(e) {
-      if (!drawing) return;
-      e.preventDefault();
-      const {x,y} = coords(e);
-      ctx.lineWidth   = eraser ? eraseW : drawW;
-      ctx.strokeStyle = eraser ? '#fff': '#000';
-      ctx.lineCap     = 'round';
-      ctx.lineTo(x,y); ctx.stroke();
-      socket.emit('whiteboard',{type:'draw',x,y,eraser:eraser,room});
-    }
-
-    function endDraw(e) {
-      if (!drawing) return;
-      e.preventDefault();
-      drawing = false; ctx.closePath();
-      socket.emit('whiteboard',{type:'end',room});
-    }
-
-    ['mousedown','mousemove','mouseup','mouseout']
-      .forEach(ev => whiteboard.addEventListener(ev,
-        { mousedown:startDraw, mousemove:draw, mouseup:endDraw, mouseout:endDraw }[ev]));
-
-    ['touchstart','touchmove','touchend','touchcancel']
-      .forEach(ev => whiteboard.addEventListener(ev,
-        { touchstart:startDraw, touchmove:draw, touchend:endDraw, touchcancel:endDraw }[ev]));
-
-    document.getElementById('clearBoard').addEventListener('click',()=>{
-      ctx.clearRect(0,0,whiteboard.width,whiteboard.height);
-      socket.emit('whiteboard',{type:'clear',room});
-    });
-    document.getElementById('toggleEraser').addEventListener('click',function(){
-      eraser = !eraser;
-      this.textContent = eraser ? 'Switch to Draw':'Toggle Eraser';
-    });
-
-    socket.on('whiteboard', data => {
-      if (data.type === 'start') {
-        ctx.beginPath(); ctx.moveTo(data.x,data.y);
-      } else if (data.type === 'draw') {
-        ctx.lineWidth   = data.eraser ? eraseW : drawW;
-        ctx.strokeStyle = data.eraser ? '#fff' : '#000';
-        ctx.lineCap     = 'round';
-        ctx.lineTo(data.x,data.y); ctx.stroke();
-      } else if (data.type === 'end') {
-        ctx.closePath();
-      } else if (data.type === 'clear') {
-        ctx.clearRect(0,0,whiteboard.width,whiteboard.height);
-      }
-    });
-  </script>
 {% endblock %}
