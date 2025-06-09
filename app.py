@@ -1044,17 +1044,15 @@ def cancel_class():
 @app.route('/classroom/<room_slug>')
 def classroom(room_slug):
     logging.info(f"Accessing classroom with slug: {room_slug} for user email: {session.get('email')}")
-    # Check if user is logged in
     if 'email' not in session:
         flash("Please log in to access the classroom.")
         return redirect(url_for('login'))
     
-    if '-' not in room_slug or len(room_slug) < 9:  # Minimum length for name-UUID
+    if '-' not in room_slug or len(room_slug) < 9:
         flash("Invalid classroom URL.")
         logging.warning(f"Invalid room_slug format: {room_slug}")
         return redirect(url_for('dashboard'))
 
-    # Verify database connection
     db_status, db_error = check_db_connection()
     if not db_status:
         logging.error(f"Database connection failed: {db_error}")
@@ -1062,7 +1060,6 @@ def classroom(room_slug):
         return redirect(url_for('login'))
 
     try:
-        # Fetch user details
         cursor.execute("SELECT user_id, role, lifetime_free FROM users WHERE email = %s", (session['email'],))
         user = cursor.fetchone()
         if not user:
@@ -1071,7 +1068,6 @@ def classroom(room_slug):
             return redirect(url_for('login'))
         user_id, role, lifetime_free = user
 
-        # Check session limits for non-students without lifetime free access
         plan, status = get_user_subscription(user_id)
         if not lifetime_free and role != 'student' and plan == 2:
             now = datetime.utcnow()
@@ -1083,7 +1079,6 @@ def classroom(room_slug):
                 logging.info(f"User {user_id} reached free session limit")
                 return redirect(url_for('upgrade'))
 
-        # Verify room access using room_slug instead of room_name
         if role == 'tutor':
             query = "SELECT 1 FROM invitations WHERE LOWER(room_slug) = LOWER(%s) AND tutor_id = %s"
         else:
@@ -1094,7 +1089,6 @@ def classroom(room_slug):
             logging.warning(f"User {user_id} attempted to access unauthorized room: {room_slug}")
             return redirect(url_for('dashboard'))
 
-        # Start session tracking
         cursor.execute(
             "INSERT INTO sessions (user_id, start_time) VALUES (%s, %s) RETURNING session_id",
             (user_id, datetime.utcnow())
@@ -1102,14 +1096,12 @@ def classroom(room_slug):
         session['current_session_id'] = cursor.fetchone()[0]
         conn.commit()
 
-        # Fetch the friendly room name using the room_slug
         cursor.execute("SELECT room_name FROM invitations WHERE room_slug = %s LIMIT 1", (room_slug,))
         room_row = cursor.fetchone()
         room_name = room_row[0] if room_row else "Unknown Classroom"
         conn.commit()
-        # Render classroom
-        return render_template('classroom.html', roomName=room_name, userPlan=plan, userRole=role)
 
+        return render_template('classroom.html', roomName=room_name, user_id=user_id, userRole=role)
     except Exception as e:
         logging.error(f"Error in classroom for email {session['email']}: {str(e)}", exc_info=True)
         flash("An error occurred. Please try again.")
@@ -1469,23 +1461,18 @@ def on_join(data):
     sid = request.sid
 
     if not room or not user_id:
-        logging.warning(f"Invalid join request: room={room}, user_id={user_id}")
+        logging.warning(f"Invalid join request: room={room}, user_id={user_id}, sid={sid}")
         return
 
     join_room(room)
     add_user_to_room(user_id, room)
 
-    # Count users in the room
     room_members = socketio.server.manager.rooms.get('/', {}).get(room, set())
     user_count = len(room_members)
 
     logging.info(f"User {sid} (user_id={user_id}) joined room: {room}, total users: {user_count}")
-
-    # Assign WebRTC role based on join order, not role
     role = 'offerer' if user_count == 1 else 'answerer'
     emit('role', {'role': role}, to=sid)
-
-    # Notify others in the room
     emit('user-joined', {'msg': 'A new user has joined!'}, room=room, skip_sid=sid)
 
 @socketio.on('connect')

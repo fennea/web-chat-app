@@ -37,8 +37,12 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.min.js"></script>
 
     <script>
-        const room = "{{ roomName | replace(' ', '-') | lower }}-{{ user_id }}";
-        const userId = "{{ user_id }}";
+        const room = "{{ roomName | replace(' ', '-') | lower }}-{{ user_id }}".trim();
+        const userId = "{{ user_id }}".trim();
+        if (!room || !userId) {
+            console.error('Room or userId is invalid:', { room, userId });
+            alert('Error: Invalid room or user ID. Please reload the page.');
+        }
         const userRole = "{{ userRole }}";
         let peerConnection;
         const socket = io();
