@@ -52,6 +52,7 @@ cursor = None
 db_connected = False
 
 user_counts = defaultdict(int)
+user_room_map = {}
 
 # Set global timezone in app config
 app.config['TIMEZONE'] = 'UTC'
@@ -101,6 +102,14 @@ def generate_room_slug(room_name):
     # Append a short token, e.g., part of a UUID
     token = str(uuid.uuid4())[:8]
     return f"{base}-{token}"
+
+def add_user_to_room(user_id, room):
+    if user_id not in user_room_map:
+        user_room_map[user_id] = set()
+    user_room_map[user_id].add(room)
+
+def get_user_rooms(user_id):
+    return user_room_map.get(user_id, set())
 
 # Add a before_request hook to log all incoming requests
 @app.before_request
@@ -1460,26 +1469,50 @@ def handle_typing(data):
 def on_join(data):
     room = data.get('room')
     sid = request.sid
+    user_id = data.get('user_id')
+
     if room:
         join_room(room)
+        add_user_to_room(user_id, room)  # ✅ Register room immediately
 
-        # Get the current number of users in this room explicitly
+        # Get current users in this room
         room_members = socketio.server.manager.rooms.get('/', {}).get(room, set())
         user_count = len(room_members)
 
-        logging.info(f"User {sid} joined room: {room}, total users now: {user_count}")
+        logging.info(f"User {sid} (user_id={user_id}) joined room: {room}, total users now: {user_count}")
 
-        # First user becomes offerer
+        # Assign WebRTC roles
         if user_count == 1:
             emit('role', {'role': 'offerer'}, room=sid)
         else:
             emit('role', {'role': 'answerer'}, room=sid)
 
+        # Announce to room
         emit('user-joined', {'msg': 'A new user has joined the room!'}, room=room)
+
+@socketio.on('connect')
+def on_connect():
+    sid = request.sid
+    logging.info(f"User {sid} connected")
+
 
 @socketio.on('disconnect')
 def on_disconnect():
-    pass
+    sid = request.sid
+    logging.info(f"User {sid} disconnected")
+    # optionally: flag user as 'disconnected' but not fully gone
+
+@socketio.on('rejoin_all')
+def handle_rejoin_all(data):
+    user_id = data.get('user_id')
+    if not user_id:
+        logging.warning("Rejoin request missing user_id")
+        return
+
+    rooms = get_user_rooms(user_id)
+    for room in rooms:
+        join_room(room)
+        logging.info(f"User {user_id} rejoined room {room}")
 
 @socketio.on('signal')
 def handle_signal(data):

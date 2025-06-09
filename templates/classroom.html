@@ -53,6 +53,19 @@
     .toolbar button {
       margin: 0 5px;
     }
+    .hidden {
+      display: none;
+    }
+    #startSessionBtn {
+      margin: 1rem auto;
+      display: block;
+    }
+    @media (min-width: 768px) {
+      #startSessionBtn {
+        display: none;
+      }
+    }
+
 
   </style>
 {% endblock %}
@@ -60,7 +73,11 @@
 {% block content %}
   <div class="container-fluid py-3">
     <!-- Controls -->
+    <button id="startSessionBtn" class="btn btn-success">Start Session</button>
     <div class="d-flex justify-content-center align-items-center gap-3 mb-3 bg-white shadow-sm p-3 rounded">
+      <div id="reconnectBanner" class="hidden" style="background:#e0ffe0; padding:0.5rem; text-align:center;">
+        🔁 Reconnected successfully
+      </div>      
       <span class="badge bg-secondary" id="sessionTimer">Session Time: 00:00</span>
       <button id="shareScreenBtn" class="btn btn-primary">Share Screen</button>
       <button id="flipRemoteBtn" class="btn btn-secondary">
@@ -107,6 +124,7 @@
     let signalQueue = [];
     let localStreamReady = false;
 
+    const CURRENT_USER_ID = {{ current_user_id }};
 
     const localVideo = document.getElementById('localVideo');
     const remoteVideo = document.getElementById('remoteVideo');
@@ -115,8 +133,8 @@
     const statusMessages = document.getElementById('statusMessages');
     const sessionTimer = document.getElementById('sessionTimer');
 
-    let localStream;
-    let peerConnection;
+    let localStream = null;
+    let peerConnection = null;
     let isOfferer = false;
     let isFlipped = false;
     let lastSessionUpdate = 0;
@@ -148,6 +166,39 @@
       ? 30 * 60   // 30 minutes in seconds
       : null;     // no limit
 
+
+
+    const startBtn = document.getElementById('startSessionBtn');
+    startBtn.addEventListener('click', () => {
+      startBtn.disabled = true;
+      startSession();
+    });
+
+    function startSession() {
+      navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+        .then(stream => {
+          console.log('Local stream acquired:', stream.getTracks());
+          localStream = stream;
+          localVideo.srcObject = stream;
+          localVideo.play();
+          localStreamReady = true;
+          addStatusMessage('Local camera connected');
+
+          if (signalQueue.length > 0) {
+            console.log(`Processing ${signalQueue.length} queued signals.`);
+            signalQueue.forEach(async (signal) => {
+              await handleSignal(signal);
+            });
+            signalQueue = [];
+          }
+        })
+        .catch(err => {
+          console.error('Error accessing media devices:', err);
+          addStatusMessage('Failed to access camera/microphone. Check permissions.');
+          alert('Camera/microphone access denied or unavailable. Please check permissions.');
+        });
+    }
+
     function updateTimer() {
       const elapsed = Math.floor((Date.now() - startTime) / 1000);
       const minutes = Math.floor(elapsed / 60);
@@ -175,11 +226,27 @@
       statusMessages.scrollTop = statusMessages.scrollHeight;
     }
 
-    function initPeerConnection() {
+    function resetPeerConnection() {
       if (peerConnection) {
-        console.log('Closing existing peer connection');
-        peerConnection.close();
+        try {
+          peerConnection.getSenders().forEach(sender => {
+            try {
+              sender.track?.stop();
+            } catch (e) {
+              console.warn("Error stopping track:", e);
+            }
+          });
+          peerConnection.close();
+        } catch (err) {
+          console.error("Error closing peerConnection:", err);
+        }
+        peerConnection = null;
       }
+    }
+
+    function initPeerConnection() {
+      resetPeerConnection();
+
       peerConnection = new RTCPeerConnection(config);
 
       localStream.getTracks().forEach(track => {
@@ -235,11 +302,36 @@
       }
     }
 
-    const socket = io();
+    const socket = io({
+      reconnection: true,
+      reconnectionAttempts: Infinity,  // try forever
+      reconnectionDelay: 1000,         // wait 1s before trying again
+      reconnectionDelayMax: 5000       // cap backoff at 5s
+    });
+
 
     socket.on('connect', () => {
-      console.log('Socket.IO connected');
-      socket.emit('join', { room });
+      console.log('✅ Socket.IO connected');
+
+      // Clear existing timer interval (in case it was already running before reconnect)
+      if (typeof timerInterval !== 'undefined') {
+        clearInterval(timerInterval);
+      }
+
+      // Show reconnect banner (optional UX)
+      const banner = document.getElementById('reconnectBanner');
+      if (banner) {
+        banner.classList.remove('hidden');
+        setTimeout(() => {
+          banner.classList.add('hidden');
+        }, 2000);
+      }
+
+      // Rejoin rooms
+      socket.emit('join', { room, user_id: CURRENT_USER_ID });
+      socket.emit('rejoin_all', { user_id: CURRENT_USER_ID });
+
+      // Restart timer
       timerInterval = setInterval(updateTimer, 1000);
     });
 
@@ -251,8 +343,13 @@
     socket.on('reconnect', () => {
       console.log('Socket.IO reconnected');
       addStatusMessage('Reconnected to server');
-      socket.emit('join', { room });
-      if (isOfferer && localStream) {
+
+      socket.emit('join', { room, user_id: CURRENT_USER_ID });
+      socket.emit('rejoin_all', { user_id: CURRENT_USER_ID });
+
+      // Ensure local stream is present and restart peer connection logic
+      if (localStream) {
+        addStatusMessage('Reinitializing peer connection after reconnect...');
         initPeerConnection();
       }
     });
