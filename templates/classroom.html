@@ -57,9 +57,7 @@
       margin: 1rem auto;
       display: block;
     }
-    @media (min-width: 768px) {
-      #startSessionBtn { display: none; }
-    }
+
   </style>
 {% endblock %}
 
@@ -247,11 +245,6 @@
         lastUpdate = sec;
       }
     }, 1000);
-
-    if (window.innerWidth >= 768) {
-      // desktop: kick off immediately
-      startSession();
-    }
 
   </script>
 
