@@ -31,7 +31,9 @@
             <button id="clearBoard">Clear Whiteboard</button>
         </div>
     </div>
-    <script src="/static/js/socket.io.min.js"></script>
+
+    <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.min.js"></script>
+
     <script>
         const room = "{{ roomName | replace(' ', '-') | lower }}-{{ user_id }}";
         const userId = "{{ user_id }}";
