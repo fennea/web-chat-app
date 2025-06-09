@@ -42,7 +42,14 @@
         const userRole = "{{ userRole }}";
         let peerConnection;
         const socket = io();
-        const configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+        const configuration = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                // Add TURN server if available (requires credentials)
+                // { urls: 'turn:your.turn.server', username: 'user', credential: 'pass' }
+            ],
+            iceCandidatePoolSize: 10
+        };
 
         // Video Session
         const startButton = document.getElementById('startVideo');
@@ -50,6 +57,8 @@
 
         async function startVideoSession() {
             try {
+                const startButton = document.getElementById('startVideo');
+                if (startButton.disabled) return; // Prevent multiple starts
                 startButton.disabled = true;
                 if (peerConnection) peerConnection.close(); // Clean up existing connection
                 peerConnection = new RTCPeerConnection(configuration);
@@ -59,19 +68,24 @@
 
                 peerConnection.onicecandidate = (event) => {
                     if (event.candidate) {
+                        console.log('ICE candidate:', event.candidate);
                         socket.emit('signal', { candidate: event.candidate, room });
+                    } else {
+                        console.log('All ICE candidates gathered');
                     }
                 };
 
                 peerConnection.ontrack = (event) => {
+                    console.log('Received remote track');
                     document.getElementById('remoteVideo').srcObject = event.streams[0];
                 };
 
+                // Join room and wait for role
                 socket.emit('join', { room, user_id: userId });
 
                 socket.on('role', async ({ role }) => {
                     console.log(`Assigned role: ${role}`);
-                    if (role === 'offerer') {
+                    if (role === 'offerer' && peerConnection.signalingState === 'stable') {
                         const offer = await peerConnection.createOffer();
                         await peerConnection.setLocalDescription(offer);
                         socket.emit('signal', { sdp: peerConnection.localDescription, room });
@@ -82,13 +96,17 @@
                     console.log(`Received signal: ${JSON.stringify(data)}`);
                     if (data.sdp) {
                         await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
-                        if (data.sdp.type === 'offer' && peerConnection.signalingState === 'stable') {
+                        if (data.sdp.type === 'offer' && peerConnection.signalingState === 'have-remote-offer') {
                             const answer = await peerConnection.createAnswer();
                             await peerConnection.setLocalDescription(answer);
                             socket.emit('signal', { sdp: peerConnection.localDescription, room });
                         }
                     } else if (data.candidate) {
-                        await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+                        try {
+                            await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+                        } catch (e) {
+                            console.error('Error adding ICE candidate:', e);
+                        }
                     }
                 });
             } catch (error) {

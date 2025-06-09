@@ -1513,12 +1513,12 @@ def handle_rejoin_all(data):
 @socketio.on('signal')
 def handle_signal(data):
     room = data.get('room')
-    if room:
-        logging.info(f"Incoming WebRTC signal: {data}")
-        emit('signal', data, room=room, include_self=False)
-        logging.info(f"Emitted WebRTC signal to room {room}")
-    else:
+    if not room:
         logging.warning("Signal received without room specified.")
+        return
+    logging.info(f"Incoming WebRTC signal for room {room}: {data}")
+    emit('signal', data, room=room, include_self=True)  # Include sender to handle self-updates
+    logging.info(f"Emitted WebRTC signal to room {room}")
 
 
 @socketio.on('session_update')
