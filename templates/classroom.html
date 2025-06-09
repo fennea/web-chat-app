@@ -1,331 +1,208 @@
-{% extends "base.html" %}
-
-{% block title %}TwoToro - {{ roomName }}{% endblock %}
-
-{% block extra_styles %}
-  {{ super() }}
-  <style>
-    /* Custom styles to complement Bootstrap */
-    .video-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 1.5rem;
-      padding: 1.5rem;
-      max-width: 1200px;
-      margin: 0 auto;
-      flex-grow: 1;
-    }
-
-    video {
-      width: 100%;
-      height: auto;
-      background-color: #000;
-      border-radius: 0.5rem;
-      border: 2px solid #dee2e6;
-      box-shadow: 0 0.25rem 0.5rem rgba(0,0,0,0.1);
-    }
-
-    .status-messages {
-      max-height: 200px;
-      overflow-y: auto;
-    }
-
-    .whiteboard-container {
-      margin: 20px auto;
-      max-width: 800px;
-      border: 2px solid #ccc;
-      background: #fff;
-      position: relative;
-      padding: 10px;
-      border-radius: 0.5rem;
-      box-shadow: 0 0.25rem 0.5rem rgba(0,0,0,0.1);
-    }
-    .whiteboard-container canvas {
-      width: 100%;
-      height: auto;
-      display: block;
-    }
-    .toolbar {
-      margin-top: 10px;
-      text-align: center;
-    }
-    .toolbar button {
-      margin: 0 5px;
-    }
-    .hidden { display: none; }
-    #startSessionBtn {
-      margin: 1rem auto;
-      display: block;
-    }
-
-  </style>
-{% endblock %}
-
-{% block content %}
-  <div class="container-fluid py-3">
-    <!-- Mobile-only start button -->
-    <button id="startSessionBtn" class="btn btn-success">Start Session</button>
-
-    <div class="d-flex justify-content-center align-items-center gap-3 mb-3 bg-white shadow-sm p-3 rounded">
-      <div id="reconnectBanner" class="hidden" style="background:#e0ffe0; padding:0.5rem; text-align:center;">
-        🔁 Reconnected successfully
-      </div>
-      <span class="badge bg-secondary" id="sessionTimer">Session Time: 00:00</span>
-      <button id="shareScreenBtn" class="btn btn-primary">Share Screen</button>
-      <button id="flipRemoteBtn" class="btn btn-secondary">
-        {% if role=='tutor' %} Flip Student Video
-        {% elif role=='student' %} Flip Teacher Video
-        {% else %} Flip Remote Video
-        {% endif %}
-      </button>
-      <button id="exitBtn" class="btn btn-danger ms-2" onclick="window.location.href='{{ url_for('dashboard') }}'">
-        <i class="fas fa-sign-out-alt"></i> Exit Classroom
-      </button>
-    </div>
-
-    <!-- Status Messages -->
-    <div class="card mx-auto mb-3" style="max-width:800px;">
-      <div class="card-body status-messages" id="statusMessages"></div>
-    </div>
-
-    <!-- Video Container -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Classroom: {{ roomName }}</title>
+    <style>
+        .video-container { display: flex; flex-direction: row; justify-content: center; }
+        video { width: 45%; margin: 10px; border: 1px solid #ccc; }
+        .controls { margin: 20px; text-align: center; }
+        button { padding: 10px 20px; font-size: 16px; border-radius: 5px; border: none; background-color: #007bff; color: white; cursor: pointer; margin: 5px; }
+        button:disabled { background-color: #6c757d; cursor: not-allowed; }
+        button:hover:not(:disabled) { background-color: #0056b3; }
+        #whiteboard { width: 100%; max-width: 800px; height: 400px; border: 1px solid #ccc; display: none; }
+        .whiteboard-controls { display: none; margin: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Classroom: {{ roomName }}</h1>
     <div class="video-container">
-      <video id="localVideo" autoplay muted playsinline></video>
-      <video id="remoteVideo" autoplay playsinline></video>
+        <video id="localVideo" autoplay playsinline muted></video>
+        <video id="remoteVideo" autoplay playsinline></video>
     </div>
-  </div>
-
-  <!-- Whiteboard -->
-  <div class="whiteboard-container">
-    <canvas id="whiteboard" width="800" height="600"></canvas>
-    <div class="toolbar">
-      <button id="toggleEraser">Toggle Eraser</button>
-      <button id="clearBoard">Clear Board</button>
+    <div class="controls">
+        <button id="startVideo" {% if userRole == 'student' %}disabled{% endif %}>Start Video Session</button>
+        <button id="toggleWhiteboard">Show Whiteboard</button>
+        <button id="endSession">End Session</button>
     </div>
-  </div>
+    <div class="whiteboard-container">
+        <canvas id="whiteboard"></canvas>
+        <div class="whiteboard-controls">
+            <button id="toggleEraser">Toggle Eraser</button>
+            <button id="clearBoard">Clear Whiteboard</button>
+        </div>
+    </div>
+    <script src="/static/js/socket.io.min.js"></script>
+    <script>
+        const room = "{{ roomName | replace(' ', '-') | lower }}-{{ user_id }}";
+        const userId = "{{ user_id }}";
+        const userRole = "{{ userRole }}";
+        let peerConnection;
+        const socket = io();
+        const configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
-  <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
-  <script>
-    // Elements & state
-    const localVideo     = document.getElementById('localVideo');
-    const remoteVideo    = document.getElementById('remoteVideo');
-    const startBtn       = document.getElementById('startSessionBtn');
-    const statusMessages = document.getElementById('statusMessages');
-    const sessionTimer   = document.getElementById('sessionTimer');
-    const room           = "{{ roomName }}";
-    const userId         = {{ current_user_id }};
-    let pc               = null;
-    let localStream      = null;
-    let signalQueue      = [];
-    let isOfferer        = false;
-    let lastUpdate       = 0;
-    const config         = { iceServers: [
-      { urls:'stun:stun.l.google.com:19302' },
-      /* + your TURN if needed */
-    ]};
-
-    function logMsg(msg) {
-      const p = document.createElement('p');
-      p.textContent = msg;
-      statusMessages.appendChild(p);
-      statusMessages.scrollTop = statusMessages.scrollHeight;
-    }
-
-    function resetPC() {
-      if (!pc) return;
-      pc.getSenders().forEach(s => s.track?.stop());
-      pc.close();
-      pc = null;
-    }
-
-    function startWebRTC() {
-      resetPC();
-      pc = new RTCPeerConnection(config);
-      localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
-
-      pc.onicecandidate = e => {
-        if (e.candidate) socket.emit('signal', { room, type:'candidate', payload:e.candidate });
-      };
-
-      pc.ontrack = e => {
-        remoteVideo.srcObject = e.streams[0];
-        remoteVideo.play().catch(()=>{}); // Safari
-        logMsg('✅ Remote video connected');
-      };
-
-      pc.oniceconnectionstatechange = () => {
-        if (pc.iceConnectionState === 'failed') {
-          logMsg('ICE failed, retrying…');
-          startWebRTC();
+        // Video Session
+        const startButton = document.getElementById('startVideo');
+        if (userRole === 'tutor') {
+            startButton.disabled = false;
+            startButton.addEventListener('click', startVideoSession);
         }
-      };
 
-      pc.onconnectionstatechange = () => {
-        if (pc.connectionState === 'connected') logMsg('🔗 WebRTC connected');
-      };
+        async function startVideoSession() {
+            try {
+                startButton.disabled = true;
+                peerConnection = new RTCPeerConnection(configuration);
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                document.getElementById('localVideo').srcObject = stream;
+                stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
 
-      if (isOfferer) {
-        pc.createOffer()
-          .then(o => pc.setLocalDescription(o))
-          .then(() => socket.emit('signal', { room, type:'offer', payload:pc.localDescription }))
-          .catch(console.error);
-      }
-    }
+                peerConnection.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        socket.emit('signal', { candidate: event.candidate, room });
+                    }
+                };
 
-    async function handleSignal(data) {
-      if (!pc) startWebRTC();
-      try {
-        if (data.type === 'offer') {
-          await pc.setRemoteDescription(data.payload);
-          const ans = await pc.createAnswer();
-          await pc.setLocalDescription(ans);
-          socket.emit('signal', { room, type:'answer', payload:pc.localDescription });
+                peerConnection.ontrack = (event) => {
+                    document.getElementById('remoteVideo').srcObject = event.streams[0];
+                };
+
+                socket.emit('join', { room, user_id: userId });
+
+                socket.on('role', async ({ role }) => {
+                    console.log(`Assigned role: ${role}`);
+                    if (role === 'offerer') {
+                        const offer = await peerConnection.createOffer();
+                        await peerConnection.setLocalDescription(offer);
+                        socket.emit('signal', { sdp: peerConnection.localDescription, room });
+                    }
+                });
+
+                socket.on('signal', async (data) => {
+                    console.log(`Received signal: ${JSON.stringify(data)}`);
+                    if (data.sdp) {
+                        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                        if (data.sdp.type === 'offer') {
+                            const answer = await peerConnection.createAnswer();
+                            await peerConnection.setLocalDescription(answer);
+                            socket.emit('signal', { sdp: peerConnection.localDescription, room });
+                        }
+                    } else if (data.candidate) {
+                        await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+                    }
+                });
+            } catch (error) {
+                console.error('Error starting video:', error);
+                alert('Failed to start video session. Please check permissions and try again.');
+                startButton.disabled = false;
+            }
         }
-        else if (data.type === 'answer') {
-          await pc.setRemoteDescription(data.payload);
-        }
-        else if (data.type === 'candidate') {
-          await pc.addIceCandidate(data.payload);
-        }
-      } catch (e) {
-        console.error('Signal error', e);
-        logMsg('⚠️ Signal error');
-      }
-    }
 
-    // Socket.IO
-    const socket = io({ reconnection:true, reconnectionAttempts:Infinity });
-    socket.on('connect', () => {
-      logMsg('✅ Socket connected');
-      if (localStream) {
-        socket.emit('join',      { room, user_id:userId });
-        socket.emit('rejoin_all',{ user_id:userId });
-        startWebRTC();
-      }
-    });
-    socket.on('role', ({role}) => {
-      isOfferer = (role==='offerer');
-      logMsg(`You are the ${role}`);
-    });
-    socket.on('user-joined', d => {
-      logMsg(d.msg || 'Another user joined');
-      if (isOfferer && localStream) startWebRTC();
-    });
-    socket.on('signal', handleSignal);
-
-    // Kick off media & join
-    function startSession() {
-      startBtn.disabled = true;
-      navigator.mediaDevices.getUserMedia({ video:true, audio:true })
-        .then(stream => {
-          localStream = stream;
-          localVideo.srcObject = stream;
-          localVideo.play().catch(()=>{});
-          logMsg('✅ Local camera ready');
-
-          socket.emit('join',      { room, user_id:userId });
-          socket.emit('rejoin_all',{ user_id:userId });
-        })
-        .catch(err => {
-          console.error(err);
-          alert('Camera/microphone error');
+        document.getElementById('endSession').addEventListener('click', () => {
+            if (peerConnection) {
+                peerConnection.close();
+                document.getElementById('localVideo').srcObject = null;
+                document.getElementById('remoteVideo').srcObject = null;
+            }
+            socket.emit('session_update', { duration: 0 });
+            window.location.href = '/dashboard';
         });
-    }
-    startBtn.addEventListener('click', startSession);
 
-    // Session timer & periodic updates
-    const startTime = Date.now();
-    setInterval(() => {
-      const sec = Math.floor((Date.now() - startTime)/1000);
-      const m = String(Math.floor(sec/60)).padStart(2,'0');
-      const s = String(sec%60).padStart(2,'0');
-      sessionTimer.textContent = `Session Time: ${m}:${s}`;
-      if (sec - lastUpdate >= 30) {
-        socket.emit('session_update',{duration:Math.floor(sec/60)});
-        lastUpdate = sec;
-      }
-    }, 1000);
+        // Whiteboard
+        const whiteboard = document.getElementById('whiteboard');
+        const ctx = whiteboard.getContext('2d');
+        let drawing = false;
+        let eraser = false;
+        const drawW = 2, eraseW = 10;
 
+        function resizeCanvas() {
+            whiteboard.width = whiteboard.offsetWidth * window.devicePixelRatio;
+            whiteboard.height = whiteboard.offsetHeight * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
 
-  </script>
+        function coords(e) {
+            const r = whiteboard.getBoundingClientRect();
+            const x = e.touches ? e.touches[0].clientX - r.left : e.offsetX;
+            const y = e.touches ? e.touches[0].clientY - r.top : e.offsetY;
+            return { x, y };
+        }
 
-  <script>
-    // Whiteboard
-    const whiteboard = document.getElementById('whiteboard');
-    const ctx        = whiteboard.getContext('2d');
-    let drawing      = false;
-    let eraser       = false;
-    const drawW      = 2, eraseW = 10;
+        function startDraw(e) {
+            e.preventDefault();
+            const { x, y } = coords(e);
+            drawing = true;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            socket.emit('whiteboard', { type: 'start', x, y, eraser, room });
+        }
 
-    function resizeCanvas() {
-      whiteboard.width  = whiteboard.offsetWidth;
-      whiteboard.height = whiteboard.offsetHeight;
-    }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
+        function draw(e) {
+            if (!drawing) return;
+            e.preventDefault();
+            const { x, y } = coords(e);
+            ctx.lineWidth = eraser ? eraseW : drawW;
+            ctx.strokeStyle = eraser ? '#fff' : '#000';
+            ctx.lineCap = 'round';
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            socket.emit('whiteboard', { type: 'draw', x, y, eraser, room });
+        }
 
-    function coords(e) {
-      const r = whiteboard.getBoundingClientRect();
-      const x = e.touches ? e.touches[0].clientX - r.left : e.offsetX;
-      const y = e.touches ? e.touches[0].clientY - r.top  : e.offsetY;
-      return {x,y};
-    }
+        function endDraw(e) {
+            if (!drawing) return;
+            e.preventDefault();
+            drawing = false;
+            ctx.closePath();
+            socket.emit('whiteboard', { type: 'end', room });
+        }
 
-    function startDraw(e) {
-      e.preventDefault();
-      const {x,y} = coords(e);
-      drawing = true; ctx.beginPath(); ctx.moveTo(x,y);
-      socket.emit('whiteboard',{type:'start',x,y,eraser:eraser,room});
-    }
+        ['mousedown', 'mousemove', 'mouseup', 'mouseout'].forEach(ev => {
+            whiteboard.addEventListener(ev, { mousedown: startDraw, mousemove: draw, mouseup: endDraw, mouseout: endDraw }[ev]);
+        });
 
-    function draw(e) {
-      if (!drawing) return;
-      e.preventDefault();
-      const {x,y} = coords(e);
-      ctx.lineWidth   = eraser ? eraseW : drawW;
-      ctx.strokeStyle = eraser ? '#fff': '#000';
-      ctx.lineCap     = 'round';
-      ctx.lineTo(x,y); ctx.stroke();
-      socket.emit('whiteboard',{type:'draw',x,y,eraser:eraser,room});
-    }
+        ['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach(ev => {
+            whiteboard.addEventListener(ev, { touchstart: startDraw, touchmove: draw, touchend: endDraw, touchcancel: endDraw }[ev]);
+        });
 
-    function endDraw(e) {
-      if (!drawing) return;
-      e.preventDefault();
-      drawing = false; ctx.closePath();
-      socket.emit('whiteboard',{type:'end',room});
-    }
+        document.getElementById('toggleWhiteboard').addEventListener('click', () => {
+            const wb = document.getElementById('whiteboard');
+            const wbControls = document.querySelector('.whiteboard-controls');
+            const isVisible = wb.style.display === 'block';
+            wb.style.display = isVisible ? 'none' : 'block';
+            wbControls.style.display = isVisible ? 'none' : 'block';
+            socket.emit('whiteboard', { type: 'toggle', visible: !isVisible, room });
+        });
 
-    ['mousedown','mousemove','mouseup','mouseout']
-      .forEach(ev => whiteboard.addEventListener(ev,
-        { mousedown:startDraw, mousemove:draw, mouseup:endDraw, mouseout:endDraw }[ev]));
+        document.getElementById('clearBoard').addEventListener('click', () => {
+            ctx.clearRect(0, 0, whiteboard.width, whiteboard.height);
+            socket.emit('whiteboard', { type: 'clear', room });
+        });
 
-    ['touchstart','touchmove','touchend','touchcancel']
-      .forEach(ev => whiteboard.addEventListener(ev,
-        { touchstart:startDraw, touchmove:draw, touchend:endDraw, touchcancel:endDraw }[ev]));
+        document.getElementById('toggleEraser').addEventListener('click', function() {
+            eraser = !eraser;
+            this.textContent = eraser ? 'Switch to Draw' : 'Toggle Eraser';
+        });
 
-    document.getElementById('clearBoard').addEventListener('click',()=>{
-      ctx.clearRect(0,0,whiteboard.width,whiteboard.height);
-      socket.emit('whiteboard',{type:'clear',room});
-    });
-    document.getElementById('toggleEraser').addEventListener('click',function(){
-      eraser = !eraser;
-      this.textContent = eraser ? 'Switch to Draw':'Toggle Eraser';
-    });
-
-    socket.on('whiteboard', data => {
-      if (data.type === 'start') {
-        ctx.beginPath(); ctx.moveTo(data.x,data.y);
-      } else if (data.type === 'draw') {
-        ctx.lineWidth   = data.eraser ? eraseW : drawW;
-        ctx.strokeStyle = data.eraser ? '#fff' : '#000';
-        ctx.lineCap     = 'round';
-        ctx.lineTo(data.x,data.y); ctx.stroke();
-      } else if (data.type === 'end') {
-        ctx.closePath();
-      } else if (data.type === 'clear') {
-        ctx.clearRect(0,0,whiteboard.width,whiteboard.height);
-      }
-    });
-  </script>
-{% endblock %}
+        socket.on('whiteboard', data => {
+            if (data.type === 'start') {
+                ctx.beginPath();
+                ctx.moveTo(data.x, data.y);
+            } else if (data.type === 'draw') {
+                ctx.lineWidth = data.eraser ? eraseW : drawW;
+                ctx.strokeStyle = data.eraser ? '#fff' : '#000';
+                ctx.lineCap = 'round';
+                ctx.lineTo(data.x, data.y);
+                ctx.stroke();
+            } else if (data.type === 'end') {
+                ctx.closePath();
+            } else if (data.type === 'clear') {
+                ctx.clearRect(0, 0, whiteboard.width, whiteboard.height);
+            } else if (data.type === 'toggle') {
+                document.getElementById('whiteboard').style.display = data.visible ? 'block' : 'none';
+                document.querySelector('.whiteboard-controls').style.display = data.visible ? 'block' : 'none';
+            }
+        });
+    </script>
+</body>
+</html>
