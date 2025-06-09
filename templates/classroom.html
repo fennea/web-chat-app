@@ -247,6 +247,12 @@
         lastUpdate = sec;
       }
     }, 1000);
+
+    if (window.innerWidth >= 768) {
+      // desktop: kick off immediately
+      startSession();
+    }
+
   </script>
 
   <script>
