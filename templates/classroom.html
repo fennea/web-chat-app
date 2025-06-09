@@ -22,14 +22,13 @@
       background-color: #000;
       border-radius: 0.5rem;
       border: 2px solid #dee2e6;
-      box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+      box-shadow: 0 0.25rem 0.5rem rgba(0,0,0,0.1);
     }
 
     .status-messages {
       max-height: 200px;
       overflow-y: auto;
     }
-
 
     .whiteboard-container {
       margin: 20px auto;
@@ -39,7 +38,7 @@
       position: relative;
       padding: 10px;
       border-radius: 0.5rem;
-      box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+      box-shadow: 0 0.25rem 0.5rem rgba(0,0,0,0.1);
     }
     .whiteboard-container canvas {
       width: 100%;
@@ -53,51 +52,41 @@
     .toolbar button {
       margin: 0 5px;
     }
-    .hidden {
-      display: none;
-    }
+    .hidden { display: none; }
     #startSessionBtn {
       margin: 1rem auto;
       display: block;
     }
     @media (min-width: 768px) {
-      #startSessionBtn {
-        display: none;
-      }
+      #startSessionBtn { display: none; }
     }
-
-
   </style>
 {% endblock %}
 
 {% block content %}
   <div class="container-fluid py-3">
-    <!-- Controls -->
+    <!-- Mobile-only start button -->
     <button id="startSessionBtn" class="btn btn-success">Start Session</button>
+
     <div class="d-flex justify-content-center align-items-center gap-3 mb-3 bg-white shadow-sm p-3 rounded">
       <div id="reconnectBanner" class="hidden" style="background:#e0ffe0; padding:0.5rem; text-align:center;">
         🔁 Reconnected successfully
-      </div>      
+      </div>
       <span class="badge bg-secondary" id="sessionTimer">Session Time: 00:00</span>
       <button id="shareScreenBtn" class="btn btn-primary">Share Screen</button>
       <button id="flipRemoteBtn" class="btn btn-secondary">
-        {% if role == 'tutor' %}
-          Flip Student Video
-        {% elif role == 'student' %}
-          Flip Teacher Video
-        {% else %}
-          Flip Remote Video
+        {% if role=='tutor' %} Flip Student Video
+        {% elif role=='student' %} Flip Teacher Video
+        {% else %} Flip Remote Video
         {% endif %}
       </button>
-
       <button id="exitBtn" class="btn btn-danger ms-2" onclick="window.location.href='{{ url_for('dashboard') }}'">
         <i class="fas fa-sign-out-alt"></i> Exit Classroom
-      </button>      
-      
+      </button>
     </div>
 
     <!-- Status Messages -->
-    <div class="card mx-auto mb-3" style="max-width: 800px;">
+    <div class="card mx-auto mb-3" style="max-width:800px;">
       <div class="card-body status-messages" id="statusMessages"></div>
     </div>
 
@@ -108,8 +97,8 @@
     </div>
   </div>
 
-  <!-- Whiteboard Section -->
-  <div id="whiteboard-container" class="whiteboard-container">
+  <!-- Whiteboard -->
+  <div class="whiteboard-container">
     <canvas id="whiteboard" width="800" height="600"></canvas>
     <div class="toolbar">
       <button id="toggleEraser">Toggle Eraser</button>
@@ -117,87 +106,74 @@
     </div>
   </div>
 
-
   <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
-  
   <script>
-    // grab everything once
-    const localVideo    = document.getElementById('localVideo');
-    const remoteVideo   = document.getElementById('remoteVideo');
-    const startBtn      = document.getElementById('startSessionBtn');
-    const statusMessages= document.getElementById('statusMessages');
-    const sessionTimer  = document.getElementById('sessionTimer');
-    const room          = "{{ roomName }}";
-    const userId        = {{ current_user_id }};
-    let   pc            = null;
-    let   localStream   = null;
-    let   signalQueue   = [];
-    let   isOfferer     = false;
-    let   lastUpdate    = 0;
-    const config = { iceServers: [ /* your STUN/TURN… */ ] };
-  
-    // show messages
+    // Elements & state
+    const localVideo     = document.getElementById('localVideo');
+    const remoteVideo    = document.getElementById('remoteVideo');
+    const startBtn       = document.getElementById('startSessionBtn');
+    const statusMessages = document.getElementById('statusMessages');
+    const sessionTimer   = document.getElementById('sessionTimer');
+    const room           = "{{ roomName }}";
+    const userId         = {{ current_user_id }};
+    let pc               = null;
+    let localStream      = null;
+    let signalQueue      = [];
+    let isOfferer        = false;
+    let lastUpdate       = 0;
+    const config         = { iceServers: [
+      { urls:'stun:stun.l.google.com:19302' },
+      /* + your TURN if needed */
+    ]};
+
     function logMsg(msg) {
       const p = document.createElement('p');
       p.textContent = msg;
       statusMessages.appendChild(p);
       statusMessages.scrollTop = statusMessages.scrollHeight;
     }
-  
-    // clean up old PC & tracks
+
     function resetPC() {
       if (!pc) return;
       pc.getSenders().forEach(s => s.track?.stop());
       pc.close();
       pc = null;
     }
-  
-    // build a new RTCPeerConnection and kick off offer/answer
+
     function startWebRTC() {
       resetPC();
       pc = new RTCPeerConnection(config);
-  
-      // attach local tracks
-      for (let t of localStream.getTracks()) {
-        pc.addTrack(t, localStream);
-      }
-  
-      // candidates → server
+      localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+
       pc.onicecandidate = e => {
         if (e.candidate) socket.emit('signal', { room, type:'candidate', payload:e.candidate });
       };
-  
-      // remote track → video element
+
       pc.ontrack = e => {
         remoteVideo.srcObject = e.streams[0];
-        remoteVideo.play().catch(()=>{});  // Safari needs explicit play()
+        remoteVideo.play().catch(()=>{}); // Safari
         logMsg('✅ Remote video connected');
       };
-  
-      // connection monitoring
+
       pc.oniceconnectionstatechange = () => {
         if (pc.iceConnectionState === 'failed') {
           logMsg('ICE failed, retrying…');
           startWebRTC();
         }
       };
-  
+
       pc.onconnectionstatechange = () => {
-        if (pc.connectionState === 'connected') {
-          logMsg('🔗 WebRTC connected');
-        }
+        if (pc.connectionState === 'connected') logMsg('🔗 WebRTC connected');
       };
-  
-      // if we’re the offerer, create and send the offer
+
       if (isOfferer) {
         pc.createOffer()
           .then(o => pc.setLocalDescription(o))
-          .then(()=> socket.emit('signal', { room, type:'offer', payload:pc.localDescription }))
+          .then(() => socket.emit('signal', { room, type:'offer', payload:pc.localDescription }))
           .catch(console.error);
       }
     }
-  
-    // handle incoming signaling
+
     async function handleSignal(data) {
       if (!pc) startWebRTC();
       try {
@@ -214,23 +190,21 @@
           await pc.addIceCandidate(data.payload);
         }
       } catch (e) {
-        console.error('signal error', e);
+        console.error('Signal error', e);
         logMsg('⚠️ Signal error');
       }
     }
-  
-    // your socket.io setup
-    const socket = io({ reconnection: true, reconnectionAttempts: Infinity });
+
+    // Socket.IO
+    const socket = io({ reconnection:true, reconnectionAttempts:Infinity });
     socket.on('connect', () => {
-      logMsg('Socket connected');
-      // only re-join AFTER we have a local stream
+      logMsg('✅ Socket connected');
       if (localStream) {
-        socket.emit('join',    { room, user_id: userId });
-        socket.emit('rejoin_all',{ user_id: userId });
+        socket.emit('join',      { room, user_id:userId });
+        socket.emit('rejoin_all',{ user_id:userId });
         startWebRTC();
       }
     });
-  
     socket.on('role', ({role}) => {
       isOfferer = (role==='offerer');
       logMsg(`You are the ${role}`);
@@ -240,177 +214,118 @@
       if (isOfferer && localStream) startWebRTC();
     });
     socket.on('signal', handleSignal);
-  
-    // the single getUserMedia entry point
+
+    // Kick off media & join
     function startSession() {
       startBtn.disabled = true;
-      navigator.mediaDevices.getUserMedia({video:true,audio:true})
+      navigator.mediaDevices.getUserMedia({ video:true, audio:true })
         .then(stream => {
           localStream = stream;
           localVideo.srcObject = stream;
-          localVideo.play().catch(()=>{});  // Safari plays inline only with explicit call
+          localVideo.play().catch(()=>{});
           logMsg('✅ Local camera ready');
-  
-          // now that we have media, join the room and begin negotiation
-          socket.emit('join', { room, user_id: userId });
-          socket.emit('rejoin_all',{ user_id: userId });
+
+          socket.emit('join',      { room, user_id:userId });
+          socket.emit('rejoin_all',{ user_id:userId });
         })
         .catch(err => {
           console.error(err);
-          alert('Camera/mic error');
+          alert('Camera/microphone error');
         });
     }
-  
-    // wire up start button
     startBtn.addEventListener('click', startSession);
-  
-    // session timer logic (unchanged)
-    let lastSec = 0;
-    setInterval(()=>{
-      const s = Math.floor((Date.now()-lastSec)/1000);
-      sessionTimer.textContent = `Session Time: ${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
-      if (s - lastUpdate >= 30) {
-        socket.emit('session_update',{duration:Math.floor(s/60)});
-        lastUpdate = s;
+
+    // Session timer & periodic updates
+    const startTime = Date.now();
+    setInterval(() => {
+      const sec = Math.floor((Date.now() - startTime)/1000);
+      const m = String(Math.floor(sec/60)).padStart(2,'0');
+      const s = String(sec%60).padStart(2,'0');
+      sessionTimer.textContent = `Session Time: ${m}:${s}`;
+      if (sec - lastUpdate >= 30) {
+        socket.emit('session_update',{duration:Math.floor(sec/60)});
+        lastUpdate = sec;
       }
-    },1000);
-  
+    }, 1000);
   </script>
-  
 
   <script>
-    // Initialize canvas context and variables
+    // Whiteboard
     const whiteboard = document.getElementById('whiteboard');
-    const context = whiteboard.getContext('2d');
-    let drawing = false;
-    let eraserMode = false;
+    const ctx        = whiteboard.getContext('2d');
+    let drawing      = false;
+    let eraser       = false;
+    const drawW      = 2, eraseW = 10;
 
-    // Set line widths for drawing and erasing
-    const drawingWidth = 2;
-    const eraserWidth = 10;
-
-    // Utility function to resize the canvas gracefully
     function resizeCanvas() {
-      whiteboard.width = whiteboard.offsetWidth;
+      whiteboard.width  = whiteboard.offsetWidth;
       whiteboard.height = whiteboard.offsetHeight;
     }
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    // Utility: get canvas-relative coordinates for both mouse and touch events
-    function getCanvasCoords(e) {
-      const rect = whiteboard.getBoundingClientRect();
-      let x, y;
-      if (e.touches && e.touches[0]) {
-        x = e.touches[0].clientX - rect.left;
-        y = e.touches[0].clientY - rect.top;
-      } else {
-        x = e.offsetX;
-        y = e.offsetY;
-      }
-      return { x, y };
+    function coords(e) {
+      const r = whiteboard.getBoundingClientRect();
+      const x = e.touches ? e.touches[0].clientX - r.left : e.offsetX;
+      const y = e.touches ? e.touches[0].clientY - r.top  : e.offsetY;
+      return {x,y};
     }
 
-    // Start drawing (common for mouse and touch)
-    function startDrawing(e) {
-      e.preventDefault(); // Prevent scrolling on touch devices
-      const { x, y } = getCanvasCoords(e);
-      drawing = true;
-      context.beginPath();
-      context.moveTo(x, y);
-      socket.emit('whiteboard', {
-        type: 'start',
-        x: x,
-        y: y,
-        eraser: eraserMode,
-        room: room
-      });
+    function startDraw(e) {
+      e.preventDefault();
+      const {x,y} = coords(e);
+      drawing = true; ctx.beginPath(); ctx.moveTo(x,y);
+      socket.emit('whiteboard',{type:'start',x,y,eraser:eraser,room});
     }
 
-    // Drawing in progress (common for mouse and touch)
     function draw(e) {
       if (!drawing) return;
       e.preventDefault();
-      const { x, y } = getCanvasCoords(e);
-
-      // Set line width and style based on mode
-      if (eraserMode) {
-        context.lineWidth = eraserWidth;
-        context.strokeStyle = '#fff';
-      } else {
-        context.lineWidth = drawingWidth;
-        context.strokeStyle = '#000';
-      }
-      context.lineCap = 'round';
-
-      context.lineTo(x, y);
-      context.stroke();
-      socket.emit('whiteboard', {
-        type: 'draw',
-        x: x,
-        y: y,
-        eraser: eraserMode,
-        room: room
-      });
+      const {x,y} = coords(e);
+      ctx.lineWidth   = eraser ? eraseW : drawW;
+      ctx.strokeStyle = eraser ? '#fff': '#000';
+      ctx.lineCap     = 'round';
+      ctx.lineTo(x,y); ctx.stroke();
+      socket.emit('whiteboard',{type:'draw',x,y,eraser:eraser,room});
     }
 
-    // End drawing (common for mouse and touch)
-    function endDrawing(e) {
+    function endDraw(e) {
       if (!drawing) return;
       e.preventDefault();
-      drawing = false;
-      context.closePath();
-      socket.emit('whiteboard', { type: 'end', room: room });
+      drawing = false; ctx.closePath();
+      socket.emit('whiteboard',{type:'end',room});
     }
 
-    // Mouse event listeners
-    whiteboard.addEventListener('mousedown', startDrawing);
-    whiteboard.addEventListener('mousemove', draw);
-    whiteboard.addEventListener('mouseup', endDrawing);
-    whiteboard.addEventListener('mouseout', endDrawing);
+    ['mousedown','mousemove','mouseup','mouseout']
+      .forEach(ev => whiteboard.addEventListener(ev,
+        { mousedown:startDraw, mousemove:draw, mouseup:endDraw, mouseout:endDraw }[ev]));
 
-    // Touch event listeners
-    whiteboard.addEventListener('touchstart', startDrawing);
-    whiteboard.addEventListener('touchmove', draw);
-    whiteboard.addEventListener('touchend', endDrawing);
-    whiteboard.addEventListener('touchcancel', endDrawing);
+    ['touchstart','touchmove','touchend','touchcancel']
+      .forEach(ev => whiteboard.addEventListener(ev,
+        { touchstart:startDraw, touchmove:draw, touchend:endDraw, touchcancel:endDraw }[ev]));
 
-    // Toolbar functionality
-    document.getElementById('clearBoard').addEventListener('click', () => {
-      context.clearRect(0, 0, whiteboard.width, whiteboard.height);
-      socket.emit('whiteboard', { type: 'clear', room: room });
+    document.getElementById('clearBoard').addEventListener('click',()=>{
+      ctx.clearRect(0,0,whiteboard.width,whiteboard.height);
+      socket.emit('whiteboard',{type:'clear',room});
+    });
+    document.getElementById('toggleEraser').addEventListener('click',function(){
+      eraser = !eraser;
+      this.textContent = eraser ? 'Switch to Draw':'Toggle Eraser';
     });
 
-    document.getElementById('toggleEraser').addEventListener('click', function() {
-      eraserMode = !eraserMode;
-      this.textContent = eraserMode ? 'Switch to Draw' : 'Toggle Eraser';
-    });
-
-    // Handle incoming whiteboard events from the socket
-    socket.on('whiteboard', (data) => {
+    socket.on('whiteboard', data => {
       if (data.type === 'start') {
-        context.beginPath();
-        context.moveTo(data.x, data.y);
+        ctx.beginPath(); ctx.moveTo(data.x,data.y);
       } else if (data.type === 'draw') {
-        if (data.eraser) {
-          context.lineWidth = eraserWidth;
-          context.strokeStyle = '#fff';
-        } else {
-          context.lineWidth = drawingWidth;
-          context.strokeStyle = '#000';
-        }
-        context.lineCap = 'round';
-        context.lineTo(data.x, data.y);
-        context.stroke();
+        ctx.lineWidth   = data.eraser ? eraseW : drawW;
+        ctx.strokeStyle = data.eraser ? '#fff' : '#000';
+        ctx.lineCap     = 'round';
+        ctx.lineTo(data.x,data.y); ctx.stroke();
       } else if (data.type === 'end') {
-        context.closePath();
+        ctx.closePath();
       } else if (data.type === 'clear') {
-        context.clearRect(0, 0, whiteboard.width, whiteboard.height);
+        ctx.clearRect(0,0,whiteboard.width,whiteboard.height);
       }
     });
   </script>
-
-
-
-
 {% endblock %}
