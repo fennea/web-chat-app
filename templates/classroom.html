@@ -46,7 +46,8 @@
     const socket = io();
     const room = "{{ room_slug }}";
     const userId = "{{ user_id }}";
-    let role, pc, localStream, iceBuffer = [];
+    let role, pc, localStream;
+    let iceBuffer = [];
 
     const config = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
@@ -55,55 +56,82 @@
       const t = new Date().toLocaleTimeString();
       d.innerHTML += `[${t}] ${msg}<br>`;
       d.scrollTop = d.scrollHeight;
+      console.log(`[${t}] ${msg}`);
     }
 
     socket.on('connect', () => {
       socket.emit('join', { room, user_id: userId });
       log('Socket connected');
     });
-    socket.on('disconnect', () => log('Socket disconnected'));
+    socket.on('disconnect', () => {
+      document.getElementById('reconnectMessage').style.display = 'block';
+      log('Socket disconnected');
+    });
+    socket.on('connect', () => {
+      document.getElementById('reconnectMessage').style.display = 'none';
+    });
 
     socket.on('role', data => {
       role = data.role;
-      log(`Role: ${role}`);
+      log(`Assigned role: ${role}`);
       initPeer();
     });
 
-    socket.on('start_session', () => {
+    // offerer kicks off on server 'start_session'
+    socket.on('start_session', async () => {
       if (role === 'offerer') {
         log('Ready to negotiate — creating offer');
-        pc.createOffer()
-          .then(o => pc.setLocalDescription(o))
-          .then(() => socket.emit('signal', { sdp: pc.localDescription, room }))
-          .then(() => log('Offer sent'))
-          .catch(e => log('Offer error: ' + e.message));
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        socket.emit('signal', { sdp: pc.localDescription, room });
+        log('Offer sent');
       }
     });
 
     function initPeer() {
       pc = new RTCPeerConnection(config);
+
+      // if I'm the answerer, advertise recvonly tracks up-front
+      if (role === 'answerer') {
+        pc.addTransceiver('video', { direction: 'recvonly' });
+        pc.addTransceiver('audio', { direction: 'recvonly' });
+        log('Answerer: added recvonly transceivers');
+      }
+
       pc.onicecandidate = e => {
         if (e.candidate) {
           socket.emit('signal', { candidate: e.candidate, room });
           log('Sent ICE candidate');
         }
       };
+
       pc.ontrack = e => {
         document.getElementById('remoteVideo').srcObject = e.streams[0];
         log('Received remote track');
       };
-      pc.onconnectionstatechange = () => log('Connection: ' + pc.connectionState);
+
+      pc.onconnectionstatechange = () => {
+        log(`Connection state: ${pc.connectionState}`);
+      };
     }
 
+    // manual start for sending out your own camera/mic
     document.getElementById('startVideo').onclick = async () => {
       try {
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         document.getElementById('localVideo').srcObject = localStream;
         localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
-        log('Local media ready');
+        log('Local media ready and tracks added');
+        // if I'm offerer, immediately re-negotiate so answerer sees me
+        if (role === 'offerer') {
+          const offer2 = await pc.createOffer();
+          await pc.setLocalDescription(offer2);
+          socket.emit('signal', { sdp: pc.localDescription, room });
+          log('Re-offer sent with new tracks');
+        }
       } catch (e) {
-        log('getUserMedia failure: ' + e.message);
-        alert('Unable to access camera/mic.');
+        log('getUserMedia failed: ' + e.message);
+        alert('Unable to access camera & mic.');
       }
     };
 
@@ -111,43 +139,50 @@
       try {
         if (data.sdp) {
           const desc = new RTCSessionDescription(data.sdp);
+
           if (desc.type === 'offer' && role === 'answerer') {
+            // 1) set remote
             await pc.setRemoteDescription(desc);
             log('Offer received');
-            const ans = await pc.createAnswer();
-            await pc.setLocalDescription(ans);
+            // 2) create & send answer
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
             socket.emit('signal', { sdp: pc.localDescription, room });
             log('Answer sent');
             await drainIce();
-          } else if (desc.type === 'answer' && role === 'offerer') {
+          }
+          else if (desc.type === 'answer' && role === 'offerer') {
             await pc.setRemoteDescription(desc);
             log('Answer received');
             await drainIce();
           }
-        } else if (data.candidate) {
+        }
+        else if (data.candidate) {
           const cand = new RTCIceCandidate(data.candidate);
+          // if remoteDescription is already set, add immediately…
           if (pc.remoteDescription && pc.remoteDescription.type) {
             await pc.addIceCandidate(cand);
             log('ICE candidate added');
           } else {
+            // …otherwise buffer until after SDP handshake
             iceBuffer.push(cand);
             log('ICE candidate buffered');
           }
         }
-      } catch (e) {
-        log('Signal error: ' + e.message);
+      } catch (err) {
+        log('Signal error: ' + err.message);
       }
     });
 
     async function drainIce() {
-      for (let c of iceBuffer) {
+      for (const c of iceBuffer) {
         await pc.addIceCandidate(c);
         log('Drained ICE');
       }
       iceBuffer = [];
     }
 
-    // Whiteboard & endSession unchanged…
+    // — your whiteboard & endSession handlers remain unchanged —
   </script>
 </body>
 </html>
