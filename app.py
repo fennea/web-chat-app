@@ -1469,6 +1469,7 @@ def on_join(data):
         return
 
     join_room(room)
+    # Assume add_user_to_room is a helper function to track users
     add_user_to_room(user_id, room)
 
     room_members = socketio.server.manager.rooms.get('/', {}).get(room, set())
@@ -1477,7 +1478,11 @@ def on_join(data):
     logging.info(f"User {sid} (user_id={user_id}) joined room: {room}, total users: {user_count}")
     role = 'offerer' if user_count == 1 else 'answerer'
     emit('role', {'role': role}, to=sid)
-    emit('user-joined', {'msg': 'A new user has joined!'}, room=room, skip_sid=sid)
+
+    if user_count == 2:
+        emit('start_session', room=room)  # Tell both users to start the session
+    else:
+        emit('user-joined', {'msg': 'A new user has joined!'}, room=room, skip_sid=sid)
 
 @socketio.on('connect')
 def on_connect():

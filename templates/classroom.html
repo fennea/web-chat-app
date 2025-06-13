@@ -11,7 +11,7 @@
             padding: 20px;
             background-color: #f4f4f4;
         }
-        h1 {
+       	h1 {
             text-align: center;
             color: #333;
         }
@@ -74,6 +74,16 @@
             display: none;
             margin-top: 10px;
         }
+        #log {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+        }
     </style>
 </head>
 <body>
@@ -95,6 +105,7 @@
         </div>
     </div>
     <div class="reconnect-message" id="reconnectMessage">Attempting to reconnect...</div>
+    <div id="log"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.min.js"></script>
     <script>
@@ -116,7 +127,8 @@
         let eraser = false;
         const whiteboard = document.getElementById('whiteboard');
         const ctx = whiteboard.getContext('2d');
-        let iceCandidateBuffer = []; // Buffer for ICE candidates
+        let iceCandidateBuffer = [];
+        let userCount = 0;
 
         // WebRTC Configuration
         const configuration = {
@@ -125,10 +137,25 @@
             ]
         };
 
+        // Logging function
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        // Handle user count updates
+        socket.on('user-count', (data) => {
+            userCount = data.count;
+            log(`User count updated: ${userCount}`);
+        });
+
         // Handle role assignment from server
         socket.on('role', (data) => {
             role = data.role;
-            console.log('Assigned role:', role);
+            log(`Assigned role: ${role}`);
             initializePeerConnection();
         });
 
@@ -139,22 +166,38 @@
             peerConnection.onicecandidate = (event) => {
                 if (event.candidate) {
                     socket.emit('signal', { candidate: event.candidate, room: room });
-                    console.log('Sent ICE candidate:', event.candidate);
+                    log('Sent ICE candidate: ' + JSON.stringify(event.candidate));
                 }
             };
 
             peerConnection.ontrack = (event) => {
                 document.getElementById('remoteVideo').srcObject = event.streams[0];
-                console.log('Received remote track');
+                log('Received remote track');
             };
 
-            // Handle connection state changes
             peerConnection.onconnectionstatechange = () => {
-                console.log('Connection state changed to:', peerConnection.connectionState);
+                log(`Connection state changed to: ${peerConnection.connectionState}`);
                 if (peerConnection.connectionState === 'disconnected') {
                     document.getElementById('reconnectMessage').style.display = 'block';
                 } else if (peerConnection.connectionState === 'connected') {
                     document.getElementById('reconnectMessage').style.display = 'none';
+                }
+            };
+
+            peerConnection.oniceconnectionstatechange = () => {
+                log(`ICE connection state changed to: ${peerConnection.iceConnectionState}`);
+            };
+
+            peerConnection.onnegotiationneeded = async () => {
+                if (role === 'offerer' && userCount >= 2) {
+                    try {
+                        const offer = await peerConnection.createOffer();
+                        await peerConnection.setLocalDescription(offer);
+                        socket.emit('signal', { sdp: peerConnection.localDescription, room: room });
+                        log('Offer created and sent: ' + JSON.stringify(peerConnection.localDescription));
+                    } catch (error) {
+                        log('Error during negotiation: ' + error.message);
+                    }
                 }
             };
         }
@@ -165,63 +208,56 @@
                 localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                 document.getElementById('localVideo').srcObject = localStream;
                 localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-                console.log('Local stream added to peer connection');
-
-                if (role === 'offerer') {
-                    const offer = await peerConnection.createOffer();
-                    await peerConnection.setLocalDescription(offer);
-                    socket.emit('signal', { sdp: peerConnection.localDescription, room: room });
-                    console.log('Offer created and sent:', peerConnection.localDescription);
-                }
+                log('Local stream added to peer connection');
                 document.getElementById('startVideo').disabled = true;
             } catch (error) {
-                console.error('Error starting video session:', error);
+                log('Error starting video session: ' + error.message);
                 alert('Failed to access camera and microphone.');
             }
         });
 
         // Handle Incoming Signals
         socket.on('signal', async (data) => {
-            console.log('Received signal:', data);
+            log('Received signal: ' + JSON.stringify(data));
             try {
                 if (data.sdp) {
                     if (data.sdp.type === 'offer' && role === 'answerer') {
                         await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
-                        console.log('Set remote description (offer)');
+                        log('Set remote description (offer)');
                         const answer = await peerConnection.createAnswer();
                         await peerConnection.setLocalDescription(answer);
                         socket.emit('signal', { sdp: peerConnection.localDescription, room: room });
-                        console.log('Answer created and sent:', peerConnection.localDescription);
+                        log('Answer created and sent: ' + JSON.stringify(peerConnection.localDescription));
                         // Process buffered ICE candidates
-                        for (const candidate of iceCandidateBuffer) {
-                            await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-                            console.log('Added buffered ICE candidate:', candidate);
-                        }
-                        iceCandidateBuffer = [];
+                        await processBufferedCandidates();
                     } else if (data.sdp.type === 'answer' && role === 'offerer') {
                         await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
-                        console.log('Set remote description (answer)');
+                        log('Set remote description (answer)');
                         // Process buffered ICE candidates
-                        for (const candidate of iceCandidateBuffer) {
-                            await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-                            console.log('Added buffered ICE candidate:', candidate);
-                        }
-                        iceCandidateBuffer = [];
+                        await processBufferedCandidates();
                     }
                 } else if (data.candidate) {
-                    // Buffer ICE candidates if remote description isn’t set
                     if (peerConnection.remoteDescription) {
                         await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
-                        console.log('Added ICE candidate:', data.candidate);
+                        log('Added ICE candidate: ' + JSON.stringify(data.candidate));
                     } else {
                         iceCandidateBuffer.push(data.candidate);
-                        console.log('Buffered ICE candidate:', data.candidate);
+                        log('Buffered ICE candidate: ' + JSON.stringify(data.candidate));
                     }
                 }
             } catch (error) {
-                console.error('Error handling signal:', error);
+                log('Error handling signal: ' + error.message);
             }
         });
+
+        // Process buffered ICE candidates
+        async function processBufferedCandidates() {
+            for (const candidate of iceCandidateBuffer) {
+                await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                log('Added buffered ICE candidate: ' + JSON.stringify(candidate));
+            }
+            iceCandidateBuffer = [];
+        }
 
         // Whiteboard Functionality
         function getMousePos(e) {
@@ -325,16 +361,18 @@
         // Reconnection Handling
         socket.on('disconnect', () => {
             document.getElementById('reconnectMessage').style.display = 'block';
+            log('Socket disconnected');
         });
 
         socket.on('connect', () => {
             document.getElementById('reconnectMessage').style.display = 'none';
             socket.emit('rejoin_all', { user_id: userId });
+            log('Socket reconnected');
         });
 
         // Handle User Joined Notification
         socket.on('user-joined', (data) => {
-            console.log(data.msg);
+            log(data.msg);
         });
     </script>
 </body>
