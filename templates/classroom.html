@@ -159,11 +159,19 @@
             initializePeerConnection();
         });
 
-        socket.on('start_session', () => {
-          userCount = 2;
-          // if you're already past negotiationneeded, you can kick off negotiation manually:
-          if (role === 'offerer') peerConnection.onnegotiationneeded();
+        socket.on('start_session', async () => {
+          if (!localStream) {
+            try {
+              localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+              localVideo.srcObject = localStream;
+              localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
+              log('Auto-started local stream');
+            } catch (err) {
+              log('Failed to getUserMedia: ' + err.message);
+            }
+          }
         });
+
 
 
         // Initialize Peer Connection
@@ -196,17 +204,18 @@
             };
 
             peerConnection.onnegotiationneeded = async () => {
-                if (role === 'offerer' && userCount >= 2) {
-                    try {
-                        const offer = await peerConnection.createOffer();
-                        await peerConnection.setLocalDescription(offer);
-                        socket.emit('signal', { sdp: peerConnection.localDescription, room: room });
-                        log('Offer created and sent: ' + JSON.stringify(peerConnection.localDescription));
-                    } catch (error) {
-                        log('Error during negotiation: ' + error.message);
-                    }
+              if (role === 'offerer') {
+                try {
+                  const offer = await peerConnection.createOffer();
+                  await peerConnection.setLocalDescription(offer);
+                  socket.emit('signal', { sdp: peerConnection.localDescription, room });
+                  log('Offer created and sent');
+                } catch (err) {
+                  log('Negotiation error: ' + err.message);
                 }
+              }
             };
+
         }
 
         // Start Video Session
