@@ -116,6 +116,7 @@
         let eraser = false;
         const whiteboard = document.getElementById('whiteboard');
         const ctx = whiteboard.getContext('2d');
+        let iceCandidateBuffer = []; // Buffer for ICE candidates
 
         // WebRTC Configuration
         const configuration = {
@@ -138,15 +139,18 @@
             peerConnection.onicecandidate = (event) => {
                 if (event.candidate) {
                     socket.emit('signal', { candidate: event.candidate, room: room });
+                    console.log('Sent ICE candidate:', event.candidate);
                 }
             };
 
             peerConnection.ontrack = (event) => {
                 document.getElementById('remoteVideo').srcObject = event.streams[0];
+                console.log('Received remote track');
             };
 
             // Handle connection state changes
             peerConnection.onconnectionstatechange = () => {
+                console.log('Connection state changed to:', peerConnection.connectionState);
                 if (peerConnection.connectionState === 'disconnected') {
                     document.getElementById('reconnectMessage').style.display = 'block';
                 } else if (peerConnection.connectionState === 'connected') {
@@ -161,11 +165,13 @@
                 localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                 document.getElementById('localVideo').srcObject = localStream;
                 localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+                console.log('Local stream added to peer connection');
 
                 if (role === 'offerer') {
                     const offer = await peerConnection.createOffer();
                     await peerConnection.setLocalDescription(offer);
                     socket.emit('signal', { sdp: peerConnection.localDescription, room: room });
+                    console.log('Offer created and sent:', peerConnection.localDescription);
                 }
                 document.getElementById('startVideo').disabled = true;
             } catch (error) {
@@ -176,18 +182,41 @@
 
         // Handle Incoming Signals
         socket.on('signal', async (data) => {
+            console.log('Received signal:', data);
             try {
                 if (data.sdp) {
                     if (data.sdp.type === 'offer' && role === 'answerer') {
                         await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                        console.log('Set remote description (offer)');
                         const answer = await peerConnection.createAnswer();
                         await peerConnection.setLocalDescription(answer);
                         socket.emit('signal', { sdp: peerConnection.localDescription, room: room });
+                        console.log('Answer created and sent:', peerConnection.localDescription);
+                        // Process buffered ICE candidates
+                        for (const candidate of iceCandidateBuffer) {
+                            await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                            console.log('Added buffered ICE candidate:', candidate);
+                        }
+                        iceCandidateBuffer = [];
                     } else if (data.sdp.type === 'answer' && role === 'offerer') {
                         await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                        console.log('Set remote description (answer)');
+                        // Process buffered ICE candidates
+                        for (const candidate of iceCandidateBuffer) {
+                            await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                            console.log('Added buffered ICE candidate:', candidate);
+                        }
+                        iceCandidateBuffer = [];
                     }
                 } else if (data.candidate) {
-                    await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+                    // Buffer ICE candidates if remote description isn’t set
+                    if (peerConnection.remoteDescription) {
+                        await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+                        console.log('Added ICE candidate:', data.candidate);
+                    } else {
+                        iceCandidateBuffer.push(data.candidate);
+                        console.log('Buffered ICE candidate:', data.candidate);
+                    }
                 }
             } catch (error) {
                 console.error('Error handling signal:', error);
