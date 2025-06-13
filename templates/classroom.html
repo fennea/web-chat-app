@@ -1,149 +1,193 @@
-<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.min.js"></script>
-<script>
-  const socket = io();
-  const room = "{{ room_slug }}";
-  const userId = "{{ user_id }}";
-  let role, pc, localStream;
-  let iceBuffer = [];
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Classroom: {{ roomName }}</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin:0; padding:20px; background:#f4f4f4; }
+    h1 { text-align:center; color:#333; }
+    .video-container { display:flex; justify-content:center; flex-wrap:wrap; margin-bottom:20px; }
+    video { width:45%; max-width:600px; margin:10px; border:1px solid #ccc; border-radius:5px; background:#000; }
+    .controls { text-align:center; margin:20px 0; }
+    button { padding:10px 20px; font-size:16px; border-radius:5px; border:none;
+             background:#007bff; color:#fff; cursor:pointer; margin:5px;
+             transition:background 0.3s; }
+    button:disabled { background:#6c757d; cursor:not-allowed; }
+    button:hover:not(:disabled) { background:#0056b3; }
+    .whiteboard-container { text-align:center; margin:20px 0; }
+    #whiteboard { width:100%; max-width:800px; height:400px; border:1px solid #ccc;
+                  border-radius:5px; display:none; background:#fff; }
+    .whiteboard-controls { display:none; margin-top:10px; }
+    .reconnect-message { color:red; text-align:center; display:none; margin-top:10px; }
+    #log { margin-top:20px; padding:10px; background:#fff; border:1px solid #ccc;
+           border-radius:5px; max-height:200px; overflow-y:auto; font-family:monospace; }
+  </style>
+</head>
+<body>
+  <h1>Classroom: {{ roomName }}</h1>
+  <div class="video-container">
+    <video id="localVideo" autoplay playsinline muted></video>
+    <video id="remoteVideo" autoplay playsinline></video>
+  </div>
+  <div class="controls">
+    <button id="startVideo">Start Video Session</button>
+    <button id="toggleWhiteboard">Show Whiteboard</button>
+    <button id="endSession">End Session</button>
+  </div>
+  <div class="whiteboard-container">
+    <canvas id="whiteboard"></canvas>
+    <div class="whiteboard-controls">
+      <button id="toggleEraser">Toggle Eraser</button>
+      <button id="clearBoard">Clear Whiteboard</button>
+    </div>
+  </div>
+  <div class="reconnect-message" id="reconnectMessage">
+    Attempting to reconnect...
+  </div>
+  <div id="log"></div>
 
-  const config = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+  <!-- socket.io driver can stay here -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.min.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const socket = io();
+    const room = "{{ room_slug }}";
+    const userId = "{{ user_id }}";
+    let role, pc, localStream, iceBuffer = [];
 
-  function log(msg) {
-    const d = document.getElementById('log');
-    const t = new Date().toLocaleTimeString();
-    d.innerHTML += `[${t}] ${msg}<br>`;
-    d.scrollTop = d.scrollHeight;
-    console.log(`[${t}] ${msg}`);
-  }
+    const config = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
-  // Join room
-  socket.on('connect', () => {
-    socket.emit('join', { room, user_id: userId });
-    log('Socket connected');
-  });
-  socket.on('disconnect', () => {
-    document.getElementById('reconnectMessage').style.display = 'block';
-    log('Socket disconnected');
-  });
-  socket.on('connect', () => {
-    document.getElementById('reconnectMessage').style.display = 'none';
-  });
-
-  // Receive your role then init RTCPeerConnection
-  socket.on('role', ({ role: r }) => {
-    role = r;
-    log(`Assigned role: ${role}`);
-    initPeerConnection();
-  });
-
-  function initPeerConnection() {
-    pc = new RTCPeerConnection(config);
-
-    // Answerer declares recvonly m-lines up front
-    if (role === 'answerer') {
-      pc.addTransceiver('video', { direction: 'recvonly' });
-      pc.addTransceiver('audio', { direction: 'recvonly' });
-      log('Answerer: added recvonly transceivers');
+    function log(msg) {
+      const d = document.getElementById('log');
+      const t = new Date().toLocaleTimeString();
+      d.innerHTML += `[${t}] ${msg}<br>`;
+      d.scrollTop = d.scrollHeight;
     }
 
-    // Offerer kicks off negotiation whenever tracks/transceivers change
-    if (role === 'offerer') {
-      pc.onnegotiationneeded = async () => {
-        try {
-          log('Negotiation needed—creating offer');
-          const offer = await pc.createOffer();
-          await pc.setLocalDescription(offer);
-          socket.emit('signal', { sdp: pc.localDescription, room });
-          log('Offer created & sent');
-        } catch (e) {
-          log('Negotiation error: ' + e.message);
+    // Join + reconnect messaging
+    socket.on('connect', () => {
+      document.getElementById('reconnectMessage').style.display = 'none';
+      socket.emit('join', { room, user_id: userId });
+      log('Socket connected');
+    });
+    socket.on('disconnect', () => {
+      document.getElementById('reconnectMessage').style.display = 'block';
+      log('Socket disconnected');
+    });
+
+    // Role assignment
+    socket.on('role', ({ role: r }) => {
+      role = r;
+      log(`Assigned role: ${role}`);
+      initPeer();
+    });
+
+    // Initialize PeerConnection
+    function initPeer() {
+      pc = new RTCPeerConnection(config);
+
+      // If I’m the answerer, set up recvonly transceivers so I can answer
+      if (role === 'answerer') {
+        pc.addTransceiver('video', { direction: 'recvonly' });
+        pc.addTransceiver('audio', { direction: 'recvonly' });
+        log('Answerer: recvonly transceivers added');
+      }
+
+      // Offerer: when tracks get added, negotiationneeded will fire
+      if (role === 'offerer') {
+        pc.onnegotiationneeded = async () => {
+          try {
+            log('Negotiation needed — creating offer');
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            socket.emit('signal', { sdp: pc.localDescription, room });
+            log('Offer created & sent');
+          } catch (e) {
+            log('Negotiation error: ' + e.message);
+          }
+        };
+      }
+
+      pc.onicecandidate = e => {
+        if (e.candidate) {
+          socket.emit('signal', { candidate: e.candidate, room });
+          log('Sent ICE candidate');
         }
+      };
+      pc.ontrack = e => {
+        document.getElementById('remoteVideo').srcObject = e.streams[0];
+        log('Received remote track');
+      };
+      pc.onconnectionstatechange = () => {
+        log('Connection state: ' + pc.connectionState);
+      };
+      pc.oniceconnectionstatechange = () => {
+        log('ICE state: ' + pc.iceConnectionState);
       };
     }
 
-    pc.onicecandidate = e => {
-      if (e.candidate) {
-        socket.emit('signal', { candidate: e.candidate, room });
-        log('Sent ICE candidate');
-      }
-    };
-
-    pc.ontrack = e => {
-      document.getElementById('remoteVideo').srcObject = e.streams[0];
-      log('Received remote track');
-    };
-
-    pc.onconnectionstatechange = () => {
-      log('Connection state: ' + pc.connectionState);
-    };
-    pc.oniceconnectionstatechange = () => {
-      log('ICE state: ' + pc.iceConnectionState);
-    };
-  }
-
-  // Manual Start Video button (both roles)
-  document.getElementById('startVideo').onclick = async () => {
-    try {
-      localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      document.getElementById('localVideo').srcObject = localStream;
-      localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
-      log('Local media ready & tracks added');
-      // NOTE: on the offerer side, adding tracks will fire onnegotiationneeded automatically
-    } catch (e) {
-      log('getUserMedia failed: ' + e.message);
-      alert('Unable to access camera & mic.');
-    }
-  };
-
-  // Handle SDP & ICE from remote peer
-  socket.on('signal', async data => {
-    try {
-      if (data.sdp) {
-        const desc = new RTCSessionDescription(data.sdp);
-
-        if (desc.type === 'offer' && role === 'answerer') {
-          log('Offer received');
-          await pc.setRemoteDescription(desc);
-
-          const answer = await pc.createAnswer();
-          await pc.setLocalDescription(answer);
-          socket.emit('signal', { sdp: pc.localDescription, room });
-          log('Answer created & sent');
-
-          await drainIce();
-        }
-        else if (desc.type === 'answer' && role === 'offerer') {
-          log('Answer received');
-          await pc.setRemoteDescription(desc);
-          await drainIce();
-        }
-      }
-      else if (data.candidate) {
-        const cand = new RTCIceCandidate(data.candidate);
-        if (pc.remoteDescription && pc.remoteDescription.type) {
-          await pc.addIceCandidate(cand);
-          log('ICE candidate added');
-        } else {
-          iceBuffer.push(cand);
-          log('ICE candidate buffered');
-        }
-      }
-    } catch (err) {
-      log('Signal handling error: ' + err.message);
-    }
-  });
-
-  async function drainIce() {
-    for (const c of iceBuffer) {
+    // Only now do we grab media & add tracks — both sides must click this
+    document.getElementById('startVideo').onclick = async () => {
       try {
-        await pc.addIceCandidate(c);
-        log('Drained ICE');
+        localStream = await navigator.mediaDevices.getUserMedia({ video:true, audio:true });
+        document.getElementById('localVideo').srcObject = localStream;
+        localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+        log('Local media ready & tracks added');
       } catch (e) {
-        console.warn('Failed to add buffered ICE:', e);
+        log('getUserMedia failed: ' + e.message);
+        alert('Unable to access camera & mic.');
       }
-    }
-    iceBuffer = [];
-  }
+    };
 
-  // …and your whiteboard / endSession code goes here unchanged…
-</script>
+    // Handle incoming SDP & ICE
+    socket.on('signal', async data => {
+      try {
+        if (data.sdp) {
+          const desc = new RTCSessionDescription(data.sdp);
+          if (desc.type === 'offer' && role === 'answerer') {
+            log('Offer received');
+            await pc.setRemoteDescription(desc);
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            socket.emit('signal', { sdp: pc.localDescription, room });
+            log('Answer created & sent');
+            await drainIce();
+          }
+          else if (desc.type === 'answer' && role === 'offerer') {
+            log('Answer received');
+            await pc.setRemoteDescription(desc);
+            await drainIce();
+          }
+        }
+        else if (data.candidate) {
+          const cand = new RTCIceCandidate(data.candidate);
+          if (pc.remoteDescription && pc.remoteDescription.type) {
+            await pc.addIceCandidate(cand);
+            log('ICE candidate added');
+          } else {
+            iceBuffer.push(cand);
+            log('ICE candidate buffered');
+          }
+        }
+      } catch (e) {
+        log('Signal error: ' + e.message);
+      }
+    });
+
+    async function drainIce() {
+      for (const c of iceBuffer) {
+        try {
+          await pc.addIceCandidate(c);
+          log('Drained ICE');
+        } catch {}
+      }
+      iceBuffer = [];
+    }
+
+    // … your whiteboard & endSession code goes here unchanged …
+
+  }); // end DOMContentLoaded
+  </script>
+</body>
+</html>
