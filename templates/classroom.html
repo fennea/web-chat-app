@@ -2,21 +2,21 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Classroom: {{ roomName }}</title>
   <style>
-    body { font-family: Arial, sans-serif; margin:0; padding:20px; background:#f4f4f4; }
-    h1 { text-align:center; color:#333; }
-    .video-container { display:flex; justify-content:center; flex-wrap:wrap; margin-bottom:20px; }
-    video { width:45%; max-width:600px; margin:10px; border:1px solid #ccc; border-radius:5px; background:#000; }
-    .controls { text-align:center; margin:20px 0; }
-    button { padding:10px 20px; font-size:16px; border-radius:5px; border:none; background:#007bff; color:#fff; cursor:pointer; margin:5px; transition:background-color .3s; }
-    button:disabled { background:#6c757d; cursor:not-allowed; }
-    button:hover:not(:disabled) { background:#0056b3; }
-    .whiteboard-container { text-align:center; margin:20px 0; }
-    #whiteboard { width:100%; max-width:800px; height:400px; border:1px solid #ccc; border-radius:5px; display:none; background:#fff; }
-    .whiteboard-controls { display:none; margin-top:10px; }
-    .reconnect-message { color:red; text-align:center; display:none; margin-top:10px; }
+    body { font-family: Arial; margin:0; padding:20px; background:#f4f4f4 }
+    h1 { text-align:center; color:#333 }
+    .video-container { display:flex; justify-content:center; flex-wrap:wrap; margin-bottom:20px }
+    video { width:45%; max-width:600px; margin:10px; border:1px solid #ccc; border-radius:5px; background:#000 }
+    .controls { text-align:center; margin:20px 0 }
+    button { padding:10px 20px; font-size:16px; border-radius:5px; border:none; background:#007bff; color:#fff; cursor:pointer; margin:5px; transition:.3s }
+    button:disabled { background:#6c757d; cursor:not-allowed }
+    button:hover:not(:disabled) { background:#0056b3 }
+    .whiteboard-container { text-align:center; margin:20px 0 }
+    #whiteboard { width:100%; max-width:800px; height:400px; border:1px solid #ccc; border-radius:5px; display:none; }
+    .whiteboard-controls { display:none; margin-top:10px }
+    .reconnect-message { color:red; text-align:center; display:none; margin-top:10px }
     #log { margin-top:20px; padding:10px; background:#fff; border:1px solid #ccc; border-radius:5px; max-height:200px; overflow-y:auto; font-family:monospace; }
   </style>
 </head>
@@ -46,9 +46,9 @@
     const socket = io();
     const room = "{{ room_slug }}";
     const userId = "{{ user_id }}";
-    let role, peerConnection, localStream;
-    let iceCandidateBuffer = [];  // <-- buffer until remoteDesc is set
-    const configuration = { iceServers:[{ urls:'stun:stun.l.google.com:19302' }] };
+    let role, pc, localStream;
+    let iceBuffer = [];
+    const config = { iceServers:[{ urls:'stun:stun.l.google.com:19302' }] };
 
     function log(msg) {
       const d = document.getElementById('log');
@@ -58,182 +58,190 @@
       console.log(msg);
     }
 
-    // Rejoin on reconnect for chat/whiteboard reliability
     socket.on('connect', () => {
       socket.emit('rejoin_all', { user_id: userId });
       log('Socket reconnected');
+      document.getElementById('reconnectMessage').style.display = 'none';
     });
-
     socket.on('disconnect', () => {
       document.getElementById('reconnectMessage').style.display = 'block';
       log('Socket disconnected');
     });
 
-    // Join the classroom room
+    // join our shared room for signaling / whiteboard / chat
     socket.emit('join', { room, user_id: userId });
 
-    // Receive your role (offerer/answerer)
     socket.on('role', data => {
       role = data.role;
       log(`Assigned role: ${role}`);
-      setupPeerConnection();
+      initPeer();
     });
 
-    function setupPeerConnection() {
-      peerConnection = new RTCPeerConnection(configuration);
+    function initPeer() {
+      pc = new RTCPeerConnection(config);
 
-      peerConnection.onicecandidate = e => {
+      // 1) When ICE candidate is gathered, send it
+      pc.onicecandidate = e => {
         if (e.candidate) {
           socket.emit('signal', { candidate:e.candidate, room });
           log('Sent ICE candidate');
         }
       };
 
-      peerConnection.ontrack = e => {
+      // 2) When remote track arrives, attach to remoteVideo
+      pc.ontrack = e => {
         document.getElementById('remoteVideo').srcObject = e.streams[0];
         log('Received remote track');
       };
 
-      peerConnection.onconnectionstatechange = () => {
-        log(`Connection state: ${peerConnection.connectionState}`);
-        if (peerConnection.connectionState === 'connected') {
-          document.getElementById('reconnectMessage').style.display = 'none';
+      // 3) Only the offerer negotiates
+      pc.onnegotiationneeded = async () => {
+        if (role === 'offerer') {
+          try {
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            socket.emit('signal', { sdp: pc.localDescription, room });
+            log('Offer created & sent');
+          } catch (err) {
+            log('Negotiation failed: '+err.message);
+          }
         }
+      };
+
+      // 4) Connection state updates
+      pc.onconnectionstatechange = () => {
+        log('Connection state: '+pc.connectionState);
       };
     }
 
-    // Manual start button
-    document.getElementById('startVideo').addEventListener('click', async () => {
+    // manual Start button: get media + add tracks
+    document.getElementById('startVideo').onclick = async () => {
       try {
         localStream = await navigator.mediaDevices.getUserMedia({ video:true, audio:true });
         document.getElementById('localVideo').srcObject = localStream;
-        localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
+        localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
         log('Local stream added');
-
-        if (role === 'offerer') {
-          const offer = await peerConnection.createOffer();
-          await peerConnection.setLocalDescription(offer);
-          socket.emit('signal', { sdp:peerConnection.localDescription, room });
-          log('Offer created & sent');
-        }
       } catch (err) {
-        log('Error starting video: ' + err.message);
-        alert('Could not start video—check camera & mic permissions.');
+        log('getUserMedia error: '+err.message);
+        alert('Could not start video—check permissions.');
       }
-    });
+    };
 
-    // Handle incoming SDP & ICE
+    // handle incoming SDP & ICE
     socket.on('signal', async data => {
       try {
         if (data.sdp) {
-          if (data.sdp.type === 'offer' && role === 'answerer') {
-            await peerConnection.setRemoteDescription(data.sdp);
-            log('Offer received & set');
-            const ans = await peerConnection.createAnswer();
-            await peerConnection.setLocalDescription(ans);
-            socket.emit('signal', { sdp:peerConnection.localDescription, room });
+          const desc = new RTCSessionDescription(data.sdp);
+
+          if (desc.type === 'offer' && role==='answerer') {
+            await pc.setRemoteDescription(desc);
+            log('Offer set');
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            socket.emit('signal',{ sdp:pc.localDescription, room });
             log('Answer created & sent');
-            // now safe to add buffered ICE
-            await drainIceBuffer();
+            await drainIce();
           }
-          else if (data.sdp.type === 'answer' && role === 'offerer') {
-            await peerConnection.setRemoteDescription(data.sdp);
-            log('Answer received & set');
-            await drainIceBuffer();
+          else if (desc.type==='answer' && role==='offerer') {
+            await pc.setRemoteDescription(desc);
+            log('Answer set');
+            await drainIce();
           }
-        } else if (data.candidate) {
-          // buffer until remoteDesc exists
-          if (peerConnection.remoteDescription && peerConnection.remoteDescription.type) {
-            await peerConnection.addIceCandidate(data.candidate);
+        }
+        else if (data.candidate) {
+          const cand = new RTCIceCandidate(data.candidate);
+          // buffer until remote is set
+          if (pc.remoteDescription && pc.remoteDescription.type) {
+            await pc.addIceCandidate(cand);
             log('ICE candidate added');
           } else {
-            iceCandidateBuffer.push(data.candidate);
+            iceBuffer.push(cand);
             log('Buffered ICE candidate');
           }
         }
       } catch (e) {
-        log('Signal handling error: ' + e.message);
+        log('Signal error: '+e.message);
       }
     });
 
-    async function drainIceBuffer() {
-      for (const c of iceCandidateBuffer) {
-        await peerConnection.addIceCandidate(c);
+    async function drainIce() {
+      for (let c of iceBuffer) {
+        await pc.addIceCandidate(c);
         log('Drained ICE candidate');
       }
-      iceCandidateBuffer = [];
+      iceBuffer = [];
     }
 
-    // Whiteboard
-    const whiteboard = document.getElementById('whiteboard');
-    const ctx = whiteboard.getContext('2d');
-    let drawing=false, eraser=false, isWhiteboardVisible=false;
+    // WHITEBOARD (identical to your working code)
+    const wb = document.getElementById('whiteboard');
+    const ctx = wb.getContext('2d');
+    let drawing=false, eraser=false, wbVisible=false;
 
-    function getMousePos(e) {
-      const r = whiteboard.getBoundingClientRect();
+    function getPos(e) {
+      const r = wb.getBoundingClientRect();
       return { x:e.clientX-r.left, y:e.clientY-r.top };
     }
 
-    document.getElementById('toggleWhiteboard').addEventListener('click', () => {
-      isWhiteboardVisible = !isWhiteboardVisible;
-      whiteboard.style.display = isWhiteboardVisible?'block':'none';
-      document.querySelector('.whiteboard-controls').style.display = isWhiteboardVisible?'block':'none';
-      document.getElementById('toggleWhiteboard').textContent = isWhiteboardVisible?'Hide Whiteboard':'Show Whiteboard';
-    });
+    document.getElementById('toggleWhiteboard').onclick = () => {
+      wbVisible = !wbVisible;
+      wb.style.display = wbVisible?'block':'none';
+      document.querySelector('.whiteboard-controls').style.display = wbVisible?'block':'none';
+      document.getElementById('toggleWhiteboard').textContent = wbVisible?'Hide Whiteboard':'Show Whiteboard';
+    };
 
-    whiteboard.addEventListener('mousedown', e => {
-      if (!isWhiteboardVisible) return;
+    wb.addEventListener('mousedown', e => {
+      if (!wbVisible) return;
       drawing=true;
-      const {x,y}=getMousePos(e);
+      const { x,y } = getPos(e);
       ctx.beginPath(); ctx.moveTo(x,y);
-      ctx.strokeStyle=eraser?'#fff':'#000';
-      ctx.lineWidth=eraser?10:2;
+      ctx.strokeStyle = eraser?'#fff':'#000';
+      ctx.lineWidth = eraser?10:2;
       socket.emit('whiteboard',{type:'start',x,y,eraser,room});
     });
 
-    whiteboard.addEventListener('mousemove', e => {
-      if (!drawing||!isWhiteboardVisible) return;
-      const {x,y}=getMousePos(e);
+    wb.addEventListener('mousemove', e => {
+      if (!drawing||!wbVisible) return;
+      const { x,y } = getPos(e);
       ctx.lineTo(x,y); ctx.stroke();
       socket.emit('whiteboard',{type:'draw',x,y,eraser,room});
     });
 
     ['mouseup','mouseleave'].forEach(ev=>{
-      whiteboard.addEventListener(ev,()=> {
-        if (!isWhiteboardVisible) return;
+      wb.addEventListener(ev,()=> {
+        if (!wbVisible) return;
         drawing=false; ctx.closePath();
         socket.emit('whiteboard',{type:'end',room});
       });
     });
 
     socket.on('whiteboard', data => {
-      if (!isWhiteboardVisible) return;
-      ctx.strokeStyle=data.eraser?'#fff':'#000';
-      ctx.lineWidth=data.eraser?10:2;
+      if (!wbVisible) return;
+      ctx.strokeStyle = data.eraser?'#fff':'#000';
+      ctx.lineWidth = data.eraser?10:2;
       if (data.type==='start') { ctx.beginPath(); ctx.moveTo(data.x,data.y); }
       else if (data.type==='draw') { ctx.lineTo(data.x,data.y); ctx.stroke(); }
       else if (data.type==='end') { ctx.closePath(); }
-      else if (data.type==='clear') { ctx.clearRect(0,0,whiteboard.width,whiteboard.height); }
+      else if (data.type==='clear') { ctx.clearRect(0,0,wb.width,wb.height); }
     });
 
-    document.getElementById('toggleEraser').addEventListener('click',()=>{
-      eraser=!eraser;
-      document.getElementById('toggleEraser').textContent = eraser ? 'Switch to Pen' : 'Toggle Eraser';
-    });
-    document.getElementById('clearBoard').addEventListener('click',()=>{
-      ctx.clearRect(0,0,whiteboard.width,whiteboard.height);
+    document.getElementById('toggleEraser').onclick = () => {
+      eraser = !eraser;
+      document.getElementById('toggleEraser').textContent = eraser?'Switch to Pen':'Toggle Eraser';
+    };
+    document.getElementById('clearBoard').onclick = () => {
+      ctx.clearRect(0,0,wb.width,wb.height);
       socket.emit('whiteboard',{type:'clear',room});
-    });
+    };
 
-    // End session
-    document.getElementById('endSession').addEventListener('click',()=>{
-      if (localStream) localStream.getTracks().forEach(t=>t.stop());
-      if (peerConnection) peerConnection.close();
-      socket.emit('session_update',{ duration: Math.floor((Date.now() - startTime)/1000) });
-      window.location.href='/dashboard';
-    });
-
+    // END SESSION
     let startTime = Date.now();
+    document.getElementById('endSession').onclick = () => {
+      if (localStream) localStream.getTracks().forEach(t=>t.stop());
+      if (pc) pc.close();
+      const duration = Math.floor((Date.now()-startTime)/1000);
+      socket.emit('session_update',{duration});
+      window.location.href = '/dashboard';
+    };
   </script>
 </body>
 </html>
