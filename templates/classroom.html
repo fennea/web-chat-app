@@ -159,19 +159,6 @@
             initializePeerConnection();
         });
 
-        socket.on('start_session', async () => {
-          if (!localStream) {
-            try {
-              localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-              localVideo.srcObject = localStream;
-              localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
-              log('Auto-started local stream');
-            } catch (err) {
-              log('Failed to getUserMedia: ' + err.message);
-            }
-          }
-        });
-
 
 
         // Initialize Peer Connection
@@ -220,16 +207,27 @@
 
         // Start Video Session
         document.getElementById('startVideo').addEventListener('click', async () => {
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                document.getElementById('localVideo').srcObject = localStream;
-                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-                log('Local stream added to peer connection');
-                document.getElementById('startVideo').disabled = true;
-            } catch (error) {
-                log('Error starting video session: ' + error.message);
-                alert('Failed to access camera and microphone.');
+          try {
+            // 2a) Get local media
+            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            localVideo.srcObject = localStream;
+
+            // 2b) Add tracks to the PeerConnection
+            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+            log('Local stream added');
+
+            // 2c) If I’m the offerer, create & send the offer now
+            if (role === 'offerer') {
+              const offer = await peerConnection.createOffer();
+              await peerConnection.setLocalDescription(offer);
+              socket.emit('signal', { sdp: peerConnection.localDescription, room });
+              log('Offer created and sent');
             }
+            // (The answerer doesn’t send an offer—they’ll wait for yours and then respond.)
+          } catch (err) {
+            log('Error starting video session: ' + err.message);
+            alert('Could not start video—check camera & mic permissions.');
+          }
         });
 
         // Handle Incoming Signals
