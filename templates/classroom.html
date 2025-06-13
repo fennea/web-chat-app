@@ -159,6 +159,13 @@
             initializePeerConnection();
         });
 
+        socket.on('start_session', () => {
+          userCount = 2;
+          // if you're already past negotiationneeded, you can kick off negotiation manually:
+          if (role === 'offerer') peerConnection.onnegotiationneeded();
+        });
+
+
         // Initialize Peer Connection
         function initializePeerConnection() {
             peerConnection = new RTCPeerConnection(configuration);
