@@ -1101,7 +1101,7 @@ def classroom(room_slug):
         room_name = room_row[0] if room_row else "Unknown Classroom"
         conn.commit()
 
-        return render_template('classroom.html', roomName=room_name, user_id=user_id, userRole=role)
+        return render_template('classroom.html', roomName=room_name, room_slug=room_slug, user_id=user_id, userRole=role)
     except Exception as e:
         logging.error(f"Error in classroom for email {session['email']}: {str(e)}", exc_info=True)
         flash("An error occurred. Please try again.")
@@ -1453,6 +1453,10 @@ def handle_send_message(data):
 @socketio.on('typing')
 def handle_typing(data):
     emit('show_typing', data, room=data['room'])
+
+@socketio.on('ping')
+def handle_ping():
+    emit('pong')
 
 @socketio.on('join')
 def on_join(data):

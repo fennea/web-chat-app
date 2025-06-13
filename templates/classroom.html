@@ -37,7 +37,7 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.min.js"></script>
 
     <script>
-        const room = "{{ roomName | replace(' ', '-') | lower }}-{{ user_id }}".trim();
+        const room = "{{ room_slug }}";
         const userId = "{{ user_id }}".trim();
         if (!room || !userId) {
             console.error('Room or userId is invalid:', { room, userId });
@@ -265,6 +265,10 @@
                 window.location.reload(); // Reload if all attempts fail
             }
         }
+
+    // Add this to your classroom.html script
+    setInterval(() => socket.emit('ping'), 30000); // every 30 seconds
+
     </script>
 </body>
 </html>
