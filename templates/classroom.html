@@ -1,34 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Classroom: {{ roomName }}</title>
   <style>
-    body { font-family: Arial; margin:0; padding:20px; background:#f4f4f4 }
-    h1 { text-align:center; color:#333 }
-    .video-container { display:flex; justify-content:center; flex-wrap:wrap; margin-bottom:20px }
-    video { width:45%; max-width:600px; margin:10px; border:1px solid #ccc; border-radius:5px; background:#000 }
-    .controls { text-align:center; margin:20px 0 }
-    button { padding:10px 20px; font-size:16px; border-radius:5px; border:none; background:#007bff; color:#fff; cursor:pointer; margin:5px; }
-    button:disabled { background:#6c757d; cursor:not-allowed }
-    button:hover:not(:disabled) { background:#0056b3 }
-    #log { margin-top:20px; padding:10px; background:#fff; border:1px solid #ccc; border-radius:5px; max-height:200px; overflow-y:auto; font-family:monospace }
+    body { font-family: Arial, sans-serif; margin:0; padding:20px; background:#f4f4f4; }
+    h1 { text-align:center; color:#333; }
+    .video-container { display:flex; justify-content:center; flex-wrap:wrap; margin-bottom:20px; }
+    video { width:45%; max-width:600px; margin:10px; border:1px solid #ccc; border-radius:5px; background:#000; }
+    .controls { text-align:center; margin:20px 0; }
+    button { padding:10px 20px; font-size:16px; border-radius:5px; border:none; background:#007bff; color:#fff; cursor:pointer; margin:5px; transition:background-color .3s; }
+    button:disabled { background:#6c757d; cursor:not-allowed; }
+    button:hover:not(:disabled) { background:#0056b3; }
+    .whiteboard-container { text-align:center; margin:20px 0; }
+    #whiteboard { width:100%; max-width:800px; height:400px; border:1px solid #ccc; border-radius:5px; display:none; background:#fff; }
+    .whiteboard-controls { display:none; margin-top:10px; }
+    .reconnect-message { color:red; text-align:center; display:none; margin-top:10px; }
+    #log { margin-top:20px; padding:10px; background:#fff; border:1px solid #ccc; border-radius:5px; max-height:200px; overflow-y:auto; font-family:monospace; }
   </style>
 </head>
 <body>
   <h1>Classroom: {{ roomName }}</h1>
-
   <div class="video-container">
     <video id="localVideo" autoplay playsinline muted></video>
     <video id="remoteVideo" autoplay playsinline></video>
   </div>
-
   <div class="controls">
     <button id="startVideo">Start Video Session</button>
+    <button id="toggleWhiteboard">Show Whiteboard</button>
     <button id="endSession">End Session</button>
   </div>
-
+  <div class="whiteboard-container">
+    <canvas id="whiteboard"></canvas>
+    <div class="whiteboard-controls">
+      <button id="toggleEraser">Toggle Eraser</button>
+      <button id="clearBoard">Clear Whiteboard</button>
+    </div>
+  </div>
+  <div class="reconnect-message" id="reconnectMessage">Attempting to reconnect...</div>
   <div id="log"></div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.min.js"></script>
@@ -37,25 +47,39 @@
     const room = "{{ room_slug }}";
     const userId = "{{ user_id }}";
     let role, peerConnection, localStream;
+    let iceCandidateBuffer = [];  // <-- buffer until remoteDesc is set
     const configuration = { iceServers:[{ urls:'stun:stun.l.google.com:19302' }] };
 
     function log(msg) {
-      const div = document.getElementById('log');
-      const time = new Date().toLocaleTimeString();
-      div.innerHTML += `[${time}] ${msg}<br>`;
-      div.scrollTop = div.scrollHeight;
+      const d = document.getElementById('log');
+      const t = new Date().toLocaleTimeString();
+      d.innerHTML += `[${t}] ${msg}<br>`;
+      d.scrollTop = d.scrollHeight;
       console.log(msg);
     }
 
+    // Rejoin on reconnect for chat/whiteboard reliability
+    socket.on('connect', () => {
+      socket.emit('rejoin_all', { user_id: userId });
+      log('Socket reconnected');
+    });
+
+    socket.on('disconnect', () => {
+      document.getElementById('reconnectMessage').style.display = 'block';
+      log('Socket disconnected');
+    });
+
+    // Join the classroom room
     socket.emit('join', { room, user_id: userId });
 
+    // Receive your role (offerer/answerer)
     socket.on('role', data => {
       role = data.role;
       log(`Assigned role: ${role}`);
-      setupPeer();
+      setupPeerConnection();
     });
 
-    function setupPeer() {
+    function setupPeerConnection() {
       peerConnection = new RTCPeerConnection(configuration);
 
       peerConnection.onicecandidate = e => {
@@ -72,9 +96,13 @@
 
       peerConnection.onconnectionstatechange = () => {
         log(`Connection state: ${peerConnection.connectionState}`);
+        if (peerConnection.connectionState === 'connected') {
+          document.getElementById('reconnectMessage').style.display = 'none';
+        }
       };
     }
 
+    // Manual start button
     document.getElementById('startVideo').addEventListener('click', async () => {
       try {
         localStream = await navigator.mediaDevices.getUserMedia({ video:true, audio:true });
@@ -85,15 +113,16 @@
         if (role === 'offerer') {
           const offer = await peerConnection.createOffer();
           await peerConnection.setLocalDescription(offer);
-          socket.emit('signal', { sdp: peerConnection.localDescription, room });
+          socket.emit('signal', { sdp:peerConnection.localDescription, room });
           log('Offer created & sent');
         }
       } catch (err) {
-        log('Error: ' + err.message);
-        alert('Could not start video. Check permissions.');
+        log('Error starting video: ' + err.message);
+        alert('Could not start video—check camera & mic permissions.');
       }
     });
 
+    // Handle incoming SDP & ICE
     socket.on('signal', async data => {
       try {
         if (data.sdp) {
@@ -102,27 +131,109 @@
             log('Offer received & set');
             const ans = await peerConnection.createAnswer();
             await peerConnection.setLocalDescription(ans);
-            socket.emit('signal', { sdp: peerConnection.localDescription, room });
+            socket.emit('signal', { sdp:peerConnection.localDescription, room });
             log('Answer created & sent');
+            // now safe to add buffered ICE
+            await drainIceBuffer();
           }
           else if (data.sdp.type === 'answer' && role === 'offerer') {
             await peerConnection.setRemoteDescription(data.sdp);
             log('Answer received & set');
+            await drainIceBuffer();
           }
         } else if (data.candidate) {
-          await peerConnection.addIceCandidate(data.candidate);
-          log('ICE candidate added');
+          // buffer until remoteDesc exists
+          if (peerConnection.remoteDescription && peerConnection.remoteDescription.type) {
+            await peerConnection.addIceCandidate(data.candidate);
+            log('ICE candidate added');
+          } else {
+            iceCandidateBuffer.push(data.candidate);
+            log('Buffered ICE candidate');
+          }
         }
       } catch (e) {
         log('Signal handling error: ' + e.message);
       }
     });
 
-    document.getElementById('endSession').addEventListener('click', () => {
-      if (localStream) localStream.getTracks().forEach(t => t.stop());
-      peerConnection.close();
-      window.location.href = '/dashboard';
+    async function drainIceBuffer() {
+      for (const c of iceCandidateBuffer) {
+        await peerConnection.addIceCandidate(c);
+        log('Drained ICE candidate');
+      }
+      iceCandidateBuffer = [];
+    }
+
+    // Whiteboard
+    const whiteboard = document.getElementById('whiteboard');
+    const ctx = whiteboard.getContext('2d');
+    let drawing=false, eraser=false, isWhiteboardVisible=false;
+
+    function getMousePos(e) {
+      const r = whiteboard.getBoundingClientRect();
+      return { x:e.clientX-r.left, y:e.clientY-r.top };
+    }
+
+    document.getElementById('toggleWhiteboard').addEventListener('click', () => {
+      isWhiteboardVisible = !isWhiteboardVisible;
+      whiteboard.style.display = isWhiteboardVisible?'block':'none';
+      document.querySelector('.whiteboard-controls').style.display = isWhiteboardVisible?'block':'none';
+      document.getElementById('toggleWhiteboard').textContent = isWhiteboardVisible?'Hide Whiteboard':'Show Whiteboard';
     });
+
+    whiteboard.addEventListener('mousedown', e => {
+      if (!isWhiteboardVisible) return;
+      drawing=true;
+      const {x,y}=getMousePos(e);
+      ctx.beginPath(); ctx.moveTo(x,y);
+      ctx.strokeStyle=eraser?'#fff':'#000';
+      ctx.lineWidth=eraser?10:2;
+      socket.emit('whiteboard',{type:'start',x,y,eraser,room});
+    });
+
+    whiteboard.addEventListener('mousemove', e => {
+      if (!drawing||!isWhiteboardVisible) return;
+      const {x,y}=getMousePos(e);
+      ctx.lineTo(x,y); ctx.stroke();
+      socket.emit('whiteboard',{type:'draw',x,y,eraser,room});
+    });
+
+    ['mouseup','mouseleave'].forEach(ev=>{
+      whiteboard.addEventListener(ev,()=> {
+        if (!isWhiteboardVisible) return;
+        drawing=false; ctx.closePath();
+        socket.emit('whiteboard',{type:'end',room});
+      });
+    });
+
+    socket.on('whiteboard', data => {
+      if (!isWhiteboardVisible) return;
+      ctx.strokeStyle=data.eraser?'#fff':'#000';
+      ctx.lineWidth=data.eraser?10:2;
+      if (data.type==='start') { ctx.beginPath(); ctx.moveTo(data.x,data.y); }
+      else if (data.type==='draw') { ctx.lineTo(data.x,data.y); ctx.stroke(); }
+      else if (data.type==='end') { ctx.closePath(); }
+      else if (data.type==='clear') { ctx.clearRect(0,0,whiteboard.width,whiteboard.height); }
+    });
+
+    document.getElementById('toggleEraser').addEventListener('click',()=>{
+      eraser=!eraser;
+      document.getElementById('toggleEraser').textContent = eraser ? 'Switch to Pen' : 'Toggle Eraser';
+    });
+    document.getElementById('clearBoard').addEventListener('click',()=>{
+      ctx.clearRect(0,0,whiteboard.width,whiteboard.height);
+      socket.emit('whiteboard',{type:'clear',room});
+    });
+
+    // End session
+    document.getElementById('endSession').addEventListener('click',()=>{
+      if (localStream) localStream.getTracks().forEach(t=>t.stop());
+      if (peerConnection) peerConnection.close();
+      socket.emit('session_update',{ duration: Math.floor((Date.now() - startTime)/1000) });
+      window.location.href='/dashboard';
+    });
+
+    let startTime = Date.now();
   </script>
 </body>
 </html>
