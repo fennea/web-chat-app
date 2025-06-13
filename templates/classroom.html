@@ -269,6 +269,13 @@
     // Add this to your classroom.html script
     setInterval(() => socket.emit('ping'), 30000); // every 30 seconds
 
+    peerConnection.oniceconnectionstatechange = () => {
+        console.log('ICE connection state:', peerConnection.iceConnectionState);
+    };
+    socket.on('signal', (data) => {
+        console.log('Received signal type:', data.sdp ? data.sdp.type : 'candidate');
+    });
+
     </script>
 </body>
 </html>
